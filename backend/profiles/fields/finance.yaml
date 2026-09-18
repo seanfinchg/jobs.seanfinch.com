@@ -1,0 +1,56 @@
+meta:
+  name: "Field: Finance / Markets"
+
+label: "Finance"
+
+# Finer-grained dashboard role tags for this field -- see
+# jobfinder/classify.py's classify_subfields(). Each `pattern` matches
+# against the job title only, same convention as every other field.
+subfields:
+  - tag: sales-trading
+    label: "Sales & Trading"
+    pattern: 'sales (and|&) trading|trading analyst|fx sales (and|&) trading'
+  - tag: credit
+    label: "Credit"
+    pattern: 'credit (analyst|research|trading|associate)|leveraged loans?|high yield credit|investment grade credit'
+  - tag: rates-macro
+    label: "Rates & Macro"
+    pattern: 'rates (trading|desk|analyst)|macro strategy|macro trading'
+  # Spelled-out phrasing only, not bare ABS/MBS/CLO -- those acronyms
+  # collide with unrelated ones elsewhere (ABS = anti-lock braking in
+  # automotive, for one) and this is a title-only match.
+  - tag: securitized-products
+    label: "Securitized Products"
+    pattern: 'securitized products|asset[- ]backed securities|mortgage[- ]backed securities|collateralized loan obligation'
+  # Bare "portfolio analyst" is ambiguous -- also a real title for a
+  # product/business-unit "portfolio" with nothing to do with investment
+  # management, found in real data ("Worldwide Global Business Unit Home
+  # Hardware Portfolio Analyst", HP). Scoped to not immediately follow
+  # "hardware", the collision actually found; genuine buy-side titles
+  # ("Quantitative Portfolio Analyst") are unaffected.
+  - tag: portfolio-investments
+    label: "Portfolio & Investments"
+    pattern: '(?<!hardware )portfolio analyst|investments analyst|portfolio management analyst'
+  - tag: private-credit
+    label: "Private Credit / Direct Lending"
+    pattern: 'private credit|direct lending'
+  - tag: fixed-income-derivatives
+    label: "Fixed Income & Derivatives"
+    pattern: 'fixed income (analyst|trading|sales)|derivatives (analyst|trading|sales)'
+  # Bare "repo" would false-positive constantly on software postings ("git
+  # repo") if this were a body-text match -- title-only and paired with
+  # trading/desk/analyst keeps it scoped to the repurchase-agreement desk.
+  - tag: repo
+    label: "Repo"
+    pattern: 'repo (trading|desk|analyst)'
+
+filters:
+  title_include:
+    - 'sales (and|&) trading|trading analyst|fx sales (and|&) trading'
+    - 'credit (analyst|research|trading|associate)|leveraged loans?|high yield credit|investment grade credit'
+    - 'rates (trading|desk|analyst)|macro strategy|macro trading'
+    - 'securitized products|asset[- ]backed securities|mortgage[- ]backed securities|collateralized loan obligation'
+    - '(?<!hardware )portfolio analyst|investments analyst|portfolio management analyst'
+    - 'private credit|direct lending'
+    - 'fixed income (analyst|trading|sales)|derivatives (analyst|trading|sales)'
+    - 'repo (trading|desk|analyst)'

@@ -1,0 +1,28 @@
+[
+  {
+    "source": "Simplify",
+    "category": "Software",
+    "company_name": "Acme",
+    "id": "sl-1",
+    "title": "Security Software Engineer, New Grad",
+    "active": true,
+    "date_updated": 1767000000,
+    "date_posted": 1767000000,
+    "url": "https://boards.greenhouse.io/acme/jobs/1001",
+    "locations": ["Boston, MA"],
+    "company_url": "https://simplify.jobs/c/Acme"
+  },
+  {
+    "source": "Simplify",
+    "category": "Software",
+    "company_name": "Zombie Corp",
+    "id": "sl-2",
+    "title": "Software Engineer",
+    "active": false,
+    "date_updated": 1767000000,
+    "date_posted": 1767000000,
+    "url": "https://example.com/dead",
+    "locations": ["Remote"],
+    "company_url": "https://simplify.jobs/c/Zombie"
+  }
+]

@@ -1,0 +1,34 @@
+meta:
+  name: "Field: Mobile"
+
+label: "Mobile"
+
+subfields:
+  - tag: ios
+    label: "iOS"
+    pattern: '\bios\b'
+  - tag: android
+    label: "Android"
+    pattern: '\bandroid\b'
+  # "React Native Engineer"/"Flutter Engineer" titles match this field's
+  # own title_include below but neither says "ios" or "android", so they
+  # need their own tag rather than silently getting none.
+  - tag: cross-platform
+    label: "Cross-platform (RN/Flutter)"
+    pattern: 'react native|flutter'
+
+filters:
+  title_include:
+    # Bounded so bare "mobile engineer" doesn't prefix-match "Mobile
+    # Engineering [department/services]" -- found in real data: "General
+    # Maintenance Operative - Mobile Engineering Services" (JLL), a
+    # facilities/property-maintenance role ("mobile engineer" is UK
+    # facilities-management terminology for a traveling maintenance
+    # technician), nothing to do with software.
+    - '\bmobile engineer\b|ios engineer|android engineer'
+    # Real titles put the platform before "engineer" as often as after it
+    # ("iOS Engineer, Applied Foundations" already matches; "Senior Mobile
+    # Engineer (iOS or Android)" needs the bare platform words too) and
+    # cross-platform framework titles skip "mobile"/"ios"/"android" as a
+    # standalone word entirely.
+    - 'react native|flutter engineer'

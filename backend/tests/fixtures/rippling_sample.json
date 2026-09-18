@@ -1,0 +1,9 @@
+[
+  {
+    "uuid": "job-1",
+    "name": "Security Engineer, New Grad",
+    "url": "https://ats.rippling.com/acme/jobs/job-1",
+    "workLocation": {"label": "Boston, MA"},
+    "department": {"id": "eng", "label": "Engineering"}
+  }
+]

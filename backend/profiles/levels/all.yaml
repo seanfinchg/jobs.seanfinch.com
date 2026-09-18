@@ -1,0 +1,9 @@
+meta:
+  name: "Level: All (no seniority exclusion)"
+
+# Deliberately empty. Seniority used to be a hard exclude at ingest time
+# (see levels/new-grad.yaml), but that only works for one band at a time --
+# it can't answer "show me staff roles too." Every level now flows through
+# ingestion unfiltered; jobfinder/classify.py tags each job's band from its
+# title text afterward, and the dashboard's level filter does the actual
+# narrowing, client-side, same pattern as the field/track tags.

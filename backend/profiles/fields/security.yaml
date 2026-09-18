@@ -1,0 +1,123 @@
+meta:
+  name: "Field: Security"
+
+label: "Security"
+
+# Finer-grained dashboard role tags for this field -- see
+# jobfinder/classify.py's classify_subfields(). Each `pattern` matches
+# against the job title only.
+subfields:
+  - tag: appsec
+    label: "AppSec"
+    pattern: 'application security|appsec|product security'
+  - tag: cloud-security
+    label: "Cloud Security"
+    pattern: 'cloud security|infrastructure security|platform security'
+  # No bare \bsoc\b here -- "SoC Firmware Engineer" (system-on-chip, a
+  # systems/embedded role) is a real title in the wild and would
+  # false-positive on a literal SOC match. Real security-operations
+  # postings show up as "detection engineer"/"incident response"/"DFIR" in
+  # the title, or bare "SOC" in the body (see body_include_for_weak_title
+  # below) -- the label just surfaces that this tag *is* SOC/DFIR work,
+  # since the dashboard has no separate literal "SOC" bucket to show.
+  - tag: detection-response
+    label: "Detection & Response (SOC/DFIR)"
+    pattern: 'detection engineer|detection (and|&) response|incident response|\bdfir\b'
+  - tag: iam
+    label: "IAM"
+    pattern: 'identity (and access )?management|\biam\b'
+  - tag: offensive-security
+    label: "Offensive Security"
+    pattern: 'red team|purple team|offensive security|penetration test'
+  - tag: vuln-management
+    label: "Vulnerability Management"
+    pattern: 'vulnerability management|vulnerability research|exploit develop'
+  - tag: grc
+    label: "GRC"
+    pattern: '\bgrc\b|compliance|governance|risk (management|analyst|analysis)'
+  - tag: threat-intel
+    label: "Threat Intel"
+    pattern: 'threat (intel|hunt)'
+  # Found in real data ("Security Engineer, Agent Security", "Staff
+  # Security Software Engineer, AI Security") -- a distinct enough
+  # specialty (securing models/agents, not just the infra around them) to
+  # deserve its own dashboard tag rather than folding into appsec/
+  # cloud-security.
+  - tag: ai-security
+    label: "AI / ML Security"
+    pattern: '\bai security\b|\bml security\b|\bagent security\b'
+  # "DevSecOps ... Engineer" titles matched no field and no subfield at all
+  # before this -- they don't contain \bdevops\b (no "devops" substring in
+  # "DevSecOps") and don't hit any bare security word either, so they fell
+  # through as unclassified generic software engineering. Listed under
+  # security since it's the security half of the phrase that has no other
+  # tag to land under; devops-sre.yaml's own subfields don't repeat it, so
+  # it only shows up once in the dashboard's grouped dropdown.
+  - tag: devsecops
+    label: "DevSecOps"
+    pattern: 'devsecops'
+
+# This is new-grad-cs.yaml's original security vocabulary, moved here
+# verbatim (not rewritten) so behavior for the existing personal profile
+# doesn't drift. Location preferences and the salary floor stayed behind in
+# that persona file -- they're personal-fit settings, not properties of the
+# security track itself.
+filters:
+  title_include:
+    - '\bsecurity\b'
+    - '\bappsec\b'
+    - '\binfosec\b'
+    - '\bcyber'
+    - 'detection engineer'
+    - 'trust (and|&) safety engineer'
+    - 'red team'
+    - 'purple team'
+    - 'offensive'
+    - 'penetration test'
+    - 'vulnerability (research|management)'
+    - 'incident response'
+    - 'threat (intel|detection|hunt)'
+    - 'identity (and access )?(management|engineer)'
+    - '\biam\b'
+    # a bare "GRC Engineer"/"GRC Analyst" title names a real security
+    # specialty and should pass through rather than vanish here. Bare "risk"
+    # deliberately isn't added here -- too ambiguous outside a security
+    # context (financial/insurance risk titles would false-positive).
+    - '\bgrc\b'
+
+  # Broad net: a generic new-grad SWE title alone isn't enough to prove this
+  # is a security-relevant posting -- it only counts if the body also shows
+  # some security-adjacent signal (see body_include_for_weak_title). Sources
+  # with no body text at all (smartrecruiters, workable, simplify_listings)
+  # can never satisfy that, which is the intended, conservative default.
+  title_include_weak:
+    # {grad_years} is substituted with the current year through two years
+    # out at profile-load time (see jobfinder/classify.py's
+    # grad_year_pattern()) -- no literal year to remember to bump.
+    - 'software engineer.*(new ?grad|university|early career|{grad_years})'
+    - '(new ?grad|university|early career|graduate).*software engineer'
+
+  body_include_for_weak_title:
+    - '\bsecurity\b'
+    - 'cyber'
+    - '\bgrc\b'
+    - 'compliance'
+    - 'threat'
+    - 'vulnerabilit'
+    - 'incident response'
+    - '\biam\b'
+    - 'zero trust'
+    - 'penetration test'
+    - 'red team'
+    - 'blue team'
+    - '\bsoc\b'
+    - 'dfir'
+    - 'forensic'
+
+  # Security-specific false-positive guards -- titles that would otherwise
+  # slip through title_include (e.g. "Physical Security Officer",
+  # "Cybersecurity Account Executive") but aren't the engineering roles this
+  # field is targeting.
+  title_exclude:
+    - 'physical security|guard|officer(?! of)|patrol|security technician|installer|alarm'
+    - 'sales(?!.*engineer)|account executive|marketing|recruit|customer success'

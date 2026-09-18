@@ -1,0 +1,30 @@
+# Copy this whole repo onto the deploy host and run `docker compose up -d
+# --build` from this directory over SSH -- NOT via Apps -> Discover Apps ->
+# Install via YAML. That screen only accepts pasted YAML text with nowhere
+# to also hand it this repo's source tree, so `build: .` has nothing to
+# build from there; it only works with a pre-built `image:` reference.
+# See redeploy-watch.sh for keeping this up to date without re-SSHing in
+# every time. One service, no inbound networking at all -- it only makes
+# outbound requests (ATS APIs, Netlify's deploy API) and writes to its own
+# volume, so nothing needs to be exposed on the network.
+services:
+  jobfinder:
+    build: .
+    restart: unless-stopped
+    environment:
+      # Scoped Netlify auth token + the target site's id -- create both in
+      # Netlify's dashboard, never commit them. Without these set, the
+      # container still ingests and builds the dashboard, it just skips
+      # the deploy step (see docker-entrypoint.sh).
+      NETLIFY_AUTH_TOKEN: "${NETLIFY_AUTH_TOKEN:?set in the deploy environment, not here}"
+      NETLIFY_SITE_ID: "${NETLIFY_SITE_ID:?set in the deploy environment, not here}"
+      JOBFINDER_DATA_DIR: /data
+      JOBFINDER_INTERVAL_SECONDS: "86400"
+    volumes:
+      # Point this at a real persistent storage path, not a directory inside
+      # the boot pool -- this is the only thing that needs to survive a
+      # container rebuild/update.
+      - jobfinder-data:/data
+
+volumes:
+  jobfinder-data:

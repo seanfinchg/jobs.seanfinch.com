@@ -1,0 +1,28 @@
+meta:
+  name: "Field: DevOps / SRE / Infrastructure"
+
+label: "DevOps / SRE"
+
+subfields:
+  - tag: sre
+    label: "SRE"
+    pattern: 'site reliability|\bsre\b'
+  - tag: devops
+    label: "DevOps"
+    pattern: '\bdevops\b'
+  - tag: platform
+    label: "Platform"
+    pattern: 'platform engineer|infrastructure engineer|cloud engineer'
+  # This field's own title_include below already pulls these titles into
+  # the field, but there was no subfield tag for them.
+  - tag: release-engineering
+    label: "Release Engineering"
+    pattern: 'release engineer|build engineer'
+  - tag: observability
+    label: "Observability"
+    pattern: 'observability engineer'
+
+filters:
+  title_include:
+    - 'devops|site reliability|\bsre\b|platform engineer|infrastructure engineer|cloud engineer'
+    - 'release engineer|build engineer|observability engineer'

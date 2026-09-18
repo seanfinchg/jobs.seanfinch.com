@@ -1,0 +1,29 @@
+{
+  "meta": {"totalCount": 2},
+  "result": [
+    {
+      "id": "823",
+      "jobOpeningName": "Security Engineer, New Grad",
+      "departmentId": "18589",
+      "departmentLabel": "Engineering",
+      "employmentStatusLabel": "Full-Time",
+      "employmentType": null,
+      "location": {"city": "Boston", "state": "Massachusetts"},
+      "atsLocation": {"country": null, "state": null, "province": null, "city": null},
+      "isRemote": null,
+      "locationType": "2"
+    },
+    {
+      "id": "824",
+      "jobOpeningName": "Support Engineer",
+      "departmentId": "18590",
+      "departmentLabel": "Support",
+      "employmentStatusLabel": "Full-Time",
+      "employmentType": null,
+      "location": {"city": null, "state": null},
+      "atsLocation": {"country": "United States", "state": "New York", "province": null, "city": "Rochester"},
+      "isRemote": null,
+      "locationType": "1"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+meta:
+  name: "Level: New grad / entry level"
+
+# Properties of "new grad" as a level, independent of career track. Shared
+# by every field-specific profile so a track profile doesn't need to
+# redefine its own seniority/intern/PhD exclusions.
+filters:
+  title_exclude:
+    - 'senior|staff|principal|lead\b|manager|director|head of|vp\b|architect'
+    - 'intern\b|internship|co-?op'
+    - 'phd|ph\.d'
+
+  body_exclude:
+    - '\b([5-9]|1[0-9])\+? years'

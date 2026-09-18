@@ -1,0 +1,29 @@
+meta:
+  name: "Field: Data / Machine Learning"
+
+label: "Data / ML"
+
+subfields:
+  - tag: data-engineering
+    label: "Data Engineering"
+    pattern: 'data engineer|analytics engineer'
+  - tag: machine-learning
+    label: "Machine Learning"
+    pattern: 'machine learning engineer|\bml engineer\b|\bai engineer\b'
+  - tag: data-science
+    label: "Data Science"
+    pattern: 'data scientist|applied scientist'
+  # Mirrors this field's own title_include below -- already treats
+  # mlops/applied-ai-engineer titles as data-ml, but had no matching
+  # subfield tag, so ~45 real postings ("Applied AI Engineer", "Machine
+  # Learning Engineer - MLOps Framework") landed in the field with no
+  # subfield at all.
+  - tag: mlops
+    label: "MLOps / Applied AI"
+    pattern: '\bmlops\b|ml ops|applied ai engineer'
+
+filters:
+  title_include:
+    - 'data engineer|data scientist|analytics engineer'
+    - 'machine learning engineer|\bml engineer\b|ai engineer|applied scientist'
+    - '\bmlops\b|ml ops|applied ai engineer'

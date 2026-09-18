@@ -1,0 +1,65 @@
+meta:
+  name: "Field: Mechanical Engineering"
+
+label: "Mechanical Engineering"
+
+subfields:
+  - tag: mechanical
+    label: "Mechanical Engineering"
+    pattern: '\bmechanical engineer\b'
+  # Bare "Product Engineer" is a real tech-industry title too (often a
+  # PM-adjacent software role) -- scoped to the mechanical/hardware phrasing
+  # so it doesn't pick up unrelated software "product engineer" postings.
+  - tag: product-design
+    label: "Product Design"
+    pattern: 'product design engineer|mechanical product engineer'
+  - tag: r-and-d
+    label: "R&D"
+    pattern: 'r ?(and|&) ?d engineer|research (and|&) development engineer'
+  - tag: cae-fea
+    label: "CAE / FEA"
+    pattern: 'cae engineer|finite element analysis|\bfea\b|stress analysis'
+  - tag: manufacturing
+    label: "Manufacturing"
+    pattern: 'manufacturing engineer'
+  - tag: forming-processes
+    label: "Casting / Forging / Stamping"
+    pattern: 'casting|forging|stamping'
+  # Bare "six sigma"/"dfmea" is a general business-process-improvement
+  # methodology, not specific to mechanical engineering -- found in real
+  # data matching non-engineering titles ("Business Process Manager - Six
+  # Sigma Black Belt", "Lean Six Sigma SME I/II", "Sr. Lean Six Sigma
+  # Manager"), none of which mention "engineer" anywhere in the title.
+  # Requires "engineer" to co-occur (order-agnostic, since real titles put
+  # the seniority/specialty prefix on either side).
+  - tag: quality-six-sigma
+    label: "Quality / Six Sigma"
+    pattern: '(?=.*\bengineer\b)(?=.*(?:six sigma|\bdfmea\b|\bfmea\b))'
+  - tag: npd
+    label: "New Product Development"
+    pattern: 'new product development|\bnpd\b engineer'
+  - tag: automotive-oem
+    label: "Automotive / OEM"
+    pattern: 'automotive engineer|oem engineering|automotive oem'
+
+filters:
+  title_include:
+    - '\bmechanical engineer\b'
+    - 'product design engineer|mechanical product engineer'
+    - 'cae engineer|finite element analysis|\bfea\b|stress analysis'
+    - 'manufacturing engineer'
+    - 'casting engineer|forging engineer|stamping engineer'
+    - '(?=.*\bengineer\b)(?=.*(?:six sigma|\bdfmea\b))'
+    - 'new product development engineer|\bnpd\b engineer'
+    - 'automotive engineer|oem engineering'
+  # Bare "R&D Engineer"/"Research & Development Engineer" is just as common
+  # in software/EE postings (found in real broad-cs output: NVIDIA "Software
+  # R&D Engineer... VLSI Physical Design", ByteDance "...Data Speech Product
+  # R&D Engineering", Eaton "Software Engineer - Research & Development
+  # Engineering") as in mechanical ones -- weak-tier + a body check for
+  # actual mechanical/hardware-design signal, same pattern security.yaml
+  # uses for its own ambiguous titles.
+  title_include_weak:
+    - 'r ?(and|&) ?d engineer|research (and|&) development engineer'
+  body_include_for_weak_title:
+    - 'mechanical (design|engineering)|\bhardware\b|\bcad\b|solidworks|prototyp|tooling|sheet metal|injection mold|\bcnc\b'

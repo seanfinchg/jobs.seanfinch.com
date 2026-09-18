@@ -1,0 +1,23 @@
+meta:
+  name: "Field: Software Engineering (general)"
+
+label: "Software Engineering"
+
+subfields:
+  - tag: frontend
+    label: "Frontend"
+    pattern: 'frontend|front[ -]?end'
+  - tag: backend
+    label: "Backend"
+    pattern: 'backend|back[ -]?end'
+  - tag: fullstack
+    label: "Full-stack"
+    pattern: 'full[ -]?stack'
+
+filters:
+  title_include:
+    - 'software engineer|software developer|\bsde\b'
+    - 'full[ -]?stack|frontend|front[ -]?end|backend|back[ -]?end'
+    # {grad_years}: see jobfinder/classify.py's grad_year_pattern() --
+    # substituted at profile-load time, no literal year to bump by hand.
+    - '\bengineer(ing)?\b.*(new ?grad|university|early career|{grad_years})|(new ?grad|university|early career|graduate).*\bengineer'

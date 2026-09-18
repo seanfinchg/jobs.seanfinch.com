@@ -1,0 +1,49 @@
+meta:
+  name: "New Grad CS — Security focus"
+  owner: sean
+
+# Was just boards/new-grad-cs.yaml (15 hand-picked companies). Widened to
+# also pull in boards/broad-tech.yaml's ~70 real-confirmed companies --
+# found while investigating why "new grad security roles" turned up almost
+# nothing: this profile's own board list was the actual bottleneck, not
+# the level/field filters (a plain "Security Engineer"/"SOC Analyst"-titled
+# posting at any of broad-tech.yaml's companies was never being scanned for
+# at all, since this was the only profile with `fields: [security]` and it
+# only ever looked at 15 companies). broad-cs.yaml deliberately doesn't list
+# `security` in its own `fields:` -- this profile is still the only one
+# that filters by the security vocabulary -- so widening *its*
+# board list, not broad-cs's field list, is the fix that stays inside this
+# profile's existing personal-fit scope instead of changing what broad-cs
+# is for.
+include: [boards/broad-tech.yaml, boards/new-grad-cs.yaml]
+level: new-grad
+fields: [security]
+
+# Everything below is genuinely personal-fit, not a property of "new grad"
+# or "security" in general -- kept here rather than in profiles/levels/ or
+# profiles/fields/ so those stay reusable by anyone else's persona.
+filters:
+  location_include:
+    # cambridge/lexington/newton/burlington all name other, more famous
+    # places -- require the MA marker so a Cambridge, UK or Lexington, SC
+    # posting doesn't pass as a Boston-area match.
+    - 'boston|somerville|waltham|massachusetts|\bma\b|(cambridge|lexington|newton|burlington),?\s*(ma\b|massachusetts)'
+    - 'new york|nyc|brooklyn|manhattan|jersey city|\bny\b|\bnj\b'
+    - 'san francisco|bay area|palo alto|mountain view|sunnyvale|santa clara|san jose|menlo park|oakland|\bsf\b'
+    - 'los angeles|irvine|san diego|santa monica|orange county|pasadena|culver city'
+    - 'seattle|bellevue|redmond|washington state'
+    - 'chicago|illinois'
+    - 'denver|boulder|colorado'
+    - 'portland|oregon'
+    # "arlington" alone also names Arlington Heights, IL and Arlington, TX --
+    # require the VA marker (or pair it with DC, since it's the same metro).
+    - 'maryland|virginia|mclean|reston|bethesda|\bdc\b|washington,?\s*d\.?c\.?|arlington,?\s*(va\b|virginia|county)'
+    - 'connecticut|rhode island|vermont|new hampshire|maine|delaware|minnesota|new mexico|hawaii'
+    - 'remote'
+
+  location_exclude:
+    - 'texas|austin|dallas|houston|san antonio|plano'
+    - 'florida|miami|tampa|orlando'
+    - 'tennessee|nashville|georgia|atlanta|north carolina|south carolina'
+    - 'arizona|phoenix|tempe|utah|salt lake|idaho|ohio|indiana|missouri|oklahoma|kansas|alabama|arkansas|louisiana|mississippi|kentucky|west virginia|iowa|nebraska|montana|wyoming|dakota'
+    - 'canada|united kingdom|\buk\b|london|ireland|dublin|india|singapore|israel|tel aviv|poland|germany|japan|australia|remote - (emea|apac|latam|europe|india)'

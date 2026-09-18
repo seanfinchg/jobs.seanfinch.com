@@ -1,0 +1,30 @@
+meta:
+  name: "Field: QA / Test Engineering"
+
+label: "QA"
+
+filters:
+  title_include:
+    - 'quality assurance|\bqa engineer\b|test engineer|\bsdet\b'
+    # "QA Automation Engineer" doesn't match \bqa engineer\b (word order),
+    # and test-automation titles often skip "QA"/"test engineer" entirely.
+    - '\bqa\b.*\bengineer\b|test automation'
+
+  # Bare "test engineer"/"quality assurance" also matches hardware/silicon
+  # test roles and non-software QA (accounting/compliance) -- found in real
+  # data: "Bench Test Engineer - Hardware Engineering", "Senior HiL Test
+  # Engineer - Automotive", "Manager, Accounting Quality Assurance &
+  # Governance". None of those are software QA/SDET work.
+  title_exclude:
+    - 'manufacturing|hardware (engineering|test)|bench test|\bhil\b|automotive|semiconductor|design for test|\bdft\b'
+    - 'accounting|financial|governance'
+    # Contract-manufacturer/fab job boards (Jabil, Micron) post dozens of
+    # physical-product test/QA titles with none of the above keywords in
+    # the title itself -- real data: "Test Engineering Technician II - 401
+    # Shift", "Product Quality Assurance Technician", "Construction Program
+    # Manager - Quality Assurance / Quality Control", "MSB Site Quality
+    # Assurance (QA) In Line Process Control Inspector". None of these are
+    # software QA/SDET work; "technician"/"inspector"/"construction" are
+    # reliable signals a title's bare "test engineer"/"quality assurance"
+    # match refers to a physical production role instead.
+    - '\btechnician\b|\binspector\b|construction'

@@ -1,0 +1,15 @@
+{
+  "offset": 0,
+  "limit": 100,
+  "totalFound": 1,
+  "content": [
+    {
+      "id": "9001",
+      "name": "Security Engineer, New Grad",
+      "releasedDate": "2026-08-01T12:00:00.000Z",
+      "location": {"city": "Boston", "region": "MA", "country": "us", "fullLocation": "Boston, MA, United States"},
+      "department": {},
+      "function": {"id": "engineering", "label": "Engineering"}
+    }
+  ]
+}

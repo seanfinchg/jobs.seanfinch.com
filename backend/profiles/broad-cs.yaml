@@ -1,0 +1,11 @@
+meta:
+  name: "Broad CS -- every track, every level"
+
+include: [boards/broad-tech.yaml, boards/manual.yaml, boards/finance.yaml, boards/mechanical-engineering.yaml]
+level: all
+fields: [software-engineering, data-ml, devops-sre, qa, mobile, systems, finance, mechanical-engineering]
+
+# No filters beyond level+fields: no location gate, no salary floor, no
+# seniority exclude (see profiles/levels/all.yaml -- level and track are
+# both dashboard-side filters now, computed per job by
+# jobfinder/classify.py, not ingest-time excludes).

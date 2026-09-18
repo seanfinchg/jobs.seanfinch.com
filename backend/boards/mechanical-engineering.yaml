@@ -1,0 +1,63 @@
+# Board list for the mechanical-engineering field
+# (profiles/fields/mechanical-engineering.yaml) -- kept separate from
+# boards/broad-tech.yaml since these are industrial/aerospace/automotive
+# manufacturers, not tech companies.
+#
+# Unlike the other board files here, none of these came from
+# scripts/discover_tokens.py's probe_company() -- that function only covers
+# the 7 simpler single-token adapters (greenhouse, lever, ashby,
+# smartrecruiters, workable, rippling, bamboohr), and probing the obvious
+# manufacturing/industrial names (Titan International, Eaton, Parker
+# Hannifin, ITW, Dana, BorgWarner, Honeywell, Caterpillar, Emerson, Cummins,
+# Rockwell Automation, Woodward, Textron, Moog) against all 7 came back with
+# zero hits. Every one of those either runs Workday (which needs a
+# tenant/wd/site triple discover_tokens.py can't guess) or a different ATS
+# entirely -- see the "not on Workday" list below.
+#
+# Every entry below was found by reading the company's real public careers
+# page (or a web search landing on it) for the actual myworkdayjobs.com URL
+# their apply flow redirects to, then confirmed live with a direct POST to
+# the real /wday/cxs/{tenant}/{site}/jobs endpoint (same request shape as
+# jobfinder/adapters/workday.py) before being added here. First seeded
+# 2026-08-29.
+#
+# From the original 14-company list, only Caterpillar, BorgWarner, Rockwell
+# Automation, Woodward, and Moog turned out to be on Workday. The rest are
+# confirmed on a different ATS (not a Workday gap, just unsupported by this
+# tool today): Dana -> SAP SuccessFactors (jobs.dana.com), Textron -> Oracle
+# Taleo (textron.taleo.net), Honeywell -> Oracle Cloud HCM
+# (careers.honeywell.com), Emerson -> Oracle Cloud HCM
+# (hdjq.fa.us2.oraclecloud.com), Illinois Tool Works -> Phenom-fronted site
+# with no Workday reference found (careers.itw.com), Eaton, Parker Hannifin,
+# and Cummins -> no Workday reference found on their real careers pages
+# either (Parker Hannifin's own portal is ttcportals.com), Titan
+# International -> own domain, ATS unclear. None of those 9 are in this
+# file -- don't guess a tenant for them later without a fresh, real sighting.
+#
+# The rest of this list is other large industrial/aerospace/automotive
+# employers (same spirit as the original 14) that were checked the same
+# way and did turn out to be on Workday. GE Vernova and Lockheed Martin were
+# also tried and ruled out: GE Vernova's once-live
+# ge.wd5.myworkdayjobs.com/Vernova_ExternalSite now 500s (tenant/site no
+# longer valid, likely moved post-spinoff); Lockheed Martin's public
+# lockheedmartinjobs.com search link now redirects to a dead 404 page.
+
+boards:
+  workday:
+    - {company: Caterpillar, token: cat, tenant: cat, wd: wd5, site: CaterpillarCareers}                                   # 952 jobs
+    - {company: BorgWarner, token: borgwarner, tenant: borgwarner, wd: wd5, site: BorgWarner_Careers}                       # 307 jobs
+    - {company: Rockwell Automation, token: rockwellautomation, tenant: rockwellautomation, wd: wd1, site: External_Rockwell_Automation}  # 412 jobs
+    - {company: Woodward, token: woodward, tenant: woodward, wd: wd5, site: woodward}                                       # 170 jobs
+    - {company: Moog, token: moog, tenant: moog, wd: wd5, site: MOOG_External_Career_Site}                                  # 436 jobs
+    - {company: Northrop Grumman, token: ngc, tenant: ngc, wd: wd1, site: Northrop_Grumman_External_Site}                   # 3670 jobs
+    - {company: Oshkosh Corporation, token: oshkoshcorporation, tenant: oshkoshcorporation, wd: wd5, site: Oshkosh}         # 508 jobs
+    - {company: Regal Rexnord, token: regalrexnord, tenant: regalrexnord, wd: wd1, site: Careers}                           # 528 jobs
+    - {company: Curtiss-Wright, token: curtisswright, tenant: curtisswright, wd: wd1, site: CW_External_Career_Site}        # 344 jobs
+    - {company: Trane Technologies, token: tranetechnologies, tenant: tranetechnologies, wd: wd12, site: Trane_Technologies_Careers}  # 1435 jobs
+    - {company: Johnson Controls, token: jci, tenant: jci, wd: wd5, site: JCI}                                             # 2600 jobs
+    - {company: Magna International, token: magna, tenant: magna, wd: wd3, site: Magna}                                    # 1394 jobs
+    - {company: Polaris Industries, token: polaris, tenant: polaris, wd: wd5, site: PolarisJobs}                           # 135 jobs
+    - {company: RTX, token: globalhr, tenant: globalhr, wd: wd5, site: REC_RTX_Ext_Gateway}                                # 4522 jobs
+    - {company: GE Aerospace, token: geaerospace, tenant: geaerospace, wd: wd5, site: GE_ExternalSite}                     # 483 jobs
+    - {company: Carrier Global, token: carrier, tenant: carrier, wd: wd5, site: jobs}                                       # 1119 jobs
+    - {company: Stanley Black & Decker, token: sbdinc, tenant: sbdinc, wd: wd1, site: Stanley_Black_Decker_Career_Site}     # 654 jobs

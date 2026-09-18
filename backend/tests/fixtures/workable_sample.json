@@ -1,0 +1,12 @@
+{
+  "total": 1,
+  "results": [
+    {
+      "id": 5000001,
+      "shortcode": "ABCDEF1234",
+      "title": "Security Engineer, New Grad",
+      "location": {"city": "Boston", "country": "United States", "region": null},
+      "published": "2026-08-01T00:00:00.000Z"
+    }
+  ]
+}

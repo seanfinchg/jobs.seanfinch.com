@@ -1,0 +1,35 @@
+meta:
+  name: "Field: Systems / Embedded"
+
+label: "Systems"
+
+subfields:
+  - tag: embedded
+    label: "Embedded"
+    pattern: 'embedded'
+  - tag: firmware
+    label: "Firmware"
+    pattern: 'firmware'
+  - tag: distributed-systems
+    label: "Distributed Systems"
+    pattern: 'distributed systems?'
+  - tag: networking
+    label: "Networking"
+    pattern: 'network(ing)?'
+  - tag: os-kernel
+    label: "OS / Kernel"
+    pattern: 'operating system|\bkernel\b|\brtos\b'
+
+filters:
+  title_include:
+    - 'systems engineer|embedded engineer|firmware engineer'
+    - 'operating system|distributed systems?|kernel engineer|\brtos\b'
+
+  # Bare "systems engineer" is generic enough to catch business/GTM roles
+  # that have nothing to do with computer systems -- found in real data:
+  # "GTM Systems Engineer, Salesforce", "Senior Financial Systems Engineer".
+  # Scoped exclusion, not a bare "systems" ban, so real hits (Android
+  # Systems Engineer, AI Systems Engineer) keep passing.
+  title_exclude:
+    - '(gtm|sales|financial|accounting|business|marketing) systems engineer|systems engineer.*(gtm|salesforce)'
+    - 'physical security systems'

@@ -1,0 +1,29 @@
+{
+  "jobs": [
+    {
+      "id": 1001,
+      "title": "Security Engineer, New Grad",
+      "updated_at": "2026-08-01T12:00:00-04:00",
+      "location": {"name": "Boston, MA"},
+      "absolute_url": "https://boards.greenhouse.io/acme/jobs/1001",
+      "content": "<p>We build things with <b>Python</b> and Go.</p>",
+      "departments": [{"name": "Engineering"}]
+    },
+    {
+      "id": 1002,
+      "title": "Senior Security Engineer",
+      "updated_at": "2026-08-02T12:00:00-04:00",
+      "location": {"name": "Remote"},
+      "absolute_url": "https://boards.greenhouse.io/acme/jobs/1002",
+      "content": "<p>5+ years experience required.</p>"
+    },
+    {
+      "id": 1003,
+      "title": "Sales Manager",
+      "updated_at": "2026-08-03T12:00:00-04:00",
+      "location": {"name": "New York, NY"},
+      "absolute_url": "https://boards.greenhouse.io/acme/jobs/1003",
+      "content": "<p>Own the sales pipeline.</p>"
+    }
+  ]
+}

@@ -1,0 +1,192 @@
+# Shared board list for the general (non-security-specific) new-grad CS
+# profile -- kept separate from boards/new-grad-cs.yaml, which stays a
+# small, hand-picked personal target list. Everything here came from a real
+# confirmed 200-with-jobs hit printed by scripts/discover_tokens.py (never a
+# guessed token typed in directly). First seeded 2026-08-29; re-run the
+# script with a bigger candidate list any time to grow this further.
+
+boards:
+  ashby:
+    - {company: Notion, token: notion}                      # 133 jobs
+    - {company: Confluent, token: confluent}                 # 23 jobs
+    - {company: Snowflake, token: snowflake}                  # 389 jobs
+    - {company: Docker, token: docker}                        # 62 jobs
+    - {company: Plaid, token: plaid}                          # 102 jobs
+    - {company: Ramp, token: ramp}                             # 138 jobs
+    - {company: Perplexity, token: perplexity}                # 98 jobs
+    - {company: Cohere, token: cohere}                        # 146 jobs
+    - {company: 1Password, token: 1password}                  # 62 jobs
+    - {company: Vanta, token: vanta}                           # 109 jobs
+    - {company: Linear, token: linear}                        # 29 jobs
+    - {company: OpenAI, token: openai}                        # 758 jobs
+    - {company: Cerebras Systems, token: cerebras}            # confirmed live
+    # Original Niantic (gaming) was acquired by Scopely in 2025; Niantic
+    # Spatial is the surviving entity with its own careers presence, under
+    # this non-obvious token rather than "niantic".
+    - {company: Niantic Spatial, token: niantic-spatial}      # 12 jobs
+    # Added while investigating thin new-grad-security coverage (see
+    # profiles/new-grad-cs.yaml) -- dedicated security vendors, confirmed
+    # live via scripts/discover_tokens.py the same way as everything above.
+    - {company: HackerOne, token: hackerone}                  # 26 jobs
+    - {company: Semgrep, token: semgrep}                      # 10 jobs
+    - {company: Socket, token: socket}                        # 24 jobs
+    - {company: Material Security, token: materialsecurity}   # 6 jobs
+
+  bamboohr:
+    # Confirmed via `discover_tokens.py --from-aggregator` (spotted first as
+    # simplify_listings apply-URL hits, then verified live) rather than
+    # slug-guessed -- BambooHR careers subdomains rarely match the company
+    # name closely enough for slug_variants() to land on them directly.
+    - {company: Lexical Intelligence, token: lexical}                # 8 jobs
+    - {company: Alkira, token: alkira}                               # 26 jobs
+    - {company: Asure, token: asuresoftware}                         # 48 jobs
+    - {company: Selector Software, token: selectorsoftware}          # 18 jobs
+    - {company: Apollo Mission Critical Engineering, token: apollomce} # 26 jobs
+    - {company: PHIHONG USA, token: phihong}                         # 29 jobs
+    - {company: Epos Now Group, token: eposnowgroup}                 # 35 jobs
+    - {company: United Smart Tech, token: unitedsmarttech}           # 43 jobs
+    - {company: Nexthop.ai, token: nexthopai}                        # 39 jobs
+    - {company: Content Guru, token: contentguru}                    # 38 jobs
+    - {company: Specter Aerospace, token: specteraerospace}          # 34 jobs
+    - {company: Calpion/Plutus Health, token: calpionplutus}         # 23 jobs
+    - {company: Fullbay, token: fullbay}                             # 10 jobs
+
+  greenhouse:
+    - {company: Figma, token: figma}                          # 163 jobs
+    - {company: Discord, token: discord}                      # 51 jobs
+    - {company: Reddit, token: reddit}                        # 153 jobs
+    - {company: Duolingo, token: duolingo}                    # 83 jobs
+    - {company: Grafana Labs, token: grafanalabs}             # 134 jobs
+    - {company: Elastic, token: elastic}                      # 336 jobs
+    - {company: PagerDuty, token: pagerduty}                  # 43 jobs
+    - {company: GitLab, token: gitlab}                        # 220 jobs
+    - {company: JetBrains, token: jetbrains}                  # 75 jobs
+    - {company: Samsara, token: samsara}                      # 252 jobs
+    - {company: Gusto, token: gusto}                          # 91 jobs
+    - {company: Carta, token: carta}                          # 59 jobs
+    - {company: Affirm, token: affirm}                        # 210 jobs
+    - {company: Chime, token: chime}                          # 63 jobs
+    - {company: Brex, token: brex}                            # 294 jobs
+    - {company: Scale AI, token: scaleai}                     # 219 jobs
+    - {company: SambaNova Systems, token: sambanovasystems}   # 60 jobs
+    - {company: Anthropic, token: anthropic}                  # 570 jobs
+    - {company: Databricks, token: databricks}                # 855 jobs
+    - {company: Klaviyo, token: klaviyo}                      # 143 jobs
+    - {company: Toast, token: toast}                          # 312 jobs
+    - {company: MongoDB, token: mongodb}                      # 407 jobs
+    - {company: Instacart, token: instacart}                  # 123 jobs
+    - {company: Robinhood, token: robinhood}                  # 129 jobs
+    - {company: Airbnb, token: airbnb}                        # 171 jobs
+    - {company: Stripe, token: stripe}                        # 573 jobs
+    - {company: Datadog, token: datadog}                      # 454 jobs
+    - {company: Zscaler, token: zscaler}                      # 348 jobs
+    - {company: Okta, token: okta}                            # 348 jobs
+    - {company: Twilio, token: twilio}                        # 144 jobs
+    - {company: Asana, token: asana}                          # 123 jobs
+    - {company: Dropbox, token: dropbox}                      # 41 jobs
+    - {company: Squarespace, token: squarespace}              # 24 jobs
+    - {company: Block, token: block}                          # 193 jobs
+    - {company: Coinbase, token: coinbase}                    # 188 jobs
+    - {company: Epic Games, token: epicgames}                 # 172 jobs
+    - {company: Flex, token: flex}                            # 44 jobs
+    - {company: Pinterest, token: pinterest}                  # 209 jobs
+    - {company: Roku, token: roku}                            # 248 jobs
+    - {company: VeriSign, token: verisign}                    # 20 jobs
+    - {company: Take-Two Interactive, token: taketwo}         # 34 jobs
+    - {company: Automattic, token: automatticcareers}         # confirmed live
+    - {company: DoorDash, token: doordashusa}                 # 468 jobs
+    # Same security-vendor pass as the ashby section above.
+    - {company: Netskope, token: netskope}                    # 140 jobs
+    - {company: Abnormal Security, token: abnormalsecurity}   # 73 jobs
+    - {company: Axonius, token: axonius}                      # 32 jobs
+    - {company: Huntress, token: huntress}                    # 39 jobs
+    - {company: Corelight, token: corelight}                  # 28 jobs
+    - {company: Chainguard, token: chainguard}                # 86 jobs
+
+  smartrecruiters:
+    - {company: Canva, token: canva}                          # 100 jobs
+    - {company: Uber, token: uber}                            # 1 job
+    - {company: Booking Holdings, token: Bookingcom1}         # 4 jobs
+
+  workable:
+    - {company: Hugging Face, token: huggingface}             # 7 jobs
+
+  lever:
+    # "Palantir", not "Palantir Technologies" -- matches the same real
+    # short company name featured.py's is_featured() already keys on.
+    - {company: Palantir, token: palantir}                    # 307 jobs
+
+  rippling:
+    # discover_tokens.py doesn't have a broad candidate list confirming more
+    # of these yet -- Rippling is used as an ATS by relatively few
+    # companies so far. Add more as they turn up.
+    - {company: Rippling, token: rippling}
+
+  workday:
+    # Needs tenant/wd/site, not a single guessable token -- discover_tokens.py
+    # --from-aggregator now reverse-engineers all three straight out of a
+    # real apply URL (see jobfinder/adapters/workday.py's parse_workday_url).
+    # Every entry below was confirmed live (a real POST to the tenant's
+    # /wday/cxs/.../jobs endpoint returning real jobPostings), not guessed.
+    - {company: Salesforce, token: salesforce, tenant: salesforce, wd: wd12, site: External_Career_Site}
+    - {company: Adobe, token: adobe, tenant: adobe, wd: wd5, site: external_experienced}          # 739 jobs
+    - {company: Arrow Electronics, token: arrow, tenant: arrow, wd: wd1, site: AC}                 # 508 jobs
+    - {company: AT&T, token: att, tenant: att, wd: wd1, site: ATTGeneral}                          # 1319 jobs
+    - {company: Broadcom, token: broadcom, tenant: broadcom, wd: wd1, site: External_Career}       # 389 jobs
+    - {company: Cisco, token: cisco, tenant: cisco, wd: wd5, site: Cisco_Careers}                  # 1221 jobs
+    - {company: Comcast, token: comcast, tenant: comcast, wd: wd115, site: Comcast_Careers}        # 739 jobs
+    - {company: eBay, token: ebay, tenant: ebay, wd: wd5, site: apply}                             # 375 jobs
+    - {company: Etsy, token: etsy, tenant: etsy, wd: wd5, site: Etsy_Careers}                      # 36 jobs
+    - {company: Expedia, token: expedia, tenant: expedia, wd: wd108, site: search}                 # 168 jobs
+    - {company: F5, token: f5, tenant: ffive, wd: wd5, site: f5jobs}                               # 216 jobs
+    - {company: Fidelity National Information Services, token: fis, tenant: fis, wd: wd5, site: SearchJobs} # 422 jobs
+    - {company: Fiserv, token: fiserv, tenant: fiserv, wd: wd5, site: EXT}                         # 460 jobs
+    # Global Payments and Worldpay merged in 2024 and share this tenant.
+    - {company: Global Payments, token: worldpay, tenant: worldpay, wd: wd5, site: Worldpay_External_Careers_Site} # 216 jobs
+    - {company: HP, token: hp, tenant: hp, wd: wd5, site: ExternalCareerSite}                      # 787 jobs
+    - {company: HPE, token: hpe, tenant: hpe, wd: wd5, site: Jobsathpe}                            # 1113 jobs
+    - {company: Jabil, token: jabil, tenant: jabil, wd: wd5, site: Jabil_Careers}                  # 1929 jobs
+    - {company: Micron, token: micron, tenant: micron, wd: wd1, site: External}                    # 2786 jobs
+    - {company: Motorola Solutions, token: motorolasolutions, tenant: motorolasolutions, wd: wd5, site: Careers} # 902 jobs
+    - {company: PayPal, token: paypal, tenant: paypal, wd: wd1, site: jobs}                        # 60 jobs
+    - {company: Snap, token: snap, tenant: snapchat, wd: wd1, site: snap}                          # 175 jobs
+    - {company: T-Mobile, token: tmobile, tenant: tmobile, wd: wd1, site: External}                # 2000 jobs
+    - {company: Trimble, token: trimble, tenant: trimble, wd: wd1, site: TrimbleCareers}           # 233 jobs
+    - {company: Unity, token: unity, tenant: unitytech, wd: wd1, site: Unity}                      # 130 jobs
+    - {company: Workday, token: workday, tenant: workday, wd: wd5, site: Workday}                  # 365 jobs
+    - {company: Zebra Technologies, token: zebra, tenant: zebra, wd: wd501, site: Zebra_careers}   # 244 jobs
+    - {company: Zoom, token: zoom, tenant: zoom, wd: wd5, site: Zoom}                              # 106 jobs
+    # Juniper Networks (acquired by HPE) has no independent tenant anymore --
+    # its postings live inside HPE's own Jobsathpe board above, so a
+    # separate Juniper entry here would just re-fetch and mislabel the same
+    # ~1100 HPE jobs as Juniper. Not addable as a normal board entry.
+    # Everything below found via discover_tokens.py --from-aggregator
+    # (parse_workday_url against real simplify_listings apply URLs), then
+    # confirmed live the same way as everything above.
+    - {company: General Dynamics Information Technology, token: gdit, tenant: gdit, wd: wd5, site: external_career_site} # 1227 jobs
+    - {company: NVIDIA, token: nvidia, tenant: nvidia, wd: wd5, site: NVIDIAExternalCareerSite}      # 2000 jobs
+    - {company: Jain Global, token: jainglobal, tenant: jainglobal, wd: wd5, site: ExternalSite}     # 30 jobs
+    - {company: General Motors, token: generalmotors, tenant: generalmotors, wd: wd5, site: Careers_GM} # 820 jobs
+    - {company: RTX, token: globalhr, tenant: globalhr, wd: wd5, site: rec_rtx_ext_gateway}          # 4522 jobs
+    - {company: CACI, token: caci, tenant: caci, wd: wd1, site: external}                            # 1772 jobs
+    - {company: Leidos, token: leidos, tenant: leidos, wd: wd5, site: external}                      # 2000 jobs
+    - {company: GlobalFoundries, token: globalfoundries, tenant: globalfoundries, wd: wd1, site: External} # 672 jobs
+    - {company: The Boeing Company, token: boeing, tenant: boeing, wd: wd1, site: EXTERNAL_CAREERS}  # 737 jobs
+    - {company: Bank of Montreal, token: bmo, tenant: bmo, wd: wd3, site: External}                  # 974 jobs
+    - {company: Northrop Grumman, token: ngc, tenant: ngc, wd: wd1, site: Northrop_Grumman_External_Site} # 3671 jobs
+    - {company: Rocket Software, token: rocket, tenant: rocket, wd: wd5, site: rocket_careers}       # 53 jobs
+    - {company: Integrity, token: integritymarketing, tenant: integritymarketing, wd: wd1, site: Integrity} # 189 jobs
+    - {company: Viridien, token: cgg, tenant: cgg, wd: wd103, site: viridiencareers}                 # 64 jobs
+    - {company: Pennsylvania State University, token: psu, tenant: psu, wd: wd1, site: PSU_Staff}    # 1410 jobs
+    - {company: Allstate Insurance Company, token: allstate, tenant: allstate, wd: wd5, site: sourcing_event} # 19 jobs
+    - {company: Applied Materials, token: amat, tenant: amat, wd: wd1, site: External}               # 1920 jobs
+    - {company: KBR, token: kbr, tenant: kbr, wd: wd5, site: kbr_careers}                            # 1706 jobs
+
+  simplify_listings:
+    # Aggregator, not a company board -- surfaces postings/companies not
+    # yet configured as a direct board. Reused here as the same live
+    # source new-grad-cs.yaml already uses, plus the current internship
+    # season so the level filter's "intern" bucket has real data to show
+    # (confirmed live: both repos exist and publish the expected feed).
+    - {token: new-grad, season: new-grad}
+    - {token: summer-2027-intern, season: summer-internship, year: 2027}

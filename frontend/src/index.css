@@ -1,0 +1,67 @@
+@import "tailwindcss";
+@import "@fontsource/raleway";
+@import "@fontsource/jost";
+
+@theme {
+  --font-raleway: "Raleway", sans-serif;
+  --font-jost: "Jost", sans-serif;
+
+  --color-dark-mode: #242424;
+  --color-ultra-dark-mode: #1a1a1a;
+  --color-light-mode: #ffffff;
+  --color-ultra-light-mode: #d2d3db;
+
+  /* The one identity/interactive color -- links, active filter states,
+     focus rings. Deliberately not reused from the status palette below, so
+     "this is clickable/selected" never gets confused with "this is a good
+     outcome." */
+  --color-accent: #5eead4;
+
+  /* Status colors (applied/error states, the featured star) -- fixed, never
+     reused as identity colors. Same steps as seanfinch.com's dark surface
+     (#1a1a1a ~= #1a1a19). */
+  --color-status-good: #0ca30c;
+  --color-status-warning: #fab219;
+  --color-status-serious: #ec835a;
+  --color-status-critical: #d03b3b;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Content in the marquee track is duplicated once (see FeaturedToday), so
+   translating exactly half its width loops back to the same visual
+   position the track started at -- no jump at the seam. */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@layer utilities {
+  .animate-fade-up {
+    animation: fade-up 0.5s ease-out both;
+  }
+
+  .animate-marquee {
+    animation-name: marquee;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+}
+
+body {
+  background-color: var(--color-ultra-dark-mode);
+  color: var(--color-ultra-light-mode);
+}

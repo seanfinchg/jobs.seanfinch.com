@@ -1,0 +1,24 @@
+# Mirrors .gitignore's personal-data exclusions -- without this, `COPY
+# backend/ backend/` in the Dockerfile would bake backend/jobfinder.db (the
+# answers/applications tables hold name, contact info, application history)
+# and resume.pdf straight into an image layer, the same leak .gitignore
+# already exists to prevent for git. The container creates its own fresh
+# jobfinder.db on the mounted volume at runtime (see docker-entrypoint.sh).
+backend/jobfinder.db
+backend/jobfinder.db-wal
+backend/jobfinder.db-shm
+backend/resume.pdf
+
+# Local dev artifacts that shouldn't bloat the build context or get baked
+# in -- the image builds its own venv and installs frontend deps fresh.
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.egg-info/
+*.pyc
+frontend/node_modules/
+frontend/dist/
+frontend/public/data.json
+
+.git/
+docs/

@@ -1,0 +1,19 @@
+# Board list for the finance field (profiles/fields/finance.yaml) -- kept
+# separate from boards/broad-tech.yaml since these aren't tech companies.
+# Everything here came from a real confirmed hit printed by
+# scripts/discover_tokens.py (never a guessed token typed in directly).
+# First seeded 2026-08-29; re-run the script with a bigger candidate list
+# any time to grow this further -- most trading firms (Citadel, Two Sigma,
+# DRW, Optiver, IMC, Millennium) and asset managers (MUFG, Crescent Capital,
+# State Street) probed the same day came back with no hit on any of the 7
+# supported adapters, meaning they're either on Workday (needs tenant/wd/site,
+# not a guessable single token -- see jobfinder/adapters/workday.py) or a
+# custom/unsupported ATS -- unresolved, not confirmed-absent.
+
+boards:
+  greenhouse:
+    - {company: Jane Street, token: janestreet}    # 233 jobs
+    - {company: Jump Trading, token: jumptrading}  # 110 jobs
+    - {company: Point72, token: point72}            # 239 jobs
+  lever:
+    - {company: MetLife, token: metlife}            # 39 jobs

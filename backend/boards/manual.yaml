@@ -1,0 +1,35 @@
+# Hand-entered postings for companies with no usable public JSON API --
+# fully custom/proprietary in-house career platforms (Meta, Dell, GitHub,
+# and the like), or ones sitting behind bot-protection that blocks even a
+# plain unauthenticated GET (Akamai, IBM). See jobfinder/adapters/manual.py.
+#
+# Each board entry is exactly one posting, hand-verified live (visited or
+# fetched for real, not guessed) on 2026-08-29 as part of the same pass that
+# grew broad-tech.yaml's greenhouse/lever/ashby/smartrecruiters/workday
+# entries. These go stale the moment the req closes -- there's no adapter
+# logic to detect that automatically (no fetch happens at all), so a human
+# needs to periodically re-check and refresh/remove entries here. To add
+# one: visit the company's real careers site, find a currently-open real
+# posting, and copy its title/url/location/posted_at (ISO date, or omit if
+# the site doesn't show one) below.
+
+boards:
+  manual:
+    - {token: alphabet, company: Alphabet, title: "Software Engineer, PhD, Early Career, 2026", url: "https://www.google.com/about/careers/applications/jobs/results/107018346561446598-software-engineer-phd-early-career-2026"}
+    - {token: amphenol, company: Amphenol, title: "Sr. Electrical Engineer I (Amphenol CIT division)", location: "Franklin", url: "https://jobs.dayforcehcm.com/en-US/amphenol/AMPHENOLCITCAREERS/jobs/9519", posted_at: "2026-08-10"}
+    - {token: adp, company: Automatic Data Processing, title: "Payroll Specialist", location: "Augusta, Georgia, United States", url: "https://jobs.adp.com/en/jobs/278383/payroll-specialist/", posted_at: "2026-07-31"}
+    - {token: cargill, company: Cargill, title: "Sr Consultant, MSC Software Engineering", location: "Wayzata, Minnesota", url: "https://careers.cargill.com/en/job/wayzata/sr-consultant-msc-software-engineering/23251/96890727760", posted_at: "2026-06-24"}
+    - {token: charter, company: Charter Communications, title: "Workforce Management Administrator at Spectrum", location: "Charlotte, North Carolina", url: "https://jobs.spectrum.com/job/charlotte/workforce-management-administrator/4673/95051075328"}
+    - {token: deel, company: Deel, title: "Senior Product Operations Manager (EMEA)", location: "Ireland", url: "https://jobs.deel.com/deel/job-details/829ab861-110e-4c3f-a810-5ebcdcdb24d5/overview"}
+    - {token: dell, company: Dell, title: "Senior Principal Power Engineer", location: "Round Rock, TX", url: "https://enterpriseplatform.dell.com/hcmUI/CandidateExperience/en/sites/careers/job/296079", posted_at: "2026-08-13"}
+    - {token: docusign, company: DocuSign, title: "Senior Software Engineer", location: "Seattle, Washington", url: "https://hubcareers-docusign.icims.com/jobs/29516/senior-software-engineer/job", posted_at: "2026-06-02"}
+    - {token: ea, company: Electronic Arts, title: "Experience Designer (UX) - EA SPORTS NHL", location: "Vancouver, British Columbia, Canada", url: "https://jobs.ea.com/careers/JobDetail/Experience-Designer-UX-EA-SPORTS-NHL/215809", posted_at: "2026-08-11"}
+    - {token: github, company: GitHub, title: "Senior Product Manager", location: "United States", url: "https://www.github.careers/early-in-career/jobs/5633?lang=en-us", posted_at: "2026-07-30"}
+    - {token: lamresearch, company: Lam Research, title: "Software Engineer, Sr.", location: "IN-Bangalore (3811)", url: "https://lamresearch.eightfold.ai/careers/job/1099550931674?domain=lamresearch.com", posted_at: "2025-12-16"}
+    - {token: meta, company: Meta, title: "Software Engineer, Machine Learning", location: "Sunnyvale, CA", url: "https://www.metacareers.com/profile/job_details/998357492128826/", posted_at: "2025-06-10"}
+    - {token: paychex, company: Paychex, title: "Sales Executive - PEO in Irving, Texas", location: "Irving, Texas", url: "https://careers.paychex.com/careers/jobs/42256"}
+    - {token: seagate, company: Seagate, title: "Associate Product Roadmap Analyst (Early Career)", location: "Shakopee, MN", url: "https://seagatecareers.com/job/Shakopee-Associate-Product-Roadmap-Analyst-%28Early-Career%29-MN/1419770100/", posted_at: "2026-08-14"}
+    - {token: splunk, company: Splunk, title: "Account Executive - Splunk", location: "San Francisco, California, US", url: "https://careers.cisco.com/global/en/job/CISCISGLOBAL2014632EXTERNALENGLOBAL/Account-Executive-Splunk", posted_at: "2026-08-15"}
+    - {token: synopsys, company: Synopsys, title: "Applications Engineering, Staff Engineer", location: "Hsinchu, Taiwan", url: "https://careers.synopsys.com/job/hsinchu/applications-engineering-staff-engineer/44408/97862444816", posted_at: "2026-07-15"}
+    - {token: teconnectivity, company: TE Connectivity, title: "SR FIELD APPLICATION ENGINEER", location: "San Jose, CA (Bay Area, remote-eligible)", url: "https://careers.te.com/job/SR-FIELD-APPLICATION-ENGINEER/151190-en_US/", posted_at: "2026-04-28"}
+    - {token: teradyne, company: Teradyne, title: "Factory Applications Engineer (Integrated System Test; North Reading, MA)", location: "North Reading, MA", url: "https://jobs.teradyne.com/Teradyne/job/North-Reading-Factory-Applications-Engineer-%28Integrated-System-Test-North-Reading%2C-MA%29-MA/1399396500/", posted_at: "2026-08-09"}

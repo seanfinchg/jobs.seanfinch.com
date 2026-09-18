@@ -1,0 +1,57 @@
+# Shared board list, included from profiles/new-grad-cs.yaml. Split out so a
+# second profile (e.g. a broader SWE one) can reuse the same company list with
+# different filters instead of copy-pasting boards.
+#
+# Tokens checked against the live APIs on 2026-08-28. The ones commented out
+# 404'd -- the company either isn't on that ATS anymore or the slug is wrong.
+
+boards:
+  greenhouse:
+    - {company: Appian,               token: appian}
+    - {company: Datadog,              token: datadog}
+    - {company: Wiz,                  token: wizinc}
+    - {company: Databricks,           token: databricks}
+    - {company: Cloudflare,           token: cloudflare}
+    - {company: Stripe,               token: stripe}
+    - {company: Airbnb,               token: airbnb}
+    - {company: Instacart,            token: instacart}
+    - {company: Robinhood,            token: robinhood}
+    - {company: Klaviyo,              token: klaviyo}
+    - {company: Toast,                token: toast}
+    - {company: MongoDB,              token: mongodb}
+    - {company: Anthropic,            token: anthropic}
+    # - {company: Ramp,                 token: ramp}                  # 404
+    # - {company: Chainalysis,          token: chainalysis}           # 404
+    # - {company: HubSpot,              token: hubspot}               # 200 but 0 jobs, token may be wrong
+    # - {company: Wayfair,              token: wayfair}               # 404
+    # - {company: DraftKings,           token: draftkings}            # 404
+    # - {company: Circle,               token: circle}                # 404
+    # - {company: Trail of Bits,        token: trailofbits}           # 404
+    # - {company: Air Space Intelligence, token: airspaceintelligence} # 404
+    # - {company: Palantir,             token: palantir}              # 404, likely off Greenhouse now
+
+  lever: []
+    # Neither of the original guesses resolves anymore -- api.lever.co
+    # returns 200 with an empty list either way, which reads the same as "a
+    # real token with zero current postings." Need a real Lever token before
+    # this is worth turning back on.
+    # - {company: Netflix,              token: netflix}
+    # - {company: Plaid,                token: plaid}
+
+  ashby:
+    - {company: OpenAI,               token: openai}
+    - {company: Vanta,                token: vanta}
+    - {company: Linear,               token: linear}
+
+  smartrecruiters: []
+    # - {company: Visa,                 token: visa}   # 200, 0 postings -- token unconfirmed
+
+  workable: []
+    # no confirmed Workable token from the actual target list yet
+
+  simplify_listings:
+    # Aggregator, not a company board -- surfaces postings/companies that
+    # aren't configured as a direct board yet. content_hash dedup + the
+    # native-apply_url preference in db.py mean this never shadows a
+    # direct-source hit, it only adds coverage.
+    - {token: new-grad}

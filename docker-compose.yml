@@ -1,12 +1,13 @@
-# Copy this whole repo onto the deploy host and run `docker compose up -d
-# --build` from this directory over SSH -- NOT via Apps -> Discover Apps ->
-# Install via YAML. That screen only accepts pasted YAML text with nowhere
-# to also hand it this repo's source tree, so `build: .` has nothing to
-# build from there; it only works with a pre-built `image:` reference.
-# See redeploy-watch.sh for keeping this up to date without re-SSHing in
-# every time. One service, no inbound networking at all -- it only makes
-# outbound requests (ATS APIs, Netlify's deploy API) and writes to its own
-# volume, so nothing needs to be exposed on the network.
+# Clone this repo onto the deploy host (via a repo-scoped, read-only deploy
+# key -- see redeploy-watch.sh) and run `docker compose up -d --build` from
+# this directory over SSH -- NOT via Apps -> Discover Apps -> Install via
+# YAML. That screen only accepts pasted YAML text with nowhere to also hand
+# it this repo's source tree, so `build: .` has nothing to build from
+# there; it only works with a pre-built `image:` reference.
+# See redeploy-watch.sh for keeping this up to date via `git pull` without
+# re-SSHing in every time. One service, no inbound networking at all -- it
+# only makes outbound requests (ATS APIs, Netlify's deploy API) and writes
+# to its own volume, so nothing needs to be exposed on the network.
 services:
   jobfinder:
     build: .

@@ -11,34 +11,31 @@ set -eu
 # running the same `docker compose` commands you'd type by hand keeps that
 # privilege where it already belongs.
 #
-# Idempotent and cheap to run often: hashes the actual source files (not
-# mtimes, which change on every copy regardless of content) and only
-# rebuilds when that hash actually changes.
+# This directory is a real git checkout (cloned via a repo-scoped,
+# read-only deploy key in a local key file -- see ~/.ssh/config's
+# github.com Host block), not a hand-copy of the source tree. Only rebuilds
+# when origin/master has actually moved, so pushing to GitHub is the whole
+# update mechanism now.
 
 cd "$(dirname "$0")"
 
-HASH_FILE=".last-deploy-hash"
+git fetch origin master --quiet
 
-CURRENT_HASH=$(find backend frontend Dockerfile docker-compose.yml docker-entrypoint.sh .dockerignore \
-    -type f \
-    ! -path "*/node_modules/*" ! -path "*/.venv/*" ! -path "*/dist/*" \
-    ! -path "*/__pycache__/*" ! -path "*.egg-info/*" \
-    ! -name "jobfinder.db*" ! -name "data.json" ! -name "meta.json" \
-    -exec md5sum {} \; 2>/dev/null | sort | md5sum | cut -d' ' -f1)
+LOCAL_HEAD=$(git rev-parse HEAD)
+REMOTE_HEAD=$(git rev-parse origin/master)
 
-PREVIOUS_HASH=$(cat "$HASH_FILE" 2>/dev/null || echo "")
-
-if [ "$CURRENT_HASH" = "$PREVIOUS_HASH" ]; then
-    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) no source changes, skipping rebuild"
+if [ "$LOCAL_HEAD" = "$REMOTE_HEAD" ]; then
+    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) no new commits, skipping rebuild"
     exit 0
 fi
 
-echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) source changed, rebuilding and restarting"
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) origin/master moved ($LOCAL_HEAD -> $REMOTE_HEAD), rebuilding and restarting"
+git reset --hard origin/master
 # NETLIFY_AUTH_TOKEN/NETLIFY_SITE_ID come from a .env file in this same
-# directory (docker compose loads it automatically) rather than being
-# passed inline here, so a cron-triggered run picks them up the same way
-# a manual `docker compose up` would -- cron jobs don't inherit your shell
+# directory (docker compose loads it automatically, and it's gitignored so
+# `git reset --hard` never touches it) rather than being passed inline here,
+# so a cron-triggered run picks them up the same way a manual
+# `docker compose up` would -- cron jobs don't inherit your shell
 # environment, so anything passed inline on the command line only would
 # silently vanish the moment this runs unattended.
 docker compose up -d --build
-echo "$CURRENT_HASH" > "$HASH_FILE"

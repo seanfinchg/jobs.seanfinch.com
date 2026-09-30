@@ -1,4 +1,5 @@
 import inspect
+import json
 import os
 import time
 from pathlib import Path
@@ -445,3 +446,32 @@ def test_run_releases_its_own_lock_after_a_clean_run(tmp_path):
     engine.run("unlocked", db_path=db_path, profiles_dir=profiles_dir)
 
     assert not lock_path.exists()
+
+
+def test_run_writes_progress_file_for_the_status_server(tmp_path):
+    db_path = tmp_path / "jobfinder.db"
+    progress_path = Path(str(db_path) + ".scrape-progress.json")
+
+    profiles_dir = tmp_path / "profiles"
+    profiles_dir.mkdir()
+    (profiles_dir / "progress-test.yaml").write_text(yaml.safe_dump({
+        "boards": {"fake-progress-test": [{"token": "acme"}, {"token": "widgets"}]},
+        "filters": {},
+    }))
+
+    @register
+    class _FakeProgressAdapter(Adapter):
+        name = "fake-progress-test"
+
+        def fetch(self, board):
+            return [_job(external_id=board["token"])]
+
+    engine.run("progress-test", db_path=db_path, profiles_dir=profiles_dir)
+
+    assert progress_path.exists()
+    progress = json.loads(progress_path.read_text())
+    assert progress["profile"] == "progress-test"
+    assert progress["boards_done"] == 2
+    assert progress["boards_total"] == 2
+    assert progress["total_stored"] == 2
+    assert progress["finished_at"] is not None

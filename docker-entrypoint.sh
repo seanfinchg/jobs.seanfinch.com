@@ -9,6 +9,15 @@ DATA_DIR="${JOBFINDER_DATA_DIR:-/data}"
 mkdir -p "$DATA_DIR"
 ln -sf "$DATA_DIR/jobfinder.db" jobfinder.db
 
+# Runs for the whole container lifetime, independent of the scrape/deploy
+# loop below -- reads jobfinder.db.run-lock/.scrape-progress.json (see
+# engine.py) to answer "is it scraping right now, and how far along," which
+# was previously only visible by tailing container logs. Not on the public
+# internet: reachable only from wherever this box's own ports already are
+# (private network) via docker-compose.yml's port mapping, no auth needed
+# since it exposes board health/progress only, never job content.
+python -m jobfinder.status_server &
+
 INTERVAL="${JOBFINDER_INTERVAL_SECONDS:-86400}"
 
 # Scraping (many ATS API calls, 30-40 minutes) and deploying (fast: an

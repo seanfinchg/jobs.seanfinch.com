@@ -76,6 +76,22 @@ def _acquire_run_lock(db_path: Path | str) -> Path | None:
     return lock_path
 
 
+def _progress_path(db_path: Path | str) -> Path | None:
+    """Sibling of the run-lock, same :memory: exemption -- a running total
+    the status server (see status_server.py) reads to answer "how far along
+    is the current scrape," since board-by-board progress is otherwise only
+    visible by tailing container logs."""
+    if str(db_path) == ":memory:":
+        return None
+    return Path(str(db_path) + ".scrape-progress.json")
+
+
+def _write_progress(path: Path | None, data: dict) -> None:
+    if path is None:
+        return
+    path.write_text(json.dumps(data))
+
+
 def _release_run_lock(lock_path: Path | None) -> None:
     if lock_path is not None:
         lock_path.unlink(missing_ok=True)
@@ -232,6 +248,7 @@ def run(
     db.sync_fields(conn, profiles_dir / "fields")
 
     lock_path = _acquire_run_lock(db_path)
+    progress_path = _progress_path(db_path)
     # :memory: is exclusively a test/isolated-check path (fake in-process
     # adapters registered per-test, no real HTTP calls ever happen) -- the
     # inter-request delays below exist only to protect real external hosts,
@@ -247,6 +264,8 @@ def run(
         # would be noisy for a board with hundreds of postings -- gives a
         # steady, frequent "yes, it's actually working" signal instead.
         total_stored = 0
+        boards_done = 0
+        boards_total = sum(len(board_list) for board_list in (profile.get("boards") or {}).values())
 
         for adapter_key, board_list in (profile.get("boards") or {}).items():
             try:
@@ -268,6 +287,13 @@ def run(
                 except Exception as exc:
                     logger.error("skipping %s:%s, fetch failed: %s", adapter_key, token, exc)
                     db.record_board_health(conn, adapter_key, token, ok=False, error=str(exc), now=run_started_at)
+                    boards_done += 1
+                    _write_progress(progress_path, {
+                        "profile": profile_name, "adapter": adapter_key, "token": token,
+                        "boards_done": boards_done, "boards_total": boards_total,
+                        "total_stored": total_stored, "started_at": run_started_at,
+                        "updated_at": datetime.now(timezone.utc).isoformat(),
+                    })
                     if throttle:
                         time.sleep(BOARD_FETCH_DELAY_SECONDS)
                     continue
@@ -326,10 +352,17 @@ def run(
                 db.record_board_health(conn, adapter_key, token, ok=True, job_count=len(jobs), now=run_started_at)
                 successful_boards.append((adapter_key, token))
                 total_stored += stored_count
+                boards_done += 1
                 logger.info(
                     "%s:%s -- fetched %d, stored %d (running total: %d)",
                     adapter_key, token, len(jobs), stored_count, total_stored,
                 )
+                _write_progress(progress_path, {
+                    "profile": profile_name, "adapter": adapter_key, "token": token,
+                    "boards_done": boards_done, "boards_total": boards_total,
+                    "total_stored": total_stored, "started_at": run_started_at,
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                })
                 if throttle:
                     time.sleep(BOARD_FETCH_DELAY_SECONDS)
 
@@ -344,6 +377,13 @@ def run(
             "run complete: %d board(s) succeeded, %d posting(s) stored/updated this run",
             len(successful_boards), total_stored,
         )
+        _write_progress(progress_path, {
+            "profile": profile_name, "adapter": None, "token": None,
+            "boards_done": boards_done, "boards_total": boards_total,
+            "total_stored": total_stored, "started_at": run_started_at,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "finished_at": datetime.now(timezone.utc).isoformat(),
+        })
     finally:
         _release_run_lock(lock_path)
         if own_conn:

@@ -5,13 +5,19 @@
 # it this repo's source tree, so `build: .` has nothing to build from
 # there; it only works with a pre-built `image:` reference.
 # See redeploy-watch.sh for keeping this up to date via `git pull` without
-# re-SSHing in every time. One service, no inbound networking at all -- it
-# only makes outbound requests (ATS APIs, Netlify's deploy API) and writes
-# to its own volume, so nothing needs to be exposed on the network.
+# re-SSHing in every time. One service; the only inbound port is the status
+# dashboard below (jobfinder/status_server.py), bound the normal Docker way
+# so it's reachable from this box's own private network interfaces but not
+# forwarded anywhere further -- everything else the container does is
+# still outbound-only (ATS APIs, Netlify's deploy API).
 services:
   jobfinder:
     build: .
     restart: unless-stopped
+    ports:
+      # No auth -- deliberately not public, see status_server.py's own
+      # comment for why that's an acceptable trust boundary here.
+      - "8787:8787"
     environment:
       # Scoped Netlify auth token + the target site's id -- create both in
       # Netlify's dashboard, never commit them. Without these set, the

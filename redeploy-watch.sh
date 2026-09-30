@@ -29,6 +29,23 @@ if [ "$LOCAL_HEAD" = "$REMOTE_HEAD" ]; then
     exit 0
 fi
 
+# `docker compose up -d --build` recreates the container outright, which
+# kills whatever engine.run() was doing mid-flight -- and since a scrape has
+# no per-board checkpoint, the next start re-fetches every board from #1,
+# not just the ones it hadn't reached yet. Repeatedly interrupting a scrape
+# this way is exactly the repeated-request pattern that got this project's
+# client rate-limited once already.
+# engine.py's own run-lock (jobfinder.db.run-lock, next to the db inside the
+# container -- not on the shared volume, hence checking via `exec` rather
+# than a host-side file test) already exists to stop concurrent runs; reused
+# here as "is a scrape actually in flight right now." A container that isn't
+# running at all (first-ever deploy) fails this check too, which correctly
+# falls through to rebuilding since there's nothing to interrupt.
+if docker compose exec -T jobfinder test -f jobfinder.db.run-lock 2>/dev/null; then
+    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) origin/master moved but a scrape is in progress, deferring rebuild"
+    exit 0
+fi
+
 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) origin/master moved ($LOCAL_HEAD -> $REMOTE_HEAD), rebuilding and restarting"
 git reset --hard origin/master
 # NETLIFY_AUTH_TOKEN/NETLIFY_SITE_ID come from a .env file in this same

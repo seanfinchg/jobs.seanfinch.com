@@ -157,19 +157,30 @@ export default function JobTable({ jobs, fields }: JobTableProps): React.JSX.Ele
     setSortKey(key);
   }
 
-  const sorted = [...jobs].sort((a, b) => {
-    if (sortKey === "level") return (levelRank(a.level) - levelRank(b.level)) * sortDir;
-    if (sortKey === "posted") {
-      const ad = displayDate(a);
-      const bd = displayDate(b);
-      if (ad === bd) return 0;
-      return ad > bd ? sortDir : -sortDir;
-    }
-    const av = a[sortKey];
-    const bv = b[sortKey];
-    if (av === bv) return 0;
-    return av > bv ? sortDir : -sortDir;
-  });
+  // Was recomputed on every render (a full copy + sort of up to ~6,000
+  // filtered jobs) even for state changes that have nothing to do with
+  // sorting -- paging Next/Prev, expanding a "+N more" apply popover, or
+  // any parent re-render from typing in search. That's what actually made
+  // the page feel slow to use, not the DOM size (already capped by
+  // PAGE_SIZE below). Memoized on the only three things that should ever
+  // trigger a re-sort.
+  const sorted = useMemo(
+    () =>
+      [...jobs].sort((a, b) => {
+        if (sortKey === "level") return (levelRank(a.level) - levelRank(b.level)) * sortDir;
+        if (sortKey === "posted") {
+          const ad = displayDate(a);
+          const bd = displayDate(b);
+          if (ad === bd) return 0;
+          return ad > bd ? sortDir : -sortDir;
+        }
+        const av = a[sortKey];
+        const bv = b[sortKey];
+        if (av === bv) return 0;
+        return av > bv ? sortDir : -sortDir;
+      }),
+    [jobs, sortKey, sortDir],
+  );
   const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const clampedPage = Math.min(page, pageCount - 1);
   const visible = sorted.slice(clampedPage * PAGE_SIZE, (clampedPage + 1) * PAGE_SIZE);

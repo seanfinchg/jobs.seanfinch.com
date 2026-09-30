@@ -11,6 +11,7 @@ import DisciplinePicker from "@/components/DisciplinePicker";
 import RolePicker from "@/components/RolePicker";
 import { buildLocationTree, locationTagsFor } from "@/lib/location";
 import { relativeDate } from "@/lib/date";
+import { canonicalCompanyName } from "@/lib/company";
 
 // Onboarding is two screens, not one: pick a top-level discipline, then a
 // role within it. Both persist to localStorage independently so a returning
@@ -133,7 +134,9 @@ function makeMatcher(state: FilterState) {
     if (
       skip !== "search" &&
       q &&
-      ![job.company, job.title, job.location].some((field) => field.toLowerCase().includes(q))
+      ![job.company, canonicalCompanyName(job.company), job.title, job.location].some((field) =>
+        field.toLowerCase().includes(q),
+      )
     ) {
       return false;
     }

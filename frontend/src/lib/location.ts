@@ -183,7 +183,11 @@ const CITY_ALIASES: Record<string, CityAlias> = {
   london: { city: "London", country: "United Kingdom" },
   dublin: { city: "Dublin", country: "Ireland" },
   cork: { city: "Cork", country: "Ireland" },
-  bangalore: { city: "Bangalore", country: "India" },
+  // Same city, official name changed in 1981/2014 -- both spellings show up
+  // in real postings, canonicalized to one label so they merge into a
+  // single filter-tree node instead of appearing as two siblings under
+  // India.
+  bangalore: { city: "Bengaluru", country: "India" },
   bengaluru: { city: "Bengaluru", country: "India" },
   chennai: { city: "Chennai", country: "India" },
   gurugram: { city: "Gurugram", country: "India" },

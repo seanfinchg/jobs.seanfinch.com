@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { Job } from "@/types";
+import { canonicalCompanyName } from "@/lib/company";
 
 interface CompanyTrackerProps {
   jobs: Job[];
@@ -45,12 +46,13 @@ export default function CompanyTracker({
       if (!job.featured) continue;
       const date = job.posted_at ?? job.first_seen;
       if (!isThisYear(date)) continue;
-      const existing = byCompany.get(job.company);
+      const company = canonicalCompanyName(job.company);
+      const existing = byCompany.get(company);
       if (existing) {
         existing.count += 1;
         if (date > existing.lastDrop) existing.lastDrop = date;
       } else {
-        byCompany.set(job.company, { company: job.company, count: 1, lastDrop: date });
+        byCompany.set(company, { company, count: 1, lastDrop: date });
       }
     }
     return [...byCompany.values()].sort((a, b) => (a.lastDrop < b.lastDrop ? 1 : -1));

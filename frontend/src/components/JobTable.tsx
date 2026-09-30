@@ -205,8 +205,6 @@ export default function JobTable({ jobs, fields }: JobTableProps): React.JSX.Ele
                   {sortKey === col.key ? (sortDir === 1 ? " ▲" : " ▼") : ""}
                 </th>
               ))}
-              <th className="hidden px-4 py-3 font-jost font-medium lg:table-cell">Role</th>
-              <th className="hidden px-4 py-3 font-jost font-medium md:table-cell">Salary</th>
               <th className="px-4 py-3 font-jost font-medium">Apply</th>
             </tr>
           </thead>
@@ -223,7 +221,24 @@ export default function JobTable({ jobs, fields }: JobTableProps): React.JSX.Ele
                     )}
                     {job.company}
                   </td>
-                  <td className="px-4 py-3">{job.title}</td>
+                  <td className="px-4 py-3">
+                    <p>{job.title}</p>
+                    {/* Role + Salary used to be their own columns, but at
+                        1024-1280px there wasn't room for all 8 columns
+                        without a horizontal scroll (measured: table needed
+                        ~790px, only ~670px was actually available inside
+                        the 3-column layout) -- folding them into a subtext
+                        line here removes 2 columns' worth of width demand
+                        instead of widening the whole page layout. */}
+                    {(roleLabel(job, fieldLabels, subfieldLabels) !== "—" || job.salary_min != null || job.salary_max != null) && (
+                      <p className="mt-0.5 text-xs text-ultra-light-mode/50">
+                        {roleLabel(job, fieldLabels, subfieldLabels)}
+                        {(job.salary_min != null || job.salary_max != null) && (
+                          <span className="tabular-nums"> · {formatSalary(job.salary_min, job.salary_max)}</span>
+                        )}
+                      </p>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-ultra-light-mode/80" title={job.location}>
                     {displayLocation(job)}
                   </td>
@@ -232,10 +247,6 @@ export default function JobTable({ jobs, fields }: JobTableProps): React.JSX.Ele
                   </td>
                   <td className="px-4 py-3 text-ultra-light-mode/60" title={posted.title}>
                     {posted.label}
-                  </td>
-                  <td className="hidden px-4 py-3 text-ultra-light-mode/80 lg:table-cell">{roleLabel(job, fieldLabels, subfieldLabels)}</td>
-                  <td className="hidden px-4 py-3 tabular-nums text-ultra-light-mode/80 md:table-cell">
-                    {formatSalary(job.salary_min, job.salary_max)}
                   </td>
                   <td className="px-4 py-3">
                     <ApplyCell

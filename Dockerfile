@@ -15,7 +15,10 @@ COPY frontend/ frontend/
 
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install --no-cache-dir -e backend/
+# Locked exact versions first (see backend/requirements-lock.txt), then the
+# local package with --no-deps so it can't silently pull in anything looser.
+RUN pip install --no-cache-dir -r backend/requirements-lock.txt
+RUN pip install --no-cache-dir --no-deps -e backend/
 
 RUN npm --prefix frontend ci
 RUN npm install -g netlify-cli

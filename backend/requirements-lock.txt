@@ -1,0 +1,9 @@
+# Locked runtime dependencies (what the Docker image actually installs).
+# Regenerate with: pip install -e . && pip freeze --exclude jobfinder
+# then keep only requests/pyyaml and their transitive deps (see pip show).
+certifi==2026.7.22
+charset-normalizer==3.5.1
+idna==3.19
+PyYAML==6.0.3
+requests==2.34.2
+urllib3==2.7.0

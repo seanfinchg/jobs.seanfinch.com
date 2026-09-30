@@ -1,0 +1,13 @@
+# Locked dev/apply-extra dependencies (pytest + playwright), on top of
+# requirements-lock.txt. Used locally and in CI, never in the Docker image.
+# Regenerate with: pip install -e ".[dev,apply]" && pip freeze --exclude jobfinder
+colorama==0.4.6; sys_platform == "win32"
+greenlet==3.5.5
+iniconfig==2.3.0
+packaging==26.3
+playwright==1.62.0
+pluggy==1.6.0
+pyee==13.0.1
+Pygments==2.21.0
+pytest==9.1.1
+typing_extensions==4.16.0

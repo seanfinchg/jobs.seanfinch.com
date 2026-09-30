@@ -5,6 +5,7 @@ export interface DisciplineOption {
 
 interface DisciplinePickerProps {
   options: DisciplineOption[];
+  counts: Record<string, number>;
   onSelect: (key: string) => void;
   onSelectEverything: () => void;
 }
@@ -15,7 +16,7 @@ interface DisciplinePickerProps {
 // equally-first-class option (onSelectEverything) rather than an
 // afterthought -- a multi-discipline viewer shouldn't have to fight the
 // picker to get back to the unfiltered view.
-export default function DisciplinePicker({ options, onSelect, onSelectEverything }: DisciplinePickerProps): React.JSX.Element {
+export default function DisciplinePicker({ options, counts, onSelect, onSelectEverything }: DisciplinePickerProps): React.JSX.Element {
   return (
     <div className="flex min-h-screen items-center justify-center bg-ultra-dark-mode px-6 font-raleway text-ultra-light-mode">
       <div className="w-full max-w-2xl animate-fade-up text-center">
@@ -35,6 +36,11 @@ export default function DisciplinePicker({ options, onSelect, onSelectEverything
                          focus:ring-2 focus:ring-accent/50"
             >
               <span className="font-medium">{option.label}</span>
+              {/* 0 before jobs.json has loaded reads the same as "this
+                  discipline genuinely has no matches yet" -- both are
+                  accurate in the moment, and the real count replaces it the
+                  instant the fetch resolves. */}
+              <span className="mt-1 block text-xs text-ultra-light-mode/50">{counts[option.key] ?? 0} roles</span>
             </button>
           ))}
         </div>

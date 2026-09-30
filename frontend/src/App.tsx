@@ -240,6 +240,20 @@ export default function App(): React.JSX.Element {
       .catch(() => setFields([]));
   }, []);
 
+  // How many jobs each top-level discipline bucket actually has, shown on
+  // both the onboarding picker and the post-onboarding filter chips -- e.g.
+  // Finance/Mechanical Engineering read as "broken" (an empty table, no
+  // explanation) without this, when what's actually going on is just that
+  // discipline has far fewer matched postings than CS.
+  const disciplineCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const { key } of DISCIPLINE_FILTER_OPTIONS) {
+      const slugs = disciplineFieldSlugs(key, fields);
+      counts[key] = jobs.filter((job) => job.matched_fields.some((f) => slugs.includes(f))).length;
+    }
+    return counts;
+  }, [jobs, fields]);
+
   // The discipline gate: a hard pre-filter, not one of the skippable
   // FilterDim checks below -- nothing needs to see counts "as if discipline
   // weren't set" the way Role/Level facet counts do, so it doesn't need the
@@ -364,7 +378,14 @@ export default function App(): React.JSX.Element {
   }, [mobileFiltersOpen]);
 
   if (discipline === null) {
-    return <DisciplinePicker options={DISCIPLINES} onSelect={chooseDiscipline} onSelectEverything={() => chooseDiscipline(EVERYTHING)} />;
+    return (
+      <DisciplinePicker
+        options={DISCIPLINES}
+        counts={disciplineCounts}
+        onSelect={chooseDiscipline}
+        onSelectEverything={() => chooseDiscipline(EVERYTHING)}
+      />
+    );
   }
 
   if (discipline !== EVERYTHING && roleChoice === null) {
@@ -490,6 +511,7 @@ export default function App(): React.JSX.Element {
                 fields={scopedFields}
                 discipline={discipline}
                 disciplineOptions={DISCIPLINE_FILTER_OPTIONS}
+                disciplineCounts={disciplineCounts}
                 onDisciplineChange={setDisciplineFilter}
                 roleFilterDisabled={discipline === null}
                 locationTags={locationTags}
@@ -537,6 +559,7 @@ export default function App(): React.JSX.Element {
               fields={scopedFields}
               discipline={discipline}
               disciplineOptions={DISCIPLINE_FILTER_OPTIONS}
+              disciplineCounts={disciplineCounts}
               onDisciplineChange={setDisciplineFilter}
               roleFilterDisabled={discipline === null}
               locationTags={locationTags}

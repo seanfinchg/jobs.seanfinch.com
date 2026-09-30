@@ -34,6 +34,7 @@ interface FilterBarProps {
   // whole two-step onboarding flow).
   discipline: string | null;
   disciplineOptions: { key: string; label: string }[];
+  disciplineCounts: Record<string, number>;
   onDisciplineChange: (key: string) => void;
   // Grayed out until a discipline is picked on the onboarding screens --
   // `fields` here is already scoped to the current discipline (see App.tsx),
@@ -106,6 +107,7 @@ export default function FilterBar({
   onHideDefenseChange,
   discipline,
   disciplineOptions,
+  disciplineCounts,
   onDisciplineChange,
   roleFilterDisabled = false,
   showHeading = true,
@@ -130,7 +132,7 @@ export default function FilterBar({
                   : "border-white/10 bg-dark-mode text-ultra-light-mode/70 hover:text-light-mode"
               }`}
             >
-              {option.label}
+              {option.label} <span className="text-ultra-light-mode/40">({disciplineCounts[option.key] ?? 0})</span>
             </button>
           ))}
         </div>

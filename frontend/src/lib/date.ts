@@ -5,6 +5,12 @@
 export interface RelativeDate {
   label: string;
   title: string;
+  // Local time only (e.g. "2:15 PM"), separate from title's full date+time
+  // -- shown inline next to label so the exact time is visible without
+  // hovering (title's tooltip doesn't exist at all on a touchscreen), most
+  // useful for "Today"/"Yesterday" where the day alone doesn't pin down
+  // how fresh the data actually is.
+  time: string;
 }
 
 export function relativeDate(iso: string): RelativeDate {
@@ -12,8 +18,9 @@ export function relativeDate(iso: string): RelativeDate {
   const title = Number.isNaN(date.getTime())
     ? iso
     : date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  const time = Number.isNaN(date.getTime()) ? "" : date.toLocaleTimeString(undefined, { timeStyle: "short" });
 
-  if (Number.isNaN(date.getTime())) return { label: iso, title };
+  if (Number.isNaN(date.getTime())) return { label: iso, title, time };
 
   const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
   const diffDays = Math.round((startOfDay(new Date()) - startOfDay(date)) / 86_400_000);
@@ -34,5 +41,5 @@ export function relativeDate(iso: string): RelativeDate {
     label = `${years} year${years > 1 ? "s" : ""} ago`;
   }
 
-  return { label, title };
+  return { label, title, time };
 }

@@ -413,7 +413,10 @@ export default function App(): React.JSX.Element {
           <p className="mt-1 text-sm text-ultra-light-mode/50">
             Open roles, updated daily.
             {generatedAt && (
-              <span title={relativeDate(generatedAt).title}> Jobs last updated: {relativeDate(generatedAt).label}.</span>
+              <span title={relativeDate(generatedAt).title}>
+                {" "}
+                Jobs last updated: {relativeDate(generatedAt).label} at {relativeDate(generatedAt).time}.
+              </span>
             )}
             {" · "}
             <button

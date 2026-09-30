@@ -274,6 +274,17 @@ def run(
 
                 stored_count = 0
                 for job in jobs:
+                    # Several adapters' raw API responses carry stray leading/
+                    # trailing whitespace straight through from the ATS's own
+                    # data (e.g. "Security Operations Analyst ") -- trimmed
+                    # once, centrally, here rather than per-adapter, since
+                    # every job from every adapter passes through this same
+                    # loop before anything else (hashing, filtering, storage)
+                    # touches it.
+                    job.company = job.company.strip()
+                    job.title = job.title.strip()
+                    job.location = job.location.strip()
+
                     db.touch_sighting(conn, source_uid(job), run_started_at)
 
                     if not _passes_title_and_location_filters(job, profile.get("filters") or {}):

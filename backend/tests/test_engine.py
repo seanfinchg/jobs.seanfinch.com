@@ -225,6 +225,32 @@ def test_reclassify_updates_matched_fields_for_jobs_that_still_pass(tmp_path):
     assert newly_skipped == 0
 
 
+def test_run_trims_whitespace_from_company_title_location(tmp_path):
+    profiles_dir = tmp_path / "profiles"
+    profiles_dir.mkdir()
+    (profiles_dir / "trim.yaml").write_text(yaml.safe_dump({
+        "boards": {"fake-trim-test": [{"token": "acme"}]},
+        "filters": {},
+    }))
+
+    @register
+    class _FakeTrimAdapter(Adapter):
+        name = "fake-trim-test"
+
+        def fetch(self, board):
+            return [_job(
+                company=" Acme Corp ", title="Security Operations Analyst ",
+                location=" Boston, MA", external_id="1",
+            )]
+
+    conn = db.connect(":memory:")
+    engine.run("trim", db_path=":memory:", profiles_dir=profiles_dir, conn=conn)
+    row = db.open_jobs(conn)[0]
+    assert row["company"] == "Acme Corp"
+    assert row["title"] == "Security Operations Analyst"
+    assert row["location"] == "Boston, MA"
+
+
 def test_default_fetch_body_returns_none():
     class _NoBodyFetch(Adapter):
         name = "fake-default-fetch-body-test"

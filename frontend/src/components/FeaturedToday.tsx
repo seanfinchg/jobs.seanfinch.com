@@ -97,7 +97,12 @@ export default function FeaturedToday({ jobs }: FeaturedTodayProps): React.JSX.E
         style={{ animationDuration: `${Math.max(20, spotlights.length * 4)}s` }}
       >
         {spotlights.map((s) => chip(s, `a-${s.company}-${s.day}`))}
-        {spotlights.map((s) => chip(s, `b-${s.company}-${s.day}`))}
+        {/* Second copy exists purely so the track can translate -50% and
+            loop seamlessly -- a screen reader or text-scraping agent has no
+            use for the same content twice, so it's hidden from both. */}
+        <div aria-hidden="true" className="contents">
+          {spotlights.map((s) => chip(s, `b-${s.company}-${s.day}`))}
+        </div>
       </div>
     </div>
   );

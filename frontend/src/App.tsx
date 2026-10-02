@@ -602,6 +602,12 @@ export default function App(): React.JSX.Element {
             onSelectCompany={(company) => setSearch((cur) => (cur === company ? "" : company))}
           />
         </div>
+
+        <footer className="mt-8 border-t border-white/10 pt-4 text-xs text-ultra-light-mode/40">
+          <a href="/llms.txt" className="underline underline-offset-4 hover:text-light-mode">
+            Data / API
+          </a>
+        </footer>
       </div>
     </div>
   );

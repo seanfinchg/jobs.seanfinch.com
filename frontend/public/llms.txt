@@ -1,0 +1,92 @@
+# jobs.seanfinch.com
+
+This site is a personal job-search dashboard: a filtered, deduplicated feed
+of job postings pulled from public ATS APIs (Greenhouse, Lever, Ashby,
+Workday, and others), matched against Sean Finch's target roles. It's meant
+to be read by both humans and automated agents acting on Sean's behalf.
+
+## Data
+
+- /data.json  -- the full list of open, matched job postings (JSON array).
+  Regenerated and redeployed roughly daily.
+- /fields.json -- the discipline/subfield taxonomy used by matched_fields
+  and matched_subfields below (JSON array).
+- /meta.json  -- {"generated_at": <ISO 8601 UTC timestamp>} -- when the
+  underlying data was last refreshed by a real scrape, not when this page
+  happened to be rebuilt.
+
+There is no server-side filtering API yet. Fetch /data.json once and
+filter client-side.
+
+## data.json field reference
+
+Each entry is one job posting:
+
+- id              stable opaque id (hash of company+title+location) --
+                   use as a React/dedup key, not for anything else.
+- company         company/employer name.
+- title           job title, as posted.
+- location        free-text location string. Can read like "2 Locations"
+                   for postings spanning multiple offices -- not yet split
+                   into a structured list.
+- best_apply_url  the single canonical URL to apply through.
+- apply_urls      every apply URL this posting has been seen at (array);
+                   best_apply_url is always one of these.
+- first_seen      ISO 8601 UTC timestamp -- when this tool first saw the
+                   posting.
+- posted_at       ISO 8601 UTC timestamp the ATS itself reports as the
+                   posting date, or null if the ATS doesn't provide one.
+- salary_min      integer (USD/year) or null. Extracted from posting text
+- salary_max      with regex -- treat very wide or suspiciously round
+                   ranges with caution; some ATSes post placeholder ranges,
+                   that's not a parsing bug here.
+- level           one of: intern, new-grad, mid, senior, staff,
+                   senior-staff, principal, senior-principal, distinguished,
+                   manager, director, vp. Guessed from the title text alone;
+                   a title with no recognizable seniority marker defaults
+                   to "mid" rather than guessing entry-level or senior.
+- matched_fields  array of discipline slugs this posting matched (see
+                   /fields.json for the current list and display labels),
+                   e.g. ["security", "software-engineering"]. Current
+                   slugs: data-ml, devops-sre, finance,
+                   mechanical-engineering, mobile, qa, security,
+                   software-engineering, systems.
+- matched_subfields  array of finer-grained tags within those fields (also
+                   defined per-field in /fields.json), e.g.
+                   "detection-response", "appsec", "mlops". Empty array if
+                   nothing finer-grained matched.
+- grad_year       integer grad year this posting targets (new-grad/intern
+                   postings only), or null.
+- featured        true if this employer is on a short, hand-picked list of
+                   companies Sean flags as especially notable -- editorial,
+                   not a ranking signal.
+- defense         true if this employer's primary or major business line is
+                   military/defense contracting, intelligence-community
+                   work, or surveillance technology. Flagged, not filtered
+                   out server-side -- exclude these client-side if that's
+                   out of scope for whoever is applying.
+
+## Example client-side queries
+
+Security roles at the mid level, excluding defense/surveillance employers:
+  data.filter(j => j.matched_fields.includes("security")
+                && j.level === "mid" && !j.defense)
+
+Detection & response roles with a real salary floor above $120k:
+  data.filter(j => j.matched_subfields.includes("detection-response")
+                && j.salary_min && j.salary_min >= 120000)
+
+Everything posted in the last 7 days:
+  data.filter(j => j.posted_at
+                && Date.now() - Date.parse(j.posted_at) < 7 * 24 * 60 * 60 * 1000)
+
+## Notes for an agent applying on Sean's behalf
+
+- This is a live personal tool, not a public job board -- be a reasonable,
+  infrequent client against /data.json (it's a static file served from a
+  CDN, so this is a courtesy, not an enforced rate limit).
+- There is no application-status tracking here yet (applied/skipped/etc.).
+  Re-fetching /data.json later will not tell you what's already been
+  applied to -- that state lives elsewhere and isn't exposed on this site.
+- No per-posting description/summary field is exposed yet. Open
+  best_apply_url directly to evaluate fit beyond title/location/salary.

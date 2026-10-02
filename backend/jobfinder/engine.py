@@ -98,6 +98,32 @@ def _write_progress(path: Path | None, data: dict) -> None:
     path.write_text(json.dumps(data))
 
 
+def _progress_snapshot(
+    *,
+    profile_name: str,
+    adapter_key: str | None,
+    token: str | None,
+    boards_done: int,
+    boards_total: int,
+    total_stored: int,
+    run_started_at: str,
+    in_flight_since: str | None = None,
+    finished_at: str | None = None,
+) -> dict:
+    """adapter/token double as "what's in flight" (in_flight_since set) and
+    "what last completed" (in_flight_since None) -- the status server tells
+    the two apart by that field rather than needing separate names, since
+    only one is ever true at a time."""
+    return {
+        "profile": profile_name, "adapter": adapter_key, "token": token,
+        "boards_done": boards_done, "boards_total": boards_total,
+        "total_stored": total_stored, "started_at": run_started_at,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "in_flight_since": in_flight_since,
+        "finished_at": finished_at,
+    }
+
+
 def _touch_run_lock(lock_path: Path | None) -> None:
     """Called alongside every _write_progress -- keeps the lock's mtime
     reflecting "last real activity," which is what RUN_LOCK_MAX_AGE_SECONDS
@@ -296,18 +322,24 @@ def run(
 
             for board in board_list:
                 token = board.get("token", "")
+                _write_progress(progress_path, _progress_snapshot(
+                    profile_name=profile_name, adapter_key=adapter_key, token=token,
+                    boards_done=boards_done, boards_total=boards_total,
+                    total_stored=total_stored, run_started_at=run_started_at,
+                    in_flight_since=datetime.now(timezone.utc).isoformat(),
+                ))
+                _touch_run_lock(lock_path)
                 try:
                     jobs = adapter.fetch(board)
                 except Exception as exc:
                     logger.error("skipping %s:%s, fetch failed: %s", adapter_key, token, exc)
                     db.record_board_health(conn, adapter_key, token, ok=False, error=str(exc), now=run_started_at)
                     boards_done += 1
-                    _write_progress(progress_path, {
-                        "profile": profile_name, "adapter": adapter_key, "token": token,
-                        "boards_done": boards_done, "boards_total": boards_total,
-                        "total_stored": total_stored, "started_at": run_started_at,
-                        "updated_at": datetime.now(timezone.utc).isoformat(),
-                    })
+                    _write_progress(progress_path, _progress_snapshot(
+                        profile_name=profile_name, adapter_key=adapter_key, token=token,
+                        boards_done=boards_done, boards_total=boards_total,
+                        total_stored=total_stored, run_started_at=run_started_at,
+                    ))
                     _touch_run_lock(lock_path)
                     if throttle:
                         time.sleep(BOARD_FETCH_DELAY_SECONDS)
@@ -372,12 +404,11 @@ def run(
                     "%s:%s -- fetched %d, stored %d (running total: %d)",
                     adapter_key, token, len(jobs), stored_count, total_stored,
                 )
-                _write_progress(progress_path, {
-                    "profile": profile_name, "adapter": adapter_key, "token": token,
-                    "boards_done": boards_done, "boards_total": boards_total,
-                    "total_stored": total_stored, "started_at": run_started_at,
-                    "updated_at": datetime.now(timezone.utc).isoformat(),
-                })
+                _write_progress(progress_path, _progress_snapshot(
+                    profile_name=profile_name, adapter_key=adapter_key, token=token,
+                    boards_done=boards_done, boards_total=boards_total,
+                    total_stored=total_stored, run_started_at=run_started_at,
+                ))
                 _touch_run_lock(lock_path)
                 if throttle:
                     time.sleep(BOARD_FETCH_DELAY_SECONDS)
@@ -393,13 +424,12 @@ def run(
             "run complete: %d board(s) succeeded, %d posting(s) stored/updated this run",
             len(successful_boards), total_stored,
         )
-        _write_progress(progress_path, {
-            "profile": profile_name, "adapter": None, "token": None,
-            "boards_done": boards_done, "boards_total": boards_total,
-            "total_stored": total_stored, "started_at": run_started_at,
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-            "finished_at": datetime.now(timezone.utc).isoformat(),
-        })
+        _write_progress(progress_path, _progress_snapshot(
+            profile_name=profile_name, adapter_key=None, token=None,
+            boards_done=boards_done, boards_total=boards_total,
+            total_stored=total_stored, run_started_at=run_started_at,
+            finished_at=datetime.now(timezone.utc).isoformat(),
+        ))
     finally:
         _release_run_lock(lock_path)
         if own_conn:

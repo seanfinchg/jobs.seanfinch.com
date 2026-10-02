@@ -20,6 +20,17 @@ LOCK_PATH = Path(str(DB_PATH) + ".run-lock")
 PROGRESS_PATH = Path(str(DB_PATH) + ".scrape-progress.json")
 LAST_SCRAPE_PATH = Path(os.environ.get("JOBFINDER_DATA_DIR", "/data")) / "last-scrape-epoch"
 
+# Real boards finish in low single-digit seconds to about a minute (even a
+# huge Workday tenant with hundreds of paginated requests lands well under
+# this). Found the hard way on 2026-10-02: a single board hung for 9+ hours
+# with zero network activity and nothing on the dashboard said so -- it just
+# kept showing the last board that *had* completed, looking perfectly
+# healthy. This is a separate, earlier warning than RUN_LOCK_MAX_AGE_SECONDS
+# (which means "abandon and allow a redeploy to recreate the container") --
+# this one means "still within the no-redeploy window, but worth a human
+# looking at."
+STALL_WARNING_SECONDS = 10 * 60
+
 
 def _read_progress() -> dict | None:
     if not PROGRESS_PATH.exists():
@@ -76,12 +87,22 @@ def _board_health_summary() -> dict:
         conn.close()
 
 
+def _in_flight_seconds(progress: dict | None) -> float | None:
+    if not progress or not progress.get("in_flight_since"):
+        return None
+    since = datetime.fromisoformat(progress["in_flight_since"])
+    return (datetime.now(timezone.utc) - since).total_seconds()
+
+
 def build_status() -> dict:
     progress = _read_progress()
     health = _board_health_summary()
+    in_flight_seconds = _in_flight_seconds(progress)
     return {
         "scraping": _is_scraping(),
         "progress": progress,
+        "in_flight_seconds": in_flight_seconds,
+        "stalled": in_flight_seconds is not None and in_flight_seconds > STALL_WARNING_SECONDS,
         "last_scrape_at": _last_scrape_iso(),
         "board_health": health,
         "checked_at": datetime.now(timezone.utc).isoformat(),
@@ -92,10 +113,26 @@ def _render_html(status: dict) -> str:
     progress = status["progress"]
     if status["scraping"] and progress:
         pct = round(100 * progress["boards_done"] / progress["boards_total"]) if progress["boards_total"] else 0
+        in_flight_seconds = status["in_flight_seconds"]
+        if in_flight_seconds is not None:
+            board_line = (
+                f"-- currently fetching <code>{progress['adapter']}:{progress['token']}</code> "
+                f"(started {round(in_flight_seconds)}s ago)"
+            )
+            stall_html = (
+                f"""<p style="color:#e07b39;"><strong>Possibly stalled</strong> --
+                    no activity on this board for over {round(in_flight_seconds / 60)} minute(s),
+                    well past how long any real board has taken historically.</p>"""
+                if status["stalled"]
+                else ""
+            )
+        else:
+            board_line = f"-- last completed <code>{progress['adapter']}:{progress['token']}</code>"
+            stall_html = ""
         progress_html = f"""
         <p><strong>Scraping now</strong> -- profile <code>{progress['profile']}</code></p>
-        <p>Board {progress['boards_done']} of {progress['boards_total']} ({pct}%)
-           -- currently <code>{progress['adapter']}:{progress['token']}</code></p>
+        <p>Board {progress['boards_done']} of {progress['boards_total']} ({pct}%) {board_line}</p>
+        {stall_html}
         <p>{progress['total_stored']} posting(s) stored/updated so far this run, started {progress['started_at']}</p>
         """
     elif progress:

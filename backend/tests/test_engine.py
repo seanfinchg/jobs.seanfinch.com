@@ -493,3 +493,36 @@ def test_run_writes_progress_file_for_the_status_server(tmp_path):
     assert progress["boards_total"] == 2
     assert progress["total_stored"] == 2
     assert progress["finished_at"] is not None
+
+
+def test_run_marks_a_board_in_flight_before_fetching_it_and_clears_it_after(tmp_path):
+    # Real incident (2026-10-02): a board hung for 9+ hours with zero
+    # network activity, and the status dashboard just kept showing the last
+    # board that *had* completed -- nothing distinguished "fetching this
+    # board right now" from "finished a while ago." in_flight_since is what
+    # the status server now uses to tell those apart.
+    db_path = tmp_path / "jobfinder.db"
+    progress_path = Path(str(db_path) + ".scrape-progress.json")
+    seen_in_flight = []
+
+    profiles_dir = tmp_path / "profiles"
+    profiles_dir.mkdir()
+    (profiles_dir / "in-flight-test.yaml").write_text(yaml.safe_dump({
+        "boards": {"fake-in-flight-test": [{"token": "acme"}]},
+        "filters": {},
+    }))
+
+    @register
+    class _FakeInFlightAdapter(Adapter):
+        name = "fake-in-flight-test"
+
+        def fetch(self, board):
+            seen_in_flight.append(json.loads(progress_path.read_text())["in_flight_since"])
+            return [_job(external_id=board["token"])]
+
+    engine.run("in-flight-test", db_path=db_path, profiles_dir=profiles_dir)
+
+    assert len(seen_in_flight) == 1
+    assert seen_in_flight[0] is not None
+    final_progress = json.loads(progress_path.read_text())
+    assert final_progress["in_flight_since"] is None

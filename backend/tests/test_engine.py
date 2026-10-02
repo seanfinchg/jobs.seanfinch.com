@@ -417,6 +417,24 @@ def test_stale_run_lock_is_treated_as_abandoned_not_blocking(tmp_path):
     engine._release_run_lock(new_lock_path)
 
 
+def test_touch_run_lock_refreshes_mtime_so_a_long_real_run_never_looks_stale(tmp_path):
+    # A real run can now legitimately take many hours (Workday's page size
+    # is capped at 20 by the real server) -- "stale" has to track "no
+    # activity recently," not "running longer than X," or a genuinely
+    # still-running scrape looks identical to a crashed one once it passes
+    # RUN_LOCK_MAX_AGE_SECONDS from when it *started*.
+    db_path = tmp_path / "jobfinder.db"
+    lock_path = engine._acquire_run_lock(db_path)
+    old_time = time.time() - engine.RUN_LOCK_MAX_AGE_SECONDS - 60
+    os.utime(lock_path, (old_time, old_time))
+
+    engine._touch_run_lock(lock_path)
+
+    age = time.time() - lock_path.stat().st_mtime
+    assert age < 5
+    engine._release_run_lock(lock_path)
+
+
 def test_run_raises_run_already_in_progress_when_a_lock_already_exists(tmp_path):
     db_path = tmp_path / "jobfinder.db"
     lock_path = Path(str(db_path) + ".run-lock")

@@ -57,6 +57,22 @@ def test_harvest_skips_adapters_with_no_question_schema():
     assert conn.execute("SELECT * FROM questions").fetchall() == []
 
 
+def test_harvest_matched_skips_postings_already_harvested():
+    # Real cost this guards against: without this, a live run with
+    # --questions re-requests every open posting's schema again every day,
+    # a cost that only grows as the backlog of open postings grows.
+    conn = db.connect(":memory:")
+    job = _job()
+    db.upsert_job(conn, job, profile="p", is_native=True, now="t1")
+
+    first = questions.harvest_matched(conn)
+    assert first == 1
+
+    second = questions.harvest_matched(conn)
+    assert second == 0
+    assert len(conn.execute("SELECT * FROM questions").fetchall()) == 1
+
+
 def test_harvest_ignores_closed_jobs():
     conn = db.connect(":memory:")
     job = _job()

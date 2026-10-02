@@ -9,14 +9,24 @@ from jobfinder.models import RawJob
 
 def harvest_matched(conn: sqlite3.Connection) -> int:
     """Pull question schemas for every open, matched posting whose adapter
-    exposes one. Greenhouse does; most others return None from
-    fetch_questions() and are silently skipped -- that's expected, not an
-    error.
+    exposes one and hasn't been harvested yet. Greenhouse does; most others
+    return None from fetch_questions() and are silently skipped -- that's
+    expected, not an error.
+
+    The "hasn't been harvested yet" part matters in practice, not just in
+    theory: this used to re-fetch every open posting's schema on every run
+    with no memory of what it already had, a real cost that only grows as
+    the backlog of open 'new' postings grows day over day -- a live run
+    with `--questions` was re-requesting thousands of schemas it already
+    had, every single day. A posting's own question set essentially never
+    changes once posted, so skipping anything already in `questions` is
+    the right tradeoff, not just a speed hack.
     """
     rows = conn.execute(
         "SELECT s.source_uid, s.adapter, s.board_token, s.apply_url "
         "FROM sightings s JOIN jobs j ON j.content_hash = s.content_hash "
-        "WHERE j.status = 'new'",
+        "WHERE j.status = 'new' "
+        "AND s.source_uid NOT IN (SELECT DISTINCT source_uid FROM questions)",
     ).fetchall()
 
     harvested = 0

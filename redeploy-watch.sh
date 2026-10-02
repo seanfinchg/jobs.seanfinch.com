@@ -38,14 +38,14 @@ fi
 # engine.py's own run-lock (jobfinder.db.run-lock, next to the db inside the
 # container -- not on the shared volume, hence checking via `exec` rather
 # than a host-side file test) already exists to stop concurrent runs; reused
-# here as "is a scrape actually in flight right now." `find -mmin -120`
-# matches engine.py's own RUN_LOCK_MAX_AGE_SECONDS (2 hours) -- a lock past
-# that age is stale (a crashed run, not a real one in progress) on both
-# sides, so this only defers for a lock engine.py itself would still
-# consider live. A container that isn't running at all (first-ever deploy)
-# fails this check too, which correctly falls through to rebuilding since
-# there's nothing to interrupt.
-LIVE_LOCK=$(docker compose exec -T jobfinder find jobfinder.db.run-lock -mmin -120 2>/dev/null || true)
+# here as "is a scrape actually in flight right now." `find -mmin -30`
+# matches engine.py's own RUN_LOCK_MAX_AGE_SECONDS (30 minutes -- the lock's
+# mtime is touched on every board completion now, so this measures "no
+# activity recently," not "running longer than X"; a real run can legitimately
+# take many hours). A container that isn't running at all (first-ever
+# deploy) fails this check too, which correctly falls through to rebuilding
+# since there's nothing to interrupt.
+LIVE_LOCK=$(docker compose exec -T jobfinder find jobfinder.db.run-lock -mmin -30 2>/dev/null || true)
 if [ -n "$LIVE_LOCK" ]; then
     echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) origin/master moved but a scrape is in progress, deferring rebuild"
     exit 0

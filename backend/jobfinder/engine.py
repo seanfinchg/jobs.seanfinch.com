@@ -30,11 +30,17 @@ PROFILES_DIR = Path("profiles")
 BOARD_FETCH_DELAY_SECONDS = 0.5
 BODY_FETCH_DELAY_SECONDS = 0.2
 
-# A run against the real DB can take many minutes; a lock left over from a
-# process that crashed or was killed (not a clean exit) shouldn't block every
-# future run forever, so it's treated as stale past this age rather than
-# requiring a human to manually delete the lock file.
-RUN_LOCK_MAX_AGE_SECONDS = 2 * 60 * 60
+# A real run can legitimately take many hours now (Workday's page size is
+# capped at 20 by the real server, confirmed live -- a single large tenant
+# needs well over a hundred paginated requests, each deliberately paced) --
+# "stale" has to mean "no activity in a while," not "running longer than X,"
+# or a long-but-genuinely-still-running scrape looks identical to a crashed
+# one. The lock's mtime is touched alongside every progress write (see
+# _write_progress's callers), so this threshold only needs to cover the
+# gap between two board completions, not an entire run. Also what
+# redeploy-watch.sh checks (via `find -mmin`) before deciding it's safe to
+# rebuild -- keep that in sync with this if it ever changes.
+RUN_LOCK_MAX_AGE_SECONDS = 30 * 60
 
 
 class RunAlreadyInProgress(RuntimeError):
@@ -90,6 +96,14 @@ def _write_progress(path: Path | None, data: dict) -> None:
     if path is None:
         return
     path.write_text(json.dumps(data))
+
+
+def _touch_run_lock(lock_path: Path | None) -> None:
+    """Called alongside every _write_progress -- keeps the lock's mtime
+    reflecting "last real activity," which is what RUN_LOCK_MAX_AGE_SECONDS
+    actually measures against now, not "time since this run started"."""
+    if lock_path is not None:
+        lock_path.write_text(datetime.now(timezone.utc).isoformat())
 
 
 def _release_run_lock(lock_path: Path | None) -> None:
@@ -294,6 +308,7 @@ def run(
                         "total_stored": total_stored, "started_at": run_started_at,
                         "updated_at": datetime.now(timezone.utc).isoformat(),
                     })
+                    _touch_run_lock(lock_path)
                     if throttle:
                         time.sleep(BOARD_FETCH_DELAY_SECONDS)
                     continue
@@ -363,6 +378,7 @@ def run(
                     "total_stored": total_stored, "started_at": run_started_at,
                     "updated_at": datetime.now(timezone.utc).isoformat(),
                 })
+                _touch_run_lock(lock_path)
                 if throttle:
                     time.sleep(BOARD_FETCH_DELAY_SECONDS)
 

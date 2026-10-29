@@ -1,0 +1,53 @@
+# Weekly dependency update PRs into dev. Nothing auto-merges: every update goes
+# through the required checks like any other PR.
+version: 2
+
+updates:
+  - package-ecosystem: pip
+    directory: /backend
+    target-branch: dev
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 3
+    groups:
+      python:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /frontend
+    target-branch: dev
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    cooldown:
+      default-days: 3
+    groups:
+      react:
+        patterns: ["react", "react-dom", "@types/react", "@types/react-dom", "@types/react-*"]
+      vite:
+        patterns: ["vite", "@vitejs/*", "@tailwindcss/vite", "tailwindcss"]
+      other:
+        patterns: ["*"]
+        update-types: [minor, patch]
+        exclude-patterns:
+          ["react", "react-dom", "@types/react*", "vite", "@vitejs/*", "@tailwindcss/vite", "tailwindcss"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+      day: monday

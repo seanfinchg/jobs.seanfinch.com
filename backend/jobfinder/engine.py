@@ -24,8 +24,8 @@ PROFILES_DIR = Path("profiles")
 # ...) back to back with zero delay, and fetch_body's lazy per-job fetch
 # (smartrecruiters, bamboohr) can add hundreds more within a single board --
 # that back-to-back, many-host burst pattern is exactly what tripped a
-# CDN-side bot/DDoS heuristic on a real run of this tool, blocking
-# the client. These delays exist to keep this looking
+# CDN-side bot/DDoS heuristic on a real run of this tool, blocking the
+# client outright. These delays exist to keep this looking
 # like a slow, ordinary client, not an absence-of-delay bug.
 BOARD_FETCH_DELAY_SECONDS = 0.5
 BODY_FETCH_DELAY_SECONDS = 0.2

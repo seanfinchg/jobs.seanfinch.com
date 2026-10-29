@@ -13,7 +13,7 @@ from jobfinder.models import RawJob, source_uid
 
 # Schema evolves as an ordered list of migrations rather than one mutable
 # CREATE TABLE block. This DB used to live only in a disposable CI cache;
-# now it's meant to persist indefinitely on a server, so it needs to be
+# now it's meant to persist indefinitely, so it needs to be
 # upgradeable in place instead of assuming a fresh file every time.
 MIGRATIONS: list[tuple[int, str]] = [
     (1, """

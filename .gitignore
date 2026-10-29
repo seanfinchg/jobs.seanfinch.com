@@ -28,6 +28,7 @@ frontend/dist/
 # info, work-auth answers, application history). It must never go into git
 # regardless of repo visibility. Public, listings-only data is what the
 # built dashboard's data.json is for -- generated, deployed, never committed.
+answers.local.yaml
 jobfinder.db
 jobfinder.db-wal
 jobfinder.db-shm

@@ -14,7 +14,7 @@ ln -sf "$DATA_DIR/jobfinder.db" jobfinder.db
 # engine.py) to answer "is it scraping right now, and how far along," which
 # was previously only visible by tailing container logs. Not on the public
 # internet: reachable only from wherever this box's own ports already are
-# (private network) via docker-compose.yml's port mapping, no auth needed
+# (a private network) via docker-compose.yml's port mapping, no auth needed
 # since it exposes board health/progress only, never job content.
 python -m jobfinder.status_server &
 

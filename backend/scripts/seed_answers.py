@@ -1,38 +1,37 @@
 """Run once locally (`python scripts/seed_answers.py`) to populate the
-answer bank from the resume. Never run in CI -- jobfinder.db is gitignored
-specifically because this table holds personal data.
+answer bank. Never run in CI -- jobfinder.db is gitignored specifically
+because this table holds personal data.
 
-Anything not stated on the resume (work auth, sponsorship, EEOC/demographic
-questions, clearance, salary expectations) is seeded as an obvious TODO
-placeholder rather than guessed. apply.py treats a "TODO:"-prefixed answer as
-unanswered and still stops to ask, same as a pattern with no match at all.
+Your own details live in backend/answers.local.yaml (gitignored); copy
+answers.example.yaml to start. Anything not stated there (work auth,
+sponsorship, EEOC/demographic questions, clearance, salary expectations) is
+seeded as an obvious TODO placeholder rather than guessed. apply.py treats a
+"TODO:"-prefixed answer as unanswered and still stops to ask, same as a
+pattern with no match at all.
 """
 
+import sys
 from pathlib import Path
+
+import yaml
 
 from jobfinder import db
 from jobfinder.engine import DB_PATH
 
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+ANSWERS_PATH = BACKEND_DIR / "answers.local.yaml"
+
 # Drop your resume here yourself -- resume.pdf is gitignored, same reasoning
 # as jobfinder.db.
-RESUME_PATH = Path(__file__).resolve().parent.parent / "resume.pdf"
+RESUME_PATH = BACKEND_DIR / "resume.pdf"
 
-REAL_ANSWERS = [
-    (r"resume|\bcv\b", str(RESUME_PATH), "input_file"),
-    (r"first name", "Sean", "input_text"),
-    (r"last name", "Finch", "input_text"),
-    (r"\bemail\b", "alex@example.com", "input_text"),
-    (r"\bphone\b", "(555) 555-0100", "input_text"),
-    (r"linkedin", "https://linkedin.com/in/example", "input_text"),
-    (r"github", "https://github.com/seanfinchg", "input_text"),
-    (r"(personal )?website|portfolio", "https://seanfinch.com", "input_text"),
-    (r"(university|school|college)( name)?", "Example University", "input_text"),
-    (r"degree", "Bachelor of Science in Computer Science", "input_text"),
-    (r"major|field of study", "Computer Science", "input_text"),
-    (r"graduation date|expected graduation", "May 2030", "input_text"),
-    (r"current (or previous )?employer|most recent employer", "Example Corp", "input_text"),
-    (r"current (or previous )?(job )?title|most recent (job )?title", "Software Engineer Intern", "input_text"),
-]
+RESUME_ANSWER = (r"resume|cv", str(RESUME_PATH), "input_file")
+
+
+def load_real_answers(path: Path) -> list[tuple[str, str, str]]:
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    return [(row["pattern"], row["answer"], row["field_type"]) for row in data.get("answers", [])]
+
 
 TODO_PLACEHOLDERS = [
     (r"work authoriz|authorized to work|legally (authorized|eligible)",
@@ -49,11 +48,14 @@ TODO_PLACEHOLDERS = [
 
 
 def main() -> None:
+    if not ANSWERS_PATH.exists():
+        sys.exit(f"{ANSWERS_PATH.name} not found -- copy answers.example.yaml to it and fill in your details")
+    real_answers = [RESUME_ANSWER] + load_real_answers(ANSWERS_PATH)
     conn = db.connect(DB_PATH)
-    for pattern, answer, field_type in REAL_ANSWERS + TODO_PLACEHOLDERS:
+    for pattern, answer, field_type in real_answers + TODO_PLACEHOLDERS:
         db.seed_answer(conn, pattern, answer, field_type)
     conn.close()
-    print(f"seeded {len(REAL_ANSWERS)} real answers and {len(TODO_PLACEHOLDERS)} TODO placeholders")
+    print(f"seeded {len(real_answers)} real answers and {len(TODO_PLACEHOLDERS)} TODO placeholders")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,32 @@
+# Copy to answers.local.yaml (gitignored) and fill in your own details, then
+# run `python scripts/seed_answers.py`. Each pattern is a case-insensitive
+# regex matched against a form field's label.
+#
+# Work authorization, sponsorship, demographic, clearance, and salary
+# questions are deliberately not seeded from this file -- they are seeded as
+# TODO placeholders so the apply harness always stops and asks instead.
+answers:
+  - pattern: 'first name'
+    answer: "Alex"
+    field_type: input_text
+  - pattern: 'last name'
+    answer: "Example"
+    field_type: input_text
+  - pattern: '\bemail\b'
+    answer: "alex@example.com"
+    field_type: input_text
+  - pattern: '\bphone\b'
+    answer: "(555) 555-0100"
+    field_type: input_text
+  - pattern: 'linkedin'
+    answer: "https://linkedin.com/in/example"
+    field_type: input_text
+  - pattern: 'github'
+    answer: "https://github.com/example"
+    field_type: input_text
+  - pattern: '(university|school|college)( name)?'
+    answer: "Example University"
+    field_type: input_text
+  - pattern: 'degree'
+    answer: "Bachelor of Science in Computer Science"
+    field_type: input_text

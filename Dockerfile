@@ -2,7 +2,7 @@
 # dashboard (Node) -> deploy to Netlify (netlify-cli). Two runtimes in one
 # image on purpose -- splitting into separate containers would need shared
 # storage and an orchestrator for a single-writer, once-a-day job that isn't
-# worth the extra moving parts on a server.
+# worth the extra moving parts.
 FROM node:22-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

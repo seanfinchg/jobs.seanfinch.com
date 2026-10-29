@@ -11,9 +11,8 @@ from pathlib import Path
 from jobfinder.engine import DB_PATH, RUN_LOCK_MAX_AGE_SECONDS
 
 # Not on the public internet -- no auth, no personal data (board health and
-# scrape progress only, never job content or the answer bank). Reachable
-# only from wherever the deploy host's own ports are reachable (LAN,
-# VPN), same trust boundary as connecting to the host directly.
+# scrape progress only, never job content or the answer bank). Meant to be
+# reachable only from a private network; never expose this port publicly.
 PORT = int(os.environ.get("JOBFINDER_STATUS_PORT", "8787"))
 
 LOCK_PATH = Path(str(DB_PATH) + ".run-lock")

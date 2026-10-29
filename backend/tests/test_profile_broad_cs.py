@@ -1,7 +1,7 @@
 """Regression tests against the real shipped broad-cs profile -- found by
 cross-checking real pipeline output (a live run, ~3,950 postings) against
 jobfinder/classify.py's own field classification, the same method
-the 3-round new-grad-cs pass used."""
+used for the new-grad-cs profile's accuracy passes."""
 
 from jobfinder.engine import load_profile, passes_filters
 from jobfinder.models import RawJob

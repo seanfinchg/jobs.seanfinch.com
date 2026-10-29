@@ -2,7 +2,13 @@ import importlib.util
 import re
 from pathlib import Path
 
-SCRIPT_PATH = Path(__file__).parent.parent / "scripts" / "seed_answers.py"
+import pytest
+
+BACKEND_DIR = Path(__file__).parent.parent
+SCRIPT_PATH = BACKEND_DIR / "scripts" / "seed_answers.py"
+EXAMPLE_PATH = BACKEND_DIR / "answers.example.yaml"
+
+BANNED = re.compile(r"authoriz|sponsor|veteran|disab|race|ethnicity|gender|clearance|salary|compensation", re.IGNORECASE)
 
 
 def _load_module():
@@ -20,16 +26,29 @@ def test_todo_placeholders_are_clearly_marked():
 
 def test_legal_and_personal_categories_are_never_in_real_answers():
     module = _load_module()
-    banned = re.compile(r"authoriz|sponsor|veteran|disab|race|ethnicity|gender|clearance|salary|compensation", re.IGNORECASE)
-    for pattern, answer, _ in module.REAL_ANSWERS:
-        assert not banned.search(pattern), f"legal/personal pattern leaked into REAL_ANSWERS: {pattern}"
-        assert not banned.search(answer), f"legal/personal content leaked into REAL_ANSWERS: {answer}"
+    for pattern, answer, _ in module.load_real_answers(EXAMPLE_PATH):
+        assert not BANNED.search(pattern), f"legal/personal pattern leaked into real answers: {pattern}"
+        assert not BANNED.search(answer), f"legal/personal content leaked into real answers: {answer}"
 
 
-def test_real_answers_match_the_resume_only():
+def test_example_file_loads_and_every_pattern_compiles():
     module = _load_module()
-    answers = {answer for _, answer, _ in module.REAL_ANSWERS}
-    assert "Sean" in answers
-    assert "Finch" in answers
-    assert "alex@example.com" in answers
-    assert "Example University" in answers
+    rows = module.load_real_answers(EXAMPLE_PATH)
+    assert rows
+    for pattern, answer, field_type in rows:
+        re.compile(pattern)
+        assert answer and field_type
+
+
+def test_word_boundary_patterns_survive_yaml_loading():
+    module = _load_module()
+    patterns = {pattern for pattern, _, _ in module.load_real_answers(EXAMPLE_PATH)}
+    assert r"\bemail\b" in patterns
+
+
+def test_missing_local_file_exits_with_pointer_to_example(monkeypatch, tmp_path):
+    module = _load_module()
+    monkeypatch.setattr(module, "ANSWERS_PATH", tmp_path / "answers.local.yaml")
+    with pytest.raises(SystemExit) as exc:
+        module.main()
+    assert "answers.example.yaml" in str(exc.value)

@@ -1,6 +1,7 @@
 import inspect
 import json
 import os
+import threading
 import time
 from pathlib import Path
 
@@ -526,3 +527,64 @@ def test_run_marks_a_board_in_flight_before_fetching_it_and_clears_it_after(tmp_
     assert seen_in_flight[0] is not None
     final_progress = json.loads(progress_path.read_text())
     assert final_progress["in_flight_since"] is None
+
+
+def test_call_with_deadline_returns_the_value_and_reraises_errors():
+    assert engine._call_with_deadline(lambda: 42, 5, "ok") == 42
+
+    def boom():
+        raise ValueError("adapter blew up")
+
+    with pytest.raises(ValueError, match="adapter blew up"):
+        engine._call_with_deadline(boom, 5, "err")
+
+
+def test_call_with_deadline_abandons_a_hung_call_and_dumps_stacks(capfd):
+    release = threading.Event()
+    try:
+        with pytest.raises(engine.DeadlineExceeded):
+            engine._call_with_deadline(lambda: release.wait(30), 0.2, "hung-board")
+        # faulthandler writes to the real stderr fd, so capfd (not capsys)
+        # is what sees it. It labels threads by id, not name, so what makes
+        # the dump useful is the worker's own frame showing where it hung.
+        err = capfd.readouterr().err
+        assert "Thread 0x" in err
+        assert "in target" in err
+    finally:
+        release.set()
+
+
+def test_run_abandons_a_hung_board_and_still_finishes_the_rest(tmp_path, monkeypatch):
+    # Real incident: one board hung for 9+ hours and the whole run sat behind
+    # it. A wall-clock cap per board turns that into one recorded failure.
+    monkeypatch.setattr(engine, "BOARD_FETCH_DEADLINE_SECONDS", 0.2)
+    release = threading.Event()
+    db_path = tmp_path / "jobfinder.db"
+
+    profiles_dir = tmp_path / "profiles"
+    profiles_dir.mkdir()
+    (profiles_dir / "hung-test.yaml").write_text(yaml.safe_dump({
+        "boards": {"fake-hung-test": [{"token": "stuck"}, {"token": "fine"}]},
+        "filters": {},
+    }))
+
+    @register
+    class _FakeHungAdapter(Adapter):
+        name = "fake-hung-test"
+
+        def fetch(self, board):
+            if board["token"] == "stuck":
+                release.wait(30)
+            return [_job(external_id=board["token"], board_token=board["token"])]
+
+    try:
+        engine.run("hung-test", db_path=db_path, profiles_dir=profiles_dir)
+    finally:
+        release.set()
+
+    conn = db.connect(db_path)
+    health = {row["board_token"]: row for row in conn.execute("SELECT * FROM board_health")}
+    assert "deadline" in health["stuck"]["last_error"]
+    assert health["fine"]["last_ok"] is not None
+    progress = json.loads(Path(str(db_path) + ".scrape-progress.json").read_text())
+    assert progress["boards_done"] == 2

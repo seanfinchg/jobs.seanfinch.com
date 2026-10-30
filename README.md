@@ -48,7 +48,7 @@ The apply harness answers form questions from a local SQLite table. Copy `backen
 
 ## Contributing
 
-Branches are `dev` -> `stage` -> `prod`. Fork the repo, branch from `dev`, and open a pull request into `dev`. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Start with [AGENTS.md](AGENTS.md) for how the code is organized and the rules that must not break. Branches are `dev` -> `stage` -> `prod`. Fork the repo, branch from `dev`, and open a pull request into `dev`. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

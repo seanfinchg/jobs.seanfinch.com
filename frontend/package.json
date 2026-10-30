@@ -23,7 +23,7 @@
     "@eslint/js": "^9.39.4",
     "@netlify/functions": "^6.0.0",
     "@tailwindcss/vite": "^4.2.4",
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.6.5",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.59.2",

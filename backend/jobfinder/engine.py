@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import faulthandler
 import json
 import logging
 import re
+import sys
+import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -41,6 +44,49 @@ BODY_FETCH_DELAY_SECONDS = 0.2
 # redeploy-watch.sh checks (via `find -mmin`) before deciding it's safe to
 # rebuild -- keep that in sync with this if it ever changes.
 RUN_LOCK_MAX_AGE_SECONDS = 30 * 60
+
+# requests' timeout= bounds each socket read, not the whole call, so a server
+# that keeps trickling bytes (or a paginating adapter that never reaches its
+# last page) can hold one fetch open for hours with every individual read
+# succeeding. A board hung this way for 9+ hours on a real run. These are
+# wall-clock caps on the whole call. The status dashboard warns at 10
+# minutes; a legitimately large board takes a few, so 20 leaves headroom
+# while staying well inside RUN_LOCK_MAX_AGE_SECONDS' abandon threshold.
+BOARD_FETCH_DEADLINE_SECONDS = 20 * 60
+BODY_FETCH_DEADLINE_SECONDS = 2 * 60
+
+
+class DeadlineExceeded(RuntimeError):
+    """Raised by _call_with_deadline when the wrapped call outlives its cap."""
+
+
+def _call_with_deadline(fn, deadline_seconds: float, label: str):
+    """Run fn() with a wall-clock cap. On timeout, dump every thread's stack
+    to stderr (so the container logs show where it is actually stuck -- no
+    ptrace privilege or extra tooling needed) and raise DeadlineExceeded.
+
+    The worker thread cannot be killed, so a hung call is abandoned, not
+    stopped: it is a daemon thread (never blocks exit) and may keep running
+    in the background. Acceptable because it is idle-blocked by definition,
+    and far cheaper than the whole run stalling behind it."""
+    outcome: dict = {}
+
+    def target() -> None:
+        try:
+            outcome["value"] = fn()
+        except BaseException as exc:
+            outcome["error"] = exc
+
+    worker = threading.Thread(target=target, name=f"fetch-{label}", daemon=True)
+    worker.start()
+    worker.join(deadline_seconds)
+    if worker.is_alive():
+        logger.error("%s exceeded its %ss deadline; thread stacks follow", label, deadline_seconds)
+        faulthandler.dump_traceback(file=sys.stderr, all_threads=True)
+        raise DeadlineExceeded(f"{label} exceeded its {deadline_seconds}s deadline")
+    if "error" in outcome:
+        raise outcome["error"]
+    return outcome["value"]
 
 
 class RunAlreadyInProgress(RuntimeError):
@@ -330,7 +376,9 @@ def run(
                 ))
                 _touch_run_lock(lock_path)
                 try:
-                    jobs = adapter.fetch(board)
+                    jobs = _call_with_deadline(
+                        lambda: adapter.fetch(board), BOARD_FETCH_DEADLINE_SECONDS, f"{adapter_key}:{token}",
+                    )
                 except Exception as exc:
                     logger.error("skipping %s:%s, fetch failed: %s", adapter_key, token, exc)
                     db.record_board_health(conn, adapter_key, token, ok=False, error=str(exc), now=run_started_at)
@@ -365,7 +413,9 @@ def run(
 
                     if fetches_body:
                         try:
-                            body = adapter.fetch_body(job)
+                            body = _call_with_deadline(
+                                lambda: adapter.fetch_body(job), BODY_FETCH_DEADLINE_SECONDS, source_uid(job),
+                            )
                         except Exception as exc:
                             logger.error("fetch_body failed for %s: %s", source_uid(job), exc)
                             body = None

@@ -2,6 +2,8 @@
 
 Thanks for taking a look. Pull requests are welcome.
 
+Read [AGENTS.md](AGENTS.md) first: it explains the layout, the data flow, and the rules that tests enforce.
+
 ## Branches
 
 | Branch  | Purpose                        | How changes get in                 |

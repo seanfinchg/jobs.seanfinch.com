@@ -1,0 +1,38 @@
+name: Bug report
+description: Something is broken or gives the wrong result
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you expected and what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Exact commands or clicks. For a misclassified posting, include the title and company.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Backend (adapters, engine, classification)
+        - Dashboard (frontend)
+        - Data files (data.json, meta.json, fields.json)
+        - Docs
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: OS, Python version, Node version, or browser.
+  - type: markdown
+    attributes:
+      value: Do not paste personal data, credentials, or the contents of your local database.

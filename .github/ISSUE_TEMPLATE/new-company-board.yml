@@ -1,0 +1,38 @@
+name: New company board
+description: Ask for a company to be added to the polled job boards
+labels: [enhancement]
+body:
+  - type: input
+    id: company
+    attributes:
+      label: Company name
+    validations:
+      required: true
+  - type: input
+    id: careers
+    attributes:
+      label: Careers page URL
+    validations:
+      required: true
+  - type: dropdown
+    id: ats
+    attributes:
+      label: Applicant tracking system, if you know it
+      options:
+        - Greenhouse
+        - Lever
+        - Ashby
+        - SmartRecruiters
+        - Workable
+        - Rippling
+        - BambooHR
+        - Workday
+        - Not sure
+  - type: input
+    id: token
+    attributes:
+      label: Board token, if you know it
+      description: For example the slug in boards.greenhouse.io/<token>. Confirm it with backend/scripts/discover_tokens.py.
+  - type: markdown
+    attributes:
+      value: You can also open a pull request directly. See docs/good-first-tasks.md.

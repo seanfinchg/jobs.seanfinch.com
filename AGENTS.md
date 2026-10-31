@@ -1,6 +1,6 @@
 # Working in this repo
 
-A guide for anyone (or any coding assistant) picking this project up cold. Read it before changing code. [CONTRIBUTING.md](CONTRIBUTING.md) covers the branch and PR workflow; this file covers how the code is organized and what must not break.
+A guide for anyone (or any coding assistant) picking this project up cold. Read it before changing code. [CONTRIBUTING.md](CONTRIBUTING.md) covers the branch and PR workflow; this file covers how the code is organized and what must not break. Deeper guides live in [docs/](docs/README.md): [architecture](docs/architecture.md), [testing](docs/testing.md), [data contract](docs/data-contract.md), and [getting started](docs/getting-started.md).
 
 ## What this is
 
@@ -62,8 +62,8 @@ For dashboard work you don't need to run a scrape. The three data files are publ
 ## Common tasks
 
 - **Add a company to poll:** add `{company, token}` under the right adapter in `backend/boards/*.yaml`. Confirm the token against the live endpoint first; `backend/scripts/discover_tokens.py` does that.
-- **Add an ATS:** follow `backend/jobfinder/adapters/HOW_TO_ADD_AN_ADAPTER.md`. Subclass `Adapter`, register it, add a recorded-fixture test, and run it against the real API.
-- **Add a discipline:** follow `backend/profiles/HOW_TO_ADD_A_FIELD.md`. Fields and levels are YAML layers under `backend/profiles/`; check the result with `jobfinder profile show`.
+- **Add an ATS:** follow [docs/adding-an-adapter.md](docs/adding-an-adapter.md). Subclass `Adapter`, register it, add a recorded-fixture test, and run it against the real API.
+- **Add a discipline:** follow [docs/adding-a-field.md](docs/adding-a-field.md); keys are in [docs/profile-schema.md](docs/profile-schema.md). Fields and levels are YAML layers under `backend/profiles/`; check the result with `jobfinder profile show`.
 - **Change classification:** edit `classify.py` or the field YAML, add the real titles that motivated the change to a test, then run `jobfinder reclassify` against a local DB to see the effect on stored rows.
 - **Change the schema:** append a new numbered migration in `db.py`. Never edit a shipped one.
 - **Dashboard changes:** build, then actually open it in a browser at desktop and phone width. The build passing does not mean the UI works; there are no UI tests.
@@ -79,6 +79,13 @@ For dashboard work you don't need to run a scrape. The three data files are publ
 ## High-risk paths
 
 Anything merged to `prod` is built and run on the maintainer's server. Changes to `Dockerfile`, `docker-entrypoint.sh`, `docker-compose.yml`, `redeploy-watch.sh`, `.github/`, `package.json`, and any lockfile get read line by line before merging, because they can execute at build or deploy time. Don't touch them in an unrelated PR.
+
+## Before you start
+
+- Pick something from [docs/good-first-tasks.md](docs/good-first-tasks.md), or open an issue describing what you plan to change. Small fixes can go straight to a PR.
+- Ask first before: changing the export shape ([docs/data-contract.md](docs/data-contract.md)), lowering a fetch delay or adding parallel fetching, adding a dependency, editing a high-risk path, or restructuring directories.
+- Never run a full scrape to test a change; use a one-board scratch profile ([docs/getting-started.md](docs/getting-started.md)).
+- Every docs file lives under `docs/`. Link new ones from `docs/README.md`.
 
 ## Style
 

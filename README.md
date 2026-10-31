@@ -9,6 +9,7 @@ Discovery, filtering, classification, and dedup are plain deterministic code. An
 ```
 backend/    Python package (jobfinder/), CLI, tests, profiles, board lists
 frontend/   React + Vite + Tailwind dashboard, builds into frontend/dist
+docs/       all documentation, indexed in docs/README.md
 ```
 
 ## Setup
@@ -31,7 +32,7 @@ python -m jobfinder dashboard                            # writes ../frontend/pu
 python -m jobfinder profile show new-grad-cs             # print a profile's merged filters and boards
 ```
 
-Board lists and filters live in `backend/profiles/` (see `backend/profiles/_schema.md`) and `backend/boards/`. To add a new ATS, see `backend/jobfinder/adapters/HOW_TO_ADD_AN_ADAPTER.md`. To add a discipline, see `backend/profiles/HOW_TO_ADD_A_FIELD.md`.
+Board lists and filters live in `backend/profiles/` (see [docs/profile-schema.md](docs/profile-schema.md)) and `backend/boards/`. To add a new ATS, see [docs/adding-an-adapter.md](docs/adding-an-adapter.md). To add a discipline, see [docs/adding-a-field.md](docs/adding-a-field.md). A full run polls well over a hundred boards and is slow; to try the pipeline, scrape one board first ([docs/getting-started.md](docs/getting-started.md)).
 
 The dashboard:
 
@@ -48,7 +49,7 @@ The apply harness answers form questions from a local SQLite table. Copy `backen
 
 ## Contributing
 
-Start with [AGENTS.md](AGENTS.md) for how the code is organized and the rules that must not break. Branches are `dev` -> `stage` -> `prod`. Fork the repo, branch from `dev`, and open a pull request into `dev`. See [CONTRIBUTING.md](CONTRIBUTING.md).
+New here? [docs/getting-started.md](docs/getting-started.md) takes you from clone to pull request, and [docs/good-first-tasks.md](docs/good-first-tasks.md) lists approachable work. [AGENTS.md](AGENTS.md) covers how the code is organized and the rules that must not break; [docs/architecture.md](docs/architecture.md) explains how the pieces fit. Branches are `dev` -> `stage` -> `prod`. Fork the repo, branch from `dev`, and open a pull request into `dev`. See [CONTRIBUTING.md](CONTRIBUTING.md). The full documentation index is [docs/README.md](docs/README.md).
 
 ## License
 

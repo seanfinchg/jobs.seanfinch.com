@@ -2,7 +2,11 @@
 
 Thanks for taking a look. Pull requests are welcome.
 
-Read [AGENTS.md](AGENTS.md) first: it explains the layout, the data flow, and the rules that tests enforce.
+Read [AGENTS.md](AGENTS.md) first: it explains the layout, the data flow, and the rules that tests enforce. [docs/getting-started.md](docs/getting-started.md) walks through setup and a first PR, and the rest of the documentation is indexed in [docs/README.md](docs/README.md).
+
+## Picking a task
+
+Choose one from [docs/good-first-tasks.md](docs/good-first-tasks.md) or an open issue labeled `good first issue`. For anything bigger than a small fix, open an issue first and say what you plan to do, so the maintainer can confirm the direction before you spend time on it. Ask first if the change touches the data files' shape ([docs/data-contract.md](docs/data-contract.md)), request pacing, dependencies, or the Docker, deploy, workflow, and lockfile paths.
 
 ## Branches
 
@@ -38,7 +42,7 @@ npm ci
 npm run build
 ```
 
-CI runs the same commands, plus a secret scan and a dependency scan. A first-time contributor's workflows need the maintainer's approval before they run.
+CI runs backend tests, the frontend build, and secret and dependency scans. A first-time contributor's workflows need the maintainer's approval before they run, so a check that sits pending after you open the PR is normal.
 
 ## Ground rules
 
@@ -63,6 +67,14 @@ Every PR is merged with **"Create a merge commit"**. No squash and no rebase-mer
 - **Commit subject:** one line, at most 72 characters, no trailing period.
 - **Commit body (optional):** a blank line, then short `- ` bullets.
 - **PR description:** fill in the template with bullets only.
+
+## Review
+
+The maintainer reviews and merges every PR; nobody else merges. Expect comments rather than silence: small PRs get reviewed faster. Push follow-up commits to the same branch to address feedback. A PR that touches a high-risk path (see AGENTS.md) is read line by line and may take longer.
+
+## Labels
+
+`bug`, `enhancement`, `documentation`, `question`, `good first issue` (approachable, scoped), and `help wanted` (open for anyone to take). The maintainer applies them; issue forms add `bug` or `enhancement` automatically.
 
 ## Reporting a security problem
 

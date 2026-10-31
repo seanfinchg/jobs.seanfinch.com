@@ -404,12 +404,7 @@ export default function App(): React.JSX.Element {
     <div className="min-h-screen bg-ultra-dark-mode px-4 py-6 font-raleway text-ultra-light-mode sm:px-10 sm:py-10">
       <div className="mx-auto max-w-6xl animate-fade-up lg:max-w-352 2xl:max-w-400">
         <header className="mb-5 border-b border-white/10 pb-4 sm:mb-8 sm:pb-6">
-          <h1 className="font-jost text-2xl font-semibold text-light-mode sm:text-3xl">
-            <a href="https://seanfinch.com" className="hover:text-accent">
-              Sean Finch
-            </a>{" "}
-            — Job Search
-          </h1>
+          <h1 className="font-jost text-2xl font-semibold text-light-mode sm:text-3xl">Job Search</h1>
           <p className="mt-1 text-sm text-ultra-light-mode/50">
             Open roles, updated daily.
             {generatedAt && (

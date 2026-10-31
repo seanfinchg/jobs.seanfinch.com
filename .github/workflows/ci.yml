@@ -1,14 +1,18 @@
 name: CI
 
 on:
+  # Draft PRs run nothing; marking one ready for review runs everything.
   pull_request:
     branches: [dev, stage, prod]
+    types: [opened, synchronize, reopened, ready_for_review]
+  # Not on pushes to dev: every merge into dev already passed these checks on its PR.
   push:
-    branches: [dev, stage, prod]
+    branches: [stage, prod]
+  # Runs everything, the dependency scan included, on the chosen branch (Actions -> CI -> Run).
+  workflow_dispatch:
 
-# Read-only token, and no secrets are used anywhere in this workflow, so a
-# pull request from a fork can run it safely. Never switch the trigger to
-# pull_request_target.
+# Read-only token, and no secrets are used anywhere in this workflow, so a pull request
+# from a fork can run it safely. Never switch the trigger to pull_request_target.
 permissions:
   contents: read
 
@@ -16,21 +20,17 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  # The dependency scan only warns on dev so findings don't block day-to-day
-  # work. Anything headed for stage or prod must pass it.
-  SECURITY_WARN_ONLY: ${{ github.base_ref == 'dev' || github.ref == 'refs/heads/dev' }}
-
-# Tests never touch the network: adapters are covered by recorded fixtures.
+# Three jobs, so a PR into dev bills two: check and policy. The dependency scan is skipped
+# on PRs into dev (a skipped required check passes) and must pass before anything reaches
+# stage or prod. Run it on dev before a promotion: Actions -> CI -> Run workflow.
+# Every step is a command you can run locally; `scripts/check.sh` is the `check` job.
 # Actions are pinned to full commit SHAs.
 jobs:
-  backend:
-    name: backend (pytest)
+  check:
+    name: check (backend tests, frontend tests and build)
+    if: github.event.pull_request.draft != true
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -42,36 +42,56 @@ jobs:
           cache-dependency-path: |
             backend/requirements-lock.txt
             backend/requirements-dev-lock.txt
-      - run: pip install -r requirements-lock.txt -r requirements-dev-lock.txt
-      - run: pip install --no-deps -e ".[dev]"
-      - run: python -m pytest -q
-
-  frontend:
-    name: frontend (typecheck, build)
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
-      - run: npm run build
+      - run: pip install -r backend/requirements-lock.txt -r backend/requirements-dev-lock.txt
+      - run: pip install --no-deps -e "backend[dev]"
+      - run: npm ci --prefix frontend
+      - run: bash scripts/check.sh
 
-  branch-flow:
-    name: branch-flow (dev -> stage -> prod)
-    if: github.event_name == 'pull_request'
+  # The repository's own rules, in one job: secrets, protected files, and the
+  # dev -> stage -> prod flow.
+  policy:
+    name: policy (secrets, protected files, branch flow)
+    if: github.event.pull_request.draft != true
     runs-on: ubuntu-24.04
-    timeout-minutes: 2
+    timeout-minutes: 10
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # Full history. Image: zricethezav/gitleaks v8.30.1, pinned by digest.
+      - name: Secrets (gitleaks)
+        run: |
+          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/repo" -w /repo \
+            zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
+            git --redact --no-banner .
+      # Anything that runs at build or deploy time, or controls CI, is changed only in PRs
+      # opened by the maintainer. Dependabot may still bump pinned versions in these files.
+      - name: Only the maintainer may change deploy and CI files
+        if: (success() || failure()) && github.event_name == 'pull_request'
+        env:
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          BASE_REF: ${{ github.base_ref }}
+          MAINTAINER: seanfinchg
+        run: |
+          changed="$(git diff --name-only "origin/$BASE_REF...HEAD")"
+          protected="$(printf '%s\n' "$changed" | grep -E '^(\.github/|Dockerfile$|docker-entrypoint\.sh$|docker-compose\.yml$|redeploy-watch\.sh$|netlify\.toml$|osv-scanner\.toml$|scripts/check\.sh$)' || true)"
+          if [ "$AUTHOR" = "dependabot[bot]" ]; then
+            protected="$(printf '%s\n' "$protected" | grep -v -E '^(\.github/workflows/|Dockerfile$)' || true)"
+          fi
+          if [ -n "$protected" ] && [ "$AUTHOR" != "$MAINTAINER" ]; then
+            echo "Only $MAINTAINER may change these files:" >&2
+            printf '  %s\n' $protected >&2
+            exit 1
+          fi
+          echo "OK"
       - name: Only dev may merge into stage, and only stage into prod
+        if: (success() || failure()) && github.event_name == 'pull_request' && github.base_ref != 'dev'
         env:
           BASE: ${{ github.base_ref }}
           HEAD: ${{ github.head_ref }}
@@ -84,26 +104,11 @@ jobs:
           fi
           echo "OK: $HEAD -> $BASE"
 
-  secrets:
-    name: secrets (gitleaks)
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      # Always blocking. Full history; runs as the runner user so git trusts the checkout.
-      # Image: zricethezav/gitleaks v8.30.1, pinned by digest.
-      - name: Scan the full history for secrets
-        run: |
-          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/repo" -w /repo \
-            zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
-            git --redact --no-banner .
-
-  # Known vulnerabilities in every locked dependency.
-  security-deps:
-    name: security-deps (OSV-Scanner)
+  # Known vulnerabilities in every locked dependency. Accepted ones, each with a reason and
+  # an expiry date, live in osv-scanner.toml when that file exists.
+  security:
+    name: security (dependency scan)
+    if: github.event.pull_request.draft != true && (github.event_name == 'workflow_dispatch' || (github.base_ref != 'dev' && github.ref != 'refs/heads/dev'))
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -111,12 +116,10 @@ jobs:
         with:
           persist-credentials: false
       # Image: ghcr.io/google/osv-scanner v2.7.0, pinned by digest.
-      - id: osv
-        continue-on-error: ${{ env.SECURITY_WARN_ONLY == 'true' }}
+      - name: OSV-Scanner on the lockfiles
         run: |
+          config=""
+          if [ -f osv-scanner.toml ]; then config="--config osv-scanner.toml"; fi
           docker run --rm -v "$PWD:/src" -w /src \
             ghcr.io/google/osv-scanner:v2.7.0@sha256:4f3b7e2c64b9d38a5febc5a7e4a3dfef1d1362f726dea7a2ef4762b46469fcd0 \
-            scan source --lockfile backend/requirements-lock.txt --lockfile frontend/package-lock.json \
-              --config osv-scanner.toml
-      - if: steps.osv.outcome == 'failure'
-        run: echo "::warning title=OSV-Scanner::Findings above. Warning only on dev; this blocks stage and prod."
+            scan source --lockfile backend/requirements-lock.txt --lockfile frontend/package-lock.json $config

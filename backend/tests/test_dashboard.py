@@ -137,3 +137,14 @@ def test_export_writes_fields_json_alongside_data_json(tmp_path):
     # fields_dir), not the tmp fixture above -- security.yaml is one of them.
     slugs = {f["slug"] for f in fields}
     assert "security" in slugs
+
+
+def test_data_json_is_compact_and_still_the_same_list_shape(tmp_path):
+    conn = _seeded_conn()
+    out = dashboard.export_data(conn, docs_dir=tmp_path)
+    text = out.read_text()
+
+    # The browser parses every byte of this file, so whitespace is pure cost.
+    assert text == json.dumps(json.loads(text), separators=(",", ":"))
+    assert isinstance(json.loads(text), list)
+

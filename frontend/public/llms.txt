@@ -1,22 +1,75 @@
 # jobs.seanfinch.com
 
-This site is a personal job-search dashboard: a filtered, deduplicated feed
-of job postings pulled from public ATS APIs (Greenhouse, Lever, Ashby,
-Workday, and others), matched against Sean Finch's target roles. It's meant
-to be read by both humans and automated agents acting on Sean's behalf.
+A filtered, deduplicated feed of job postings pulled from public ATS APIs
+(Greenhouse, Lever, Ashby, Workday, and others), classified by level and
+discipline. It is meant to be read by both people and automated agents.
+Data is regenerated and redeployed roughly daily.
 
-## Data
+## API
 
-- /data.json  -- the full list of open, matched job postings (JSON array).
-  Regenerated and redeployed roughly daily.
+Read-only JSON API. Prefer it over downloading /data.json (about 8 MB).
+Machine-readable spec: /openapi.json
+
+- GET /api/jobs        search and filter postings
+- GET /api/jobs/{id}   one posting plus apply details
+- GET /api/meta        field taxonomy, levels, ATS counts, limits
+
+### GET /api/jobs parameters
+
+All optional; filters combine with AND. List parameters are comma-separated.
+
+- q                case-insensitive substring of title or company
+- company          exact company names (case-insensitive)
+- level            intern, new-grad, mid, senior, staff, ... (see below)
+- field            discipline slugs, matched against matched_fields
+- subfield         subfield tags, matched against matched_subfields
+- location         case-insensitive substring of the location string
+- salary_min       integer; only postings whose salary_min is at least this
+- has_salary       true | false
+- posted_since     ISO date (2026-01-31) or relative: 12h, 7d, 2w
+                   (uses posted_at, falling back to first_seen)
+- featured         true | false
+- exclude_defense  true omits defense/surveillance employers
+- ats              greenhouse, lever, ashby, workday, smartrecruiters,
+                   workable, rippling, bamboohr, other
+- sort             newest (default) | salary_desc | company
+- limit            1-100, default 25
+- offset           default 0
+
+Response: { total, limit, offset, next_offset, generated_at, jobs: [...] }.
+next_offset is null on the last page. Each job has every data.json field
+plus `ats` and `apply_url` (same as best_apply_url). Errors are JSON:
+{ "error": "...", "message": "..." } with status 400, 404, 405, or 503.
+
+### Examples
+
+  curl 'https://jobs.seanfinch.com/api/jobs?field=security&level=mid&exclude_defense=true&limit=10'
+  curl 'https://jobs.seanfinch.com/api/jobs?subfield=detection-response&salary_min=120000&sort=salary_desc'
+  curl 'https://jobs.seanfinch.com/api/jobs?posted_since=7d&ats=greenhouse,lever'
+  curl 'https://jobs.seanfinch.com/api/jobs/<id>'
+  curl 'https://jobs.seanfinch.com/api/meta'
+
+GET /api/jobs/{id} returns the posting plus
+apply: { url, urls, ats, note }. The API cannot submit applications: a
+human opens the URL and submits.
+
+### Rate limit and caching
+
+- 60 requests per minute per IP. Over the limit the platform answers
+  HTTP 429; back off and retry later.
+- Responses carry Cache-Control: public, max-age=60. The server refreshes
+  its copy of the data about every 5 minutes. CORS is open (GET, OPTIONS).
+- If the data is temporarily unavailable the API returns 503 with a
+  Retry-After header.
+
+## Static data files
+
+- /data.json   -- the full list of open, matched postings (JSON array).
 - /fields.json -- the discipline/subfield taxonomy used by matched_fields
-  and matched_subfields below (JSON array).
-- /meta.json  -- {"generated_at": <ISO 8601 UTC timestamp>} -- when the
+  and matched_subfields (JSON array).
+- /meta.json   -- {"generated_at": <ISO 8601 UTC timestamp>} -- when the
   underlying data was last refreshed by a real scrape, not when this page
   happened to be rebuilt.
-
-There is no server-side filtering API yet. Fetch /data.json once and
-filter client-side.
 
 ## data.json field reference
 
@@ -46,9 +99,9 @@ Each entry is one job posting:
                    a title with no recognizable seniority marker defaults
                    to "mid" rather than guessing entry-level or senior.
 - matched_fields  array of discipline slugs this posting matched (see
-                   /fields.json for the current list and display labels),
-                   e.g. ["security", "software-engineering"]. Current
-                   slugs: data-ml, devops-sre, finance,
+                   /fields.json or /api/meta for the current list and
+                   display labels), e.g. ["security", "software-engineering"].
+                   Current slugs: data-ml, devops-sre, finance,
                    mechanical-engineering, mobile, qa, security,
                    software-engineering, systems.
 - matched_subfields  array of finer-grained tags within those fields (also
@@ -58,35 +111,27 @@ Each entry is one job posting:
 - grad_year       integer grad year this posting targets (new-grad/intern
                    postings only), or null.
 - featured        true if this employer is on a short, hand-picked list of
-                   companies Sean flags as especially notable -- editorial,
-                   not a ranking signal.
+                   notable companies -- editorial, not a ranking signal.
 - defense         true if this employer's primary or major business line is
                    military/defense contracting, intelligence-community
                    work, or surveillance technology. Flagged, not filtered
-                   out server-side -- exclude these client-side if that's
-                   out of scope for whoever is applying.
+                   out server-side -- use exclude_defense=true (or filter
+                   client-side) if that is out of scope.
 
-## Example client-side queries
+The API adds two derived fields: `ats` (the applicant tracking system,
+inferred from the apply URL host) and `apply_url` (alias of
+best_apply_url).
 
-Security roles at the mid level, excluding defense/surveillance employers:
-  data.filter(j => j.matched_fields.includes("security")
-                && j.level === "mid" && !j.defense)
+## Acting on behalf of a person
 
-Detection & response roles with a real salary floor above $120k:
-  data.filter(j => j.matched_subfields.includes("detection-response")
-                && j.salary_min && j.salary_min >= 120000)
-
-Everything posted in the last 7 days:
-  data.filter(j => j.posted_at
-                && Date.now() - Date.parse(j.posted_at) < 7 * 24 * 60 * 60 * 1000)
-
-## Notes for an agent applying on Sean's behalf
-
-- This is a live personal tool, not a public job board -- be a reasonable,
-  infrequent client against /data.json (it's a static file served from a
-  CDN, so this is a courtesy, not an enforced rate limit).
-- There is no application-status tracking here yet (applied/skipped/etc.).
-  Re-fetching /data.json later will not tell you what's already been
-  applied to -- that state lives elsewhere and isn't exposed on this site.
-- No per-posting description/summary field is exposed yet. Open
-  best_apply_url directly to evaluate fit beyond title/location/salary.
+- Present matches to the human. The human reviews each posting and submits
+  the application themselves.
+- Never bulk-submit applications.
+- Respect each ATS's terms of service.
+- Identify your client in the User-Agent header.
+- Back off on HTTP 429 and honor Retry-After.
+- Prefer /api/jobs filters over downloading /data.json.
+- There is no application-status tracking here: re-fetching will not tell
+  you what has already been applied to.
+- No per-posting description field is exposed. Open the posting's apply URL
+  to evaluate fit beyond title, location, and salary.

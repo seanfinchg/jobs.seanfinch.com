@@ -22,6 +22,12 @@ DEPLOY_BRANCH="${DEPLOY_BRANCH:-prod}"
 
 cd "$(dirname "$0")"
 
+# The scheduler may run this as a different user than the one that owns the
+# checkout, and git refuses that by default ("dubious ownership"). Trusting
+# this one directory through the environment applies to this process only,
+# unlike `git config --global`, which would persist and trust it everywhere.
+export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$(pwd)"
+
 git fetch origin "$DEPLOY_BRANCH" --quiet
 
 LOCAL_HEAD=$(git rev-parse HEAD)

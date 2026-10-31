@@ -4,10 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#1a1a1a" />
-    <title>Sean Finch — job search</title>
+    <title>Job search</title>
     <meta name="description" content="Live, self-updating dashboard of matched job postings, refreshed daily." />
     <meta name="robots" content="noindex" />
     <link rel="alternate" type="application/json" href="/data.json" title="Job postings (JSON)" />
+    <!-- The app fetches these with fetch("data.json") only after its script has loaded and
+         run; preloading starts the requests during HTML parse. crossorigin="anonymous"
+         matches fetch()'s default same-origin credentials so the preload is reused, not
+         downloaded twice. -->
+    <link rel="preload" href="data.json" as="fetch" crossorigin="anonymous" />
+    <link rel="preload" href="fields.json" as="fetch" crossorigin="anonymous" />
+    <link rel="preload" href="meta.json" as="fetch" crossorigin="anonymous" />
   </head>
   <body>
     <div id="root"></div>

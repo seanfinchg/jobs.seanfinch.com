@@ -1,0 +1,12 @@
+# Known vulnerabilities that are not reachable in this project. Each entry needs a
+# reason and an expiry date; after it expires the scan fails again and the entry must
+# be re-checked (is there a fix now? is it still unreachable?).
+
+# minimatch: denial of service via glob-pattern amplification. Fixed only in 11.x, but
+# ESLint 9 uses the 3.x line and typescript-eslint pins ^10, so no compatible upgrade
+# exists. Both copies are dev-only tooling that reads globs from this repo's own
+# config, never from untrusted input, and none of it is in the built bundle.
+[[IgnoredVulns]]
+id = "GHSA-g3hv-75wg-m249"
+ignoreUntil = 2026-11-30
+reason = "Dev-only transitive dependency (eslint, typescript-eslint); globs come from our own config, not untrusted input; not in the shipped bundle; no compatible fix until ESLint and typescript-eslint move to minimatch 11"

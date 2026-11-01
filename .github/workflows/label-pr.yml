@@ -1,0 +1,73 @@
+name: Label PR
+
+# Gives every PR one type label (feat, fix, docs, chore, dependencies, release) and adds
+# `deploy-sensitive` when it touches files that run at build or deploy time, so a reviewer
+# sees at a glance which PRs need a line-by-line read. A type label set by hand is never
+# replaced. Release notes are grouped by these labels (.github/release.yml).
+#
+# pull_request_target so fork and Dependabot PRs get a token that can label. This is safe
+# only because the job never checks out or runs code from the PR: it reads the PR's title,
+# author and file names through the API and passes them in as environment variables, never
+# interpolated into the script.
+on:
+  pull_request_target:
+    types: [opened, reopened, edited, synchronize, ready_for_review]
+    branches: [dev, stage, prod]
+
+permissions: {}
+
+concurrency:
+  group: label-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  label:
+    name: label PR by type
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Add type and deploy-sensitive labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          BASE: ${{ github.event.pull_request.base.ref }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          ensure() { gh label create "$1" --repo "$REPO" --color "$2" --description "$3" 2>/dev/null || true; }
+          ensure feat 1a7f37 "New or changed behaviour"
+          ensure fix d73a4a "Bug fix"
+          ensure docs 0075ca "Documentation only"
+          ensure chore cfd3d7 "Tooling, CI, config or refactoring"
+          ensure dependencies 0366d6 "Dependency updates"
+          ensure release 5319e7 "Promotion to stage or prod"
+          ensure deploy-sensitive b60205 "Touches files that run at build or deploy time"
+
+          labels="$(gh api "repos/$REPO/issues/$PR/labels" --jq '.[].name')"
+          files="$(gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[].filename')"
+          first="$(printf '%s' "$TITLE" | awk '{print tolower($1)}')"
+          only() { [ -n "$files" ] && ! printf '%s\n' "$files" | grep -qvE "$1"; }
+
+          if ! printf '%s\n' "$labels" | grep -qxE 'feat|fix|docs|chore|dependencies|release'; then
+            if [ "$AUTHOR" = "dependabot[bot]" ]; then type=dependencies
+            elif [ "$BASE" = "stage" ] || [ "$BASE" = "prod" ]; then type=release
+            elif only '(\.md$|^docs/)'; then type=docs
+            else
+              case "$first" in
+                fix|fixes|fixed|correct|repair|resolve) type=fix ;;
+                add|build|show|create|implement|support|allow|enable|let|make|introduce) type=feat ;;
+                *) type=chore ;;
+              esac
+            fi
+            gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=$type" > /dev/null
+            echo "Labelled #$PR as $type"
+          fi
+
+          if printf '%s\n' "$files" | grep -qE '^(\.github/|Dockerfile$|docker-entrypoint\.sh$|docker-compose\.yml$|redeploy-watch\.sh$|netlify\.toml$|osv-scanner\.toml$|scripts/check\.sh$|backend/requirements[^/]*\.txt$)|(^|/)package(-lock)?\.json$'; then
+            gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=deploy-sensitive" > /dev/null
+            echo "Labelled #$PR as deploy-sensitive"
+          fi

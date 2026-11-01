@@ -1,0 +1,13 @@
+# Groups the notes of each prod release by the labels the labeler workflow sets.
+changelog:
+  categories:
+    - title: Features
+      labels: [feat]
+    - title: Fixes
+      labels: [fix]
+    - title: Documentation
+      labels: [docs]
+    - title: Dependencies
+      labels: [dependencies]
+    - title: Maintenance
+      labels: [chore, release]

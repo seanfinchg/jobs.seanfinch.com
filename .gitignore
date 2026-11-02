@@ -32,12 +32,11 @@ answers.local.yaml
 jobfinder.db
 jobfinder.db-wal
 jobfinder.db-shm
+jobfinder.db.*
 resume.pdf
 
 # Local Netlify folder
 .netlify
 
-# Stale GitHub Pages build output from before the dashboard moved to
-# Netlify -- dead build artifact, not source, nothing in the current
-# pipeline reads from it.
-docs/
+# Throwaway one-board profile used in docs/getting-started.md
+backend/profiles/scratch.yaml

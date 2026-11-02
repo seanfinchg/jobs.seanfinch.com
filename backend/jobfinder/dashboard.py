@@ -74,7 +74,10 @@ def export_data(
         data.append(entry)
 
     out_path = docs_dir / "data.json"
-    out_path.write_text(json.dumps(data, indent=2))
+    # Compact on purpose: indent=2 pads 10k postings out to ~8.3 MB, and the browser
+    # parses every byte. Same JSON, same shape, ~16% smaller uncompressed (about 2.5%
+    # smaller on the wire, since compression already removes most of the whitespace).
+    out_path.write_text(json.dumps(data, separators=(",", ":")))
 
     # Separate from data.json on purpose -- data.json's shape is a bare
     # array (the frontend fetches it straight into Job[]), so run metadata

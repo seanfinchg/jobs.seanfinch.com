@@ -64,7 +64,7 @@ This is purely additive to a field file -- a new `profiles/fields/<name>.yaml`
 with `filters` but no `label`/`subfields` still works for ingest, it just
 won't get a real dashboard label or any sub-tags until those are added.
 
-See `profiles/HOW_TO_ADD_A_FIELD.md` for a full worked example (writing a
+See [adding-a-field.md](adding-a-field.md) for a full worked example (writing a
 field file, wiring it into a profile, verifying it end to end).
 
 ## `{grad_years}` placeholder

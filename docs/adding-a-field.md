@@ -19,7 +19,7 @@ specific to one career track:
 
 None of this needs to touch `jobfinder/classify.py`, `jobfinder/engine.py`,
 `jobfinder/dashboard.py`, or anything on the frontend — those all read field
-files dynamically at runtime. See `profiles/_schema.md` for the exhaustive
+files dynamically at runtime. See [profile-schema.md](profile-schema.md) for the exhaustive
 key-by-key reference; this doc is the worked walkthrough.
 
 ## 2. Write the field file
@@ -83,7 +83,7 @@ fields: [software-engineering, data-ml, devops-sre, qa, mobile, systems, hardwar
 
 `engine.load_profile()` loads every listed field's YAML and merges its
 `filters` into the profile's effective rules (list-valued filter keys
-concatenate across every layer that defines them; see `profiles/_schema.md`'s
+concatenate across every layer that defines them; see [profile-schema.md](profile-schema.md)'s
 `level`/`fields` section for the full merge semantics) — no other edit
 needed for ingest to pick it up.
 
@@ -114,5 +114,5 @@ read every field file generically, not hardcode a list of known fields.
   an unrelated title).
 - Confirmed against real live postings, not just fixtures — same rule as
   every other change to the ingest/filtering path.
-- `profiles/_schema.md` already documents `label`/`subfields`; only touch it
+- [profile-schema.md](profile-schema.md) already documents `label`/`subfields`; only touch it
   if this field needs a genuinely new key shape neither already covers.

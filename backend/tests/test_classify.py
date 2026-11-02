@@ -199,7 +199,7 @@ def test_grad_year_pattern_stays_correct_across_a_decade_boundary():
 
 def test_classify_subfields_reads_tag_pattern_from_field_yaml(tmp_path):
     # Subfields are declared per-field in profiles/fields/<name>.yaml's own
-    # `subfields:` list (see profiles/_schema.md), not a hardcoded Python
+    # `subfields:` list (see docs/profile-schema.md), not a hardcoded Python
     # dict -- this is the loader mechanism itself, independent of any one
     # field's real vocabulary (covered by the tests above, which exercise
     # the real shipped YAML files).

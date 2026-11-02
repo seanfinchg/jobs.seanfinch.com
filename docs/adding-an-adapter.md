@@ -2,8 +2,8 @@
 
 Worked example, using `lever.py` as the annotated reference — it's the
 simplest adapter that still hits a real, live, unauthenticated API. Adding
-a new source should mean writing one new file in this directory; nothing
-outside `adapters/` should need to change.
+a new source should mean writing one new file in `backend/jobfinder/adapters/`; nothing
+outside that directory should need to change.
 
 ## 1. The contract you're implementing
 
@@ -37,12 +37,11 @@ doesn't provide:
 - `fetch_questions(job) -> list[dict] | None` — the application-form
   question schema, if the ATS exposes one (`greenhouse.py` is the only
   adapter that overrides this today).
-- `fetch_body(job) -> str | None` — **coming, not yet landed.** Once it
-  exists, it'll be the place to fetch a posting's description lazily,
-  after the cheap filters already ran, for ATSes whose list endpoint
-  doesn't include one (`smartrecruiters`, `workable`). Don't build your
-  own body-fetch inside `fetch()` for a new adapter in the meantime — if
-  your list endpoint already includes a description, just populate `body`
+- `fetch_body(job) -> str | None` — a second, per-posting request for ATSes
+  whose list endpoint doesn't include a description (`smartrecruiters` and
+  `bamboohr` override it). The engine calls it only for a posting that
+  already cleared the title/location filters, to bound the extra requests.
+  If your list endpoint already includes a description, populate `body`
   directly in `fetch()`, the way `lever.py` does below.
 
 An adapter must never filter, score, classify, or know anything about
@@ -185,7 +184,7 @@ boards:
 What `token` means is adapter-specific — for most ATSes it's the
 company's board slug in that ATS's own URL. If your adapter needs more
 than `token`/`company` (Workday needs `tenant`/`wd`/`site`, for example —
-see `workday.py`), document that in `profiles/_schema.md`'s `boards`
+see `workday.py`), document that in [profile-schema.md](profile-schema.md)'s `boards`
 section, the same way Workday's entry does.
 
 ## 6. Writing a fixture-based regression test
@@ -244,6 +243,6 @@ it rather than inventing a mocking approach per adapter.
 - A fixture captured from that real call, and a test asserting `fetch()`
   parses it correctly.
 - Registered in `adapters/__init__.py`.
-- `profiles/_schema.md` updated if your adapter needs board-config keys
+- [profile-schema.md](profile-schema.md) updated if your adapter needs board-config keys
   beyond the universal `token`/`company`.
 - `pytest` green from `backend/`.

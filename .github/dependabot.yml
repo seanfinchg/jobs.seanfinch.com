@@ -9,6 +9,10 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    # Major versions are upgraded by hand, as one reviewed PR, never by a weekly bot PR.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     cooldown:
       default-days: 3
     groups:
@@ -21,6 +25,10 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    # Major versions are upgraded by hand, as one reviewed PR, never by a weekly bot PR.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     open-pull-requests-limit: 10
     cooldown:
       default-days: 3
@@ -51,3 +59,7 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    # Major versions are upgraded by hand, as one reviewed PR, never by a weekly bot PR.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]

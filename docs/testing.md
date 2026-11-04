@@ -77,8 +77,7 @@ Fixtures catch regressions. They do not prove an adapter works. Before a change 
 
 ## What is not covered
 
-- The frontend has no UI tests of any kind. `npm run build` runs the TypeScript typecheck, and that is the only automated check. Dashboard changes need a manual look in a browser at desktop and phone width.
-- `npm run lint` fails: the `lint` script and the ESLint packages exist, but there is no ESLint config file yet. This is a known gap, not something you broke.
+- The frontend has no UI tests of any kind. CI runs oxfmt, ESLint, the TypeScript typecheck and the build, but nothing renders a page. Dashboard changes need a manual look in a browser at desktop and phone width.
 - The Workday adapter's `fetch` (pagination, parsing) has no fixture test; only its URL helpers are tested.
 - There is no test that upgrades a database created at an older schema version through the later migrations.
 - The Netlify function in `frontend/netlify/functions/` has no tests.

@@ -57,7 +57,7 @@ npm run dev        # local dev server (Vite)
 npm run build      # typecheck (tsc) and production build into frontend/dist
 ```
 
-`npm run format:check`, `npm run lint` (strict type-checked ESLint, no warnings allowed), `npm run typecheck` and `npm test` are the other checks CI runs. From `backend/`, CI also runs `ruff format --check .`, `ruff check .` and `pyright`.
+`npm run format:check`, `npm run lint` (strict type-checked ESLint, no warnings allowed), `npm run typecheck` and `npm test` are the other checks CI runs. From `backend/`, CI also runs `ruff format --check .`, `ruff check .` and `pyright` (strict mode).
 
 ### Getting data for dashboard work
 

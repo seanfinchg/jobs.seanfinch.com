@@ -15,4 +15,3 @@ pytest==9.1.1
 ruff==0.17.3
 types-PyYAML==6.0.12.20261030
 types-requests==2.33.0.20261030
-typing_extensions==4.16.0

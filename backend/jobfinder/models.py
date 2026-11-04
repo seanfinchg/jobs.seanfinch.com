@@ -23,7 +23,7 @@ def source_uid(job: RawJob) -> str:
     return f"{job.adapter}:{job.board_token}:{job.external_id}"
 
 
-class Question(TypedDict, total=False):
+class Question(TypedDict):
     """One application-form question, as an adapter's fetch_questions()
     returns it and db.add_questions() stores it."""
 

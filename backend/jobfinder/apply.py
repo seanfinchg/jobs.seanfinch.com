@@ -8,6 +8,7 @@ from typing import NotRequired, Protocol, TypedDict
 
 from jobfinder import db
 from jobfinder.adapters.workday import is_workday_url
+from jobfinder.config import required_str
 from jobfinder.normalize import norm
 
 # Every function down to run() takes a duck-typed `filler`/`page` object with
@@ -18,8 +19,11 @@ from jobfinder.normalize import norm
 
 
 class FormField(TypedDict):
+    """A form field discover_fields() found. prompt_and_save() only needs
+    the label, so selector is optional here and checked by fill_field()."""
+
     label: str
-    selector: str
+    selector: NotRequired[str]
     field_type: NotRequired[str]
     required: NotRequired[bool]
 
@@ -61,7 +65,7 @@ def match_answer(conn: sqlite3.Connection, label: str) -> str | None:
 
 def fill_field(field: FormField, value: str, filler: Filler) -> None:
     field_type = field.get("field_type", "input_text")
-    selector = field["selector"]
+    selector = required_str(field, "selector")
 
     if field_type == "input_file":
         filler.set_input_files(selector, value)

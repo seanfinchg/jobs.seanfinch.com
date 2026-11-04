@@ -10,6 +10,7 @@ import threading
 import time
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -190,7 +191,7 @@ def _release_run_lock(lock_path: Path | None) -> None:
         lock_path.unlink(missing_ok=True)
 
 
-def _substitute_grad_years(value):
+def _substitute_grad_years(value: Any) -> Any:
     """Recursively replaces the `{grad_years}` placeholder token in any
     string loaded from a profile/level/field YAML with the real, current
     year-window regex (classify.grad_year_pattern()) -- computed once per

@@ -61,6 +61,7 @@ def test_in_flight_seconds_none_when_nothing_in_flight():
 def test_in_flight_seconds_measures_time_since_board_started():
     since = (datetime.now(UTC) - timedelta(seconds=90)).isoformat()
     seconds = status_server._in_flight_seconds({"in_flight_since": since})
+    assert seconds is not None
     assert 89 < seconds < 91
 
 

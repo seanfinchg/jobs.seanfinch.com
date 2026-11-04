@@ -6,6 +6,13 @@ from jobfinder import db
 from jobfinder.models import RawJob
 
 
+def _job_row(conn: sqlite3.Connection, content_hash: str) -> sqlite3.Row:
+    """get_job, for a hash the test just stored."""
+    row = db.get_job(conn, content_hash)
+    assert row is not None
+    return row
+
+
 @pytest.fixture
 def conn():
     connection = sqlite3.connect(":memory:")
@@ -80,7 +87,7 @@ def test_native_apply_url_is_never_downgraded(conn):
     hash_ = db.upsert_job(conn, native_job, profile="p", is_native=True, now="t1")
     db.upsert_job(conn, aggregator_job, profile="p", is_native=False, now="t2")
 
-    job = db.get_job(conn, hash_)
+    job = _job_row(conn, hash_)
     assert job["best_apply_url"] == native_job.url
 
 
@@ -92,7 +99,7 @@ def test_closure_flips_status_when_board_stops_listing_it(conn):
 
     assert closed == 1
     assert (
-        db.get_job(conn, db.normalize.content_hash(job.company, job.title, job.location))["status"]
+        _job_row(conn, db.normalize.content_hash(job.company, job.title, job.location))["status"]
         == "closed"
     )
 
@@ -116,7 +123,7 @@ def test_closure_spares_a_job_still_open_via_another_source(conn):
     closed = db.close_stale_sightings(conn, "greenhouse", "acme", "t2")
 
     assert closed == 0
-    assert db.get_job(conn, hash_)["status"] == "new"
+    assert _job_row(conn, hash_)["status"] == "new"
 
 
 def test_a_failing_board_is_never_passed_to_closure(conn):
@@ -125,14 +132,10 @@ def test_a_failing_board_is_never_passed_to_closure(conn):
     job = _job()
     db.upsert_job(conn, job, profile="p", is_native=True, now="t1")
 
-    job_row_before = db.get_job(
-        conn, db.normalize.content_hash(job.company, job.title, job.location)
-    )
+    job_row_before = _job_row(conn, db.normalize.content_hash(job.company, job.title, job.location))
     assert job_row_before["status"] == "new"
     # no close_stale_sightings call here -- board fetch "failed"
-    job_row_after = db.get_job(
-        conn, db.normalize.content_hash(job.company, job.title, job.location)
-    )
+    job_row_after = _job_row(conn, db.normalize.content_hash(job.company, job.title, job.location))
     assert job_row_after["status"] == "new"
 
 
@@ -146,7 +149,7 @@ def test_closure_does_not_touch_a_different_boards_jobs(conn):
     db.close_stale_sightings(conn, "greenhouse", "acme", "t2")
 
     hash_b = db.normalize.content_hash(job_b.company, job_b.title, job_b.location)
-    assert db.get_job(conn, hash_b)["status"] == "new"
+    assert _job_row(conn, hash_b)["status"] == "new"
 
 
 def test_touch_sighting_prevents_false_closure_when_filtered_out(conn):
@@ -168,7 +171,7 @@ def test_queued_or_applied_status_is_not_clobbered_by_closure(conn):
 
     db.close_stale_sightings(conn, "greenhouse", "acme", "t2")
 
-    assert db.get_job(conn, hash_)["status"] == "queued"
+    assert _job_row(conn, hash_)["status"] == "queued"
 
 
 def test_board_health_records_failure_without_wiping_last_ok(conn):

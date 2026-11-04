@@ -11,6 +11,7 @@ SCRIPT_PATH = Path(__file__).parent.parent / "scripts" / "discover_tokens.py"
 
 def _load_module():
     spec = importlib.util.spec_from_file_location("discover_tokens", SCRIPT_PATH)
+    assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module

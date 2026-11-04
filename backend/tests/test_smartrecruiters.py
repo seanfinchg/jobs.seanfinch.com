@@ -64,5 +64,6 @@ def test_fetch_body_strips_html_across_sections(monkeypatch):
         )
     )
 
+    assert body is not None
     assert "Ship security tooling." in body
     assert "CS degree" in body

@@ -464,6 +464,7 @@ def test_memory_db_never_creates_a_run_lock():
 def test_run_lock_blocks_a_second_concurrent_run_against_the_same_db(tmp_path):
     db_path = tmp_path / "jobfinder.db"
     lock_path = engine._acquire_run_lock(db_path)
+    assert lock_path is not None
     assert lock_path == Path(str(db_path) + ".run-lock")
     assert lock_path.exists()
 
@@ -497,6 +498,7 @@ def test_touch_run_lock_refreshes_mtime_so_a_long_real_run_never_looks_stale(tmp
     # RUN_LOCK_MAX_AGE_SECONDS from when it *started*.
     db_path = tmp_path / "jobfinder.db"
     lock_path = engine._acquire_run_lock(db_path)
+    assert lock_path is not None
     old_time = time.time() - engine.RUN_LOCK_MAX_AGE_SECONDS - 60
     os.utime(lock_path, (old_time, old_time))
 

@@ -8,7 +8,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "pyright", "ruff", "types-PyYAML", "types-requests"]
 apply = ["playwright"]
 
 [build-system]
@@ -27,6 +27,8 @@ select = ["E", "F", "I", "B", "UP"]
 # Long lines left are SQL, inline HTML and message strings, which the formatter does not wrap.
 ignore = ["E501"]
 
+# Standard mode for now: strict reports about 570 errors in jobfinder/ and 810 in tests/
+# (mostly unannotated parameters and untyped YAML/JSON). Moving to strict is a follow-up.
 [tool.pyright]
 include = ["jobfinder", "scripts", "tests"]
 pythonVersion = "3.12"

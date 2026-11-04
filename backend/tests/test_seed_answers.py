@@ -16,6 +16,7 @@ BANNED = re.compile(
 
 def _load_module():
     spec = importlib.util.spec_from_file_location("seed_answers", SCRIPT_PATH)
+    assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module

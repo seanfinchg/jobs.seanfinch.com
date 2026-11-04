@@ -1,5 +1,14 @@
+import sqlite3
+
 from jobfinder import db, review
 from jobfinder.models import RawJob
+
+
+def _job_row(conn: sqlite3.Connection, content_hash: str) -> sqlite3.Row:
+    """get_job, for a hash the test just stored."""
+    row = db.get_job(conn, content_hash)
+    assert row is not None
+    return row
 
 
 def _job(conn, company, title, now):
@@ -35,8 +44,8 @@ def test_queue_and_skip_mark_status_and_advance():
 
     review.review_loop(conn, jobs, ask=_scripted(["q", "s"]))
 
-    assert db.get_job(conn, h2)["status"] == "queued"
-    assert db.get_job(conn, h1)["status"] == "skipped"
+    assert _job_row(conn, h2)["status"] == "queued"
+    assert _job_row(conn, h1)["status"] == "skipped"
 
 
 def test_open_stays_on_same_job_without_changing_status():
@@ -46,13 +55,13 @@ def test_open_stays_on_same_job_without_changing_status():
 
     review.review_loop(
         conn,
-        [db.get_job(conn, h1)],
+        [_job_row(conn, h1)],
         ask=_scripted(["o", "n"]),
         opener=lambda url: opened.append(url),
     )
 
     assert opened == ["https://example.com/Acme"]
-    assert db.get_job(conn, h1)["status"] == "new"
+    assert _job_row(conn, h1)["status"] == "new"
 
 
 def test_back_returns_to_previous_job():
@@ -63,8 +72,8 @@ def test_back_returns_to_previous_job():
 
     review.review_loop(conn, jobs, ask=_scripted(["n", "b", "q", "Q"]))
 
-    assert db.get_job(conn, h2)["status"] == "queued"
-    assert db.get_job(conn, h1)["status"] == "new"
+    assert _job_row(conn, h2)["status"] == "queued"
+    assert _job_row(conn, h1)["status"] == "new"
 
 
 def test_quit_leaves_remaining_jobs_untouched():
@@ -75,8 +84,8 @@ def test_quit_leaves_remaining_jobs_untouched():
 
     review.review_loop(conn, jobs, ask=_scripted(["q", "Q"]))
 
-    assert db.get_job(conn, h2)["status"] == "queued"
-    assert db.get_job(conn, h1)["status"] == "new"
+    assert _job_row(conn, h2)["status"] == "queued"
+    assert _job_row(conn, h1)["status"] == "new"
 
 
 def test_new_jobs_by_score_orders_by_recency_and_excludes_other_statuses():

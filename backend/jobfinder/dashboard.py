@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
@@ -104,7 +104,7 @@ def export_data(
     # `jobfinder dashboard` CLI usage, which has no other timestamp to use.
     meta_path = docs_dir / "meta.json"
     meta_path.write_text(
-        json.dumps({"generated_at": generated_at or datetime.now(timezone.utc).isoformat()})
+        json.dumps({"generated_at": generated_at or datetime.now(UTC).isoformat()})
     )
 
     # Also separate from data.json: per-field display metadata (label,

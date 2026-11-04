@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from jobfinder.adapters.base import Adapter
 from jobfinder.adapters.registry import register
@@ -52,11 +52,7 @@ class SimplifyListingsAdapter(Adapter):
             if not entry.get("active", True):
                 continue
             posted_ms = entry.get("date_posted")
-            posted_at = (
-                datetime.fromtimestamp(posted_ms, tz=timezone.utc).isoformat()
-                if posted_ms
-                else None
-            )
+            posted_at = datetime.fromtimestamp(posted_ms, tz=UTC).isoformat() if posted_ms else None
             locations = entry.get("locations") or []
             jobs.append(
                 RawJob(

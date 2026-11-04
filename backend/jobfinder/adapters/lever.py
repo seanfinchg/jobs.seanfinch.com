@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from jobfinder.adapters.base import Adapter
 from jobfinder.adapters.registry import register
@@ -26,7 +26,7 @@ class LeverAdapter(Adapter):
         for item in postings:
             created_ms = item.get("createdAt")
             posted_at = (
-                datetime.fromtimestamp(created_ms / 1000, tz=timezone.utc).isoformat()
+                datetime.fromtimestamp(created_ms / 1000, tz=UTC).isoformat()
                 if created_ms
                 else None
             )

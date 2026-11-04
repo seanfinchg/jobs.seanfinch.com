@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from jobfinder import status_server
 
@@ -59,7 +59,7 @@ def test_in_flight_seconds_none_when_nothing_in_flight():
 
 
 def test_in_flight_seconds_measures_time_since_board_started():
-    since = (datetime.now(timezone.utc) - timedelta(seconds=90)).isoformat()
+    since = (datetime.now(UTC) - timedelta(seconds=90)).isoformat()
     seconds = status_server._in_flight_seconds({"in_flight_since": since})
     assert 89 < seconds < 91
 
@@ -74,7 +74,7 @@ def test_build_status_flags_stalled_past_the_warning_threshold(tmp_path, monkeyp
 
     progress_path = tmp_path / "jobfinder.db.scrape-progress.json"
     stale_since = (
-        datetime.now(timezone.utc) - timedelta(seconds=status_server.STALL_WARNING_SECONDS + 60)
+        datetime.now(UTC) - timedelta(seconds=status_server.STALL_WARNING_SECONDS + 60)
     ).isoformat()
     progress_path.write_text(
         json.dumps(

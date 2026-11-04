@@ -155,8 +155,8 @@ _URL_PATTERNS: list[tuple[str, re.Pattern]] = [
 
 
 def discover_from_aggregator(db_path: str = "jobfinder.db") -> list[dict]:
-    from jobfinder.adapters.workday import parse_workday_url
     from jobfinder import db as jobfinder_db
+    from jobfinder.adapters.workday import parse_workday_url
 
     conn = jobfinder_db.connect(db_path)
     rows = conn.execute(

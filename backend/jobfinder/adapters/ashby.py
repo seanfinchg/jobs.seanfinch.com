@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from jobfinder.adapters.base import Adapter
-from jobfinder.adapters.registry import register
 from jobfinder.adapters.greenhouse import strip_html
+from jobfinder.adapters.registry import register
 from jobfinder.http import session
 from jobfinder.models import RawJob
 

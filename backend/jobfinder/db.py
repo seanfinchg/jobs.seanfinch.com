@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
@@ -159,7 +159,7 @@ MIGRATIONS: list[tuple[int, str]] = [
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def sync_fields(conn: sqlite3.Connection, fields_dir: Path) -> None:

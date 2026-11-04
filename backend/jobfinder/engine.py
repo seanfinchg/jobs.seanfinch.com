@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import faulthandler
+import functools
 import json
 import logging
 import re
 import sys
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
@@ -126,7 +127,7 @@ def _acquire_run_lock(db_path: Path | str) -> Path | None:
         logger.warning(
             "stale run lock at %s (%.0fs old) -- treating as abandoned, proceeding", lock_path, age
         )
-    lock_path.write_text(datetime.now(timezone.utc).isoformat())
+    lock_path.write_text(datetime.now(UTC).isoformat())
     return lock_path
 
 
@@ -170,7 +171,7 @@ def _progress_snapshot(
         "boards_total": boards_total,
         "total_stored": total_stored,
         "started_at": run_started_at,
-        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(UTC).isoformat(),
         "in_flight_since": in_flight_since,
         "finished_at": finished_at,
     }
@@ -181,7 +182,7 @@ def _touch_run_lock(lock_path: Path | None) -> None:
     reflecting "last real activity," which is what RUN_LOCK_MAX_AGE_SECONDS
     actually measures against now, not "time since this run started"."""
     if lock_path is not None:
-        lock_path.write_text(datetime.now(timezone.utc).isoformat())
+        lock_path.write_text(datetime.now(UTC).isoformat())
 
 
 def _release_run_lock(lock_path: Path | None) -> None:
@@ -358,7 +359,7 @@ def run(
     # so they'd just slow the test suite down for no reason if applied there.
     throttle = str(db_path) != ":memory:"
     try:
-        run_started_at = datetime.now(timezone.utc).isoformat()
+        run_started_at = datetime.now(UTC).isoformat()
         successful_boards: list[tuple[str, str]] = []
         # A real run against 150+ boards takes long enough (each board now
         # deliberately paced, see BOARD_FETCH_DELAY_SECONDS above) that
@@ -395,13 +396,13 @@ def run(
                         boards_total=boards_total,
                         total_stored=total_stored,
                         run_started_at=run_started_at,
-                        in_flight_since=datetime.now(timezone.utc).isoformat(),
+                        in_flight_since=datetime.now(UTC).isoformat(),
                     ),
                 )
                 _touch_run_lock(lock_path)
                 try:
                     jobs = _call_with_deadline(
-                        lambda: adapter.fetch(board),
+                        functools.partial(adapter.fetch, board),
                         BOARD_FETCH_DEADLINE_SECONDS,
                         f"{adapter_key}:{token}",
                     )
@@ -449,7 +450,7 @@ def run(
                     if fetches_body:
                         try:
                             body = _call_with_deadline(
-                                lambda: adapter.fetch_body(job),
+                                functools.partial(adapter.fetch_body, job),
                                 BODY_FETCH_DEADLINE_SECONDS,
                                 source_uid(job),
                             )
@@ -539,7 +540,7 @@ def run(
                 boards_total=boards_total,
                 total_stored=total_stored,
                 run_started_at=run_started_at,
-                finished_at=datetime.now(timezone.utc).isoformat(),
+                finished_at=datetime.now(UTC).isoformat(),
             ),
         )
     finally:

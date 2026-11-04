@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from jobfinder.adapters.base import Adapter
 from jobfinder.adapters.registry import register
@@ -69,7 +69,7 @@ def _parse_posted_on(text: str) -> str | None:
     Days Ago", "Posted 30+ Days Ago"), never a real date -- best-effort
     parse only, same spirit as this repo's salary extraction."""
     text = (text or "").strip().lower()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if text == "posted today":
         return now.isoformat()
     if text == "posted yesterday":

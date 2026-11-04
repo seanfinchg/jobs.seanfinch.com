@@ -4,7 +4,7 @@ import json
 import os
 import sqlite3
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -58,7 +58,7 @@ def _last_scrape_iso() -> str | None:
         epoch = float(LAST_SCRAPE_PATH.read_text().strip())
     except (OSError, ValueError):
         return None
-    return datetime.fromtimestamp(epoch, tz=timezone.utc).isoformat()
+    return datetime.fromtimestamp(epoch, tz=UTC).isoformat()
 
 
 def _board_health_summary() -> dict:
@@ -90,7 +90,7 @@ def _in_flight_seconds(progress: dict | None) -> float | None:
     if not progress or not progress.get("in_flight_since"):
         return None
     since = datetime.fromisoformat(progress["in_flight_since"])
-    return (datetime.now(timezone.utc) - since).total_seconds()
+    return (datetime.now(UTC) - since).total_seconds()
 
 
 def build_status() -> dict:
@@ -104,7 +104,7 @@ def build_status() -> dict:
         "stalled": in_flight_seconds is not None and in_flight_seconds > STALL_WARNING_SECONDS,
         "last_scrape_at": _last_scrape_iso(),
         "board_health": health,
-        "checked_at": datetime.now(timezone.utc).isoformat(),
+        "checked_at": datetime.now(UTC).isoformat(),
     }
 
 

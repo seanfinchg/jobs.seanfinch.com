@@ -53,5 +53,7 @@ def test_content_hash_distinguishes_same_role_different_team():
 
 def test_content_hash_with_team_still_collides_on_text_variants():
     a = content_hash("Acme", "Senior Software Engineer", "New York, NY", "Platform")
-    b = content_hash("Acme", "Sr. Software Engineer", "New York, New York, United States", "platform")
+    b = content_hash(
+        "Acme", "Sr. Software Engineer", "New York, New York, United States", "platform"
+    )
     assert a == b

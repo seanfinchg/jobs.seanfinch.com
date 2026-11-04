@@ -79,7 +79,9 @@ def discover_fields(page) -> list[dict]:
 
         tag = input_el.evaluate("el => el.tagName.toLowerCase()")
         input_type = input_el.evaluate("el => el.type || ''") if tag == "input" else ""
-        required = bool(input_el.evaluate("el => el.required || el.getAttribute('aria-required') === 'true'"))
+        required = bool(
+            input_el.evaluate("el => el.required || el.getAttribute('aria-required') === 'true'")
+        )
 
         if input_type == "file":
             field_type = "input_file"
@@ -90,7 +92,14 @@ def discover_fields(page) -> list[dict]:
         else:
             field_type = "input_text"
 
-        fields.append({"label": label_text, "selector": selector, "field_type": field_type, "required": required})
+        fields.append(
+            {
+                "label": label_text,
+                "selector": selector,
+                "field_type": field_type,
+                "required": required,
+            }
+        )
     return fields
 
 
@@ -120,7 +129,9 @@ def run(conn: sqlite3.Connection, *, headless: bool = False) -> None:
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as p:
-        browser = p.chromium.launch_persistent_context(user_data_dir=".jobfinder-browser-profile", headless=False)
+        browser = p.chromium.launch_persistent_context(
+            user_data_dir=".jobfinder-browser-profile", headless=False
+        )
         try:
             for row in fillable:
                 page = browser.new_page()
@@ -132,9 +143,13 @@ def run(conn: sqlite3.Connection, *, headless: bool = False) -> None:
                     value = prompt_and_save(conn, field)
                     fill_field(field, value, page)
 
-                print(f"\a{row['company']} | {row['title']} is filled in. Review it, solve any captcha, "
-                      "and press submit yourself, then come back here and press Enter.")
+                print(
+                    f"\a{row['company']} | {row['title']} is filled in. Review it, solve any captcha, "
+                    "and press submit yourself, then come back here and press Enter."
+                )
                 input()
-                db.record_application(conn, row["content_hash"], outcome="filled_pending_manual_submit")
+                db.record_application(
+                    conn, row["content_hash"], outcome="filled_pending_manual_submit"
+                )
         finally:
             browser.close()

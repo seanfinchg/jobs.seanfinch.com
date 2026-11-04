@@ -42,7 +42,9 @@ class WorkableAdapter(Adapter):
         jobs = []
         for item in payload.get("results", []):
             location = item.get("location") or {}
-            location_str = ", ".join(part for part in [location.get("city"), location.get("country")] if part)
+            location_str = ", ".join(
+                part for part in [location.get("city"), location.get("country")] if part
+            )
             jobs.append(
                 RawJob(
                     adapter=self.name,

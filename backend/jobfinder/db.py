@@ -16,7 +16,9 @@ from jobfinder.models import RawJob, source_uid
 # now it's meant to persist indefinitely, so it needs to be
 # upgradeable in place instead of assuming a fresh file every time.
 MIGRATIONS: list[tuple[int, str]] = [
-    (1, """
+    (
+        1,
+        """
         CREATE TABLE IF NOT EXISTS jobs (
             content_hash TEXT PRIMARY KEY,
             company TEXT NOT NULL,
@@ -79,22 +81,37 @@ MIGRATIONS: list[tuple[int, str]] = [
             outcome TEXT,
             notes TEXT
         );
-    """),
-    (2, """
+    """,
+    ),
+    (
+        2,
+        """
         ALTER TABLE jobs ADD COLUMN salary_min INTEGER;
         ALTER TABLE jobs ADD COLUMN salary_max INTEGER;
-    """),
-    (3, """
+    """,
+    ),
+    (
+        3,
+        """
         ALTER TABLE jobs ADD COLUMN level TEXT;
         ALTER TABLE jobs ADD COLUMN matched_fields TEXT;
-    """),
-    (4, """
+    """,
+    ),
+    (
+        4,
+        """
         ALTER TABLE jobs ADD COLUMN matched_subfields TEXT;
-    """),
-    (5, """
+    """,
+    ),
+    (
+        5,
+        """
         ALTER TABLE jobs ADD COLUMN grad_year INTEGER;
-    """),
-    (6, """
+    """,
+    ),
+    (
+        6,
+        """
         -- Normalizes what used to be jobs.matched_fields/matched_subfields
         -- (JSON text blobs, unindexable) into real join tables, so "every
         -- finance job" or "every appsec-tagged job" is an indexed lookup
@@ -136,7 +153,8 @@ MIGRATIONS: list[tuple[int, str]] = [
         -- (adapter, board_token) once per board every run.
         CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
         CREATE INDEX IF NOT EXISTS idx_sightings_adapter_board ON sightings(adapter, board_token);
-    """),
+    """,
+    ),
 ]
 
 
@@ -193,7 +211,9 @@ def set_job_fields(
     for slug in field_slugs:
         conn.execute("INSERT OR IGNORE INTO fields (slug, label) VALUES (?, ?)", (slug, slug))
     for field_slug, tag in subfield_pairs:
-        conn.execute("INSERT OR IGNORE INTO fields (slug, label) VALUES (?, ?)", (field_slug, field_slug))
+        conn.execute(
+            "INSERT OR IGNORE INTO fields (slug, label) VALUES (?, ?)", (field_slug, field_slug)
+        )
         conn.execute(
             "INSERT OR IGNORE INTO subfields (field_slug, tag, label) VALUES (?, ?, ?)",
             (field_slug, tag, tag),
@@ -293,10 +313,23 @@ def upsert_job(
                 matched_subfields, grad_year)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, '', ?, ?, ?, ?, ?, ?)""",
             (
-                target_hash, job.company, job.title, job.location,
-                normalize.location_bucket(job.location), job.url, int(is_native),
-                job.body, job.posted_at, now, now, profile,
-                salary_min, salary_max, level, matched_fields_json, matched_subfields_json,
+                target_hash,
+                job.company,
+                job.title,
+                job.location,
+                normalize.location_bucket(job.location),
+                job.url,
+                int(is_native),
+                job.body,
+                job.posted_at,
+                now,
+                now,
+                profile,
+                salary_min,
+                salary_max,
+                level,
+                matched_fields_json,
+                matched_subfields_json,
                 grad_year,
             ),
         )
@@ -312,9 +345,18 @@ def upsert_job(
                best_apply_url = ?, best_is_native = ?, salary_min = ?, salary_max = ?,
                level = ?, matched_fields = ?, matched_subfields = ?, grad_year = ?
                WHERE content_hash = ?""",
-            (now, best_apply_url, best_is_native,
-             salary_min, salary_max, level, matched_fields_json, matched_subfields_json,
-             grad_year, target_hash),
+            (
+                now,
+                best_apply_url,
+                best_is_native,
+                salary_min,
+                salary_max,
+                level,
+                matched_fields_json,
+                matched_subfields_json,
+                grad_year,
+                target_hash,
+            ),
         )
 
     if sighting:
@@ -343,7 +385,9 @@ def touch_sighting(conn: sqlite3.Connection, uid: str, now: str) -> None:
     conn.commit()
 
 
-def close_stale_sightings(conn: sqlite3.Connection, adapter: str, board_token: str, run_started_at: str) -> int:
+def close_stale_sightings(
+    conn: sqlite3.Connection, adapter: str, board_token: str, run_started_at: str
+) -> int:
     """Call once per board, only for a board whose fetch succeeded this run.
 
     A sighting not refreshed since run_started_at means the board no longer
@@ -369,7 +413,9 @@ def close_stale_sightings(conn: sqlite3.Connection, adapter: str, board_token: s
             "SELECT status FROM jobs WHERE content_hash = ?", (row["content_hash"],)
         ).fetchone()
         if current and current["status"] == "new":
-            conn.execute("UPDATE jobs SET status = 'closed' WHERE content_hash = ?", (row["content_hash"],))
+            conn.execute(
+                "UPDATE jobs SET status = 'closed' WHERE content_hash = ?", (row["content_hash"],)
+            )
             closed += 1
     conn.commit()
     return closed
@@ -437,7 +483,9 @@ def queued_jobs(conn: sqlite3.Connection) -> list[sqlite3.Row]:
 
 def new_jobs_by_score(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     """Name is legacy (scoring was removed) -- newest-discovered first."""
-    return conn.execute("SELECT * FROM jobs WHERE status = 'new' ORDER BY first_seen DESC").fetchall()
+    return conn.execute(
+        "SELECT * FROM jobs WHERE status = 'new' ORDER BY first_seen DESC"
+    ).fetchall()
 
 
 def set_status(conn: sqlite3.Connection, content_hash: str, status: str) -> None:
@@ -456,8 +504,12 @@ def add_questions(conn: sqlite3.Connection, uid: str, questions: list[dict]) -> 
                    field_type = excluded.field_type, required = excluded.required,
                    values_json = excluded.values_json""",
             (
-                uid, q.get("name", ""), q.get("label", ""), norm_label,
-                q.get("field_type", ""), int(bool(q.get("required"))),
+                uid,
+                q.get("name", ""),
+                q.get("label", ""),
+                norm_label,
+                q.get("field_type", ""),
+                int(bool(q.get("required"))),
                 json.dumps(q.get("values", [])),
             ),
         )

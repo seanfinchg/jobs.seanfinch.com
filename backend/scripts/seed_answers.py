@@ -34,22 +34,39 @@ def load_real_answers(path: Path) -> list[tuple[str, str, str]]:
 
 
 TODO_PLACEHOLDERS = [
-    (r"work authoriz|authorized to work|legally (authorized|eligible)",
-     "TODO: fill in yourself -- work authorization status", "multi_value_single_select"),
-    (r"sponsor(ship)?",
-     "TODO: fill in yourself -- visa sponsorship needs", "multi_value_single_select"),
-    (r"veteran|disab(led|ility)|race|ethnicity|gender( identity)?|sexual orientation",
-     "TODO: fill in yourself -- EEOC/demographic question, optional on most forms", "multi_value_single_select"),
-    (r"security clearance|ts/sci|polygraph",
-     "TODO: fill in yourself -- clearance status", "multi_value_single_select"),
-    (r"salary expectat|desired salary|compensation expectat",
-     "TODO: fill in yourself -- salary expectations", "input_text"),
+    (
+        r"work authoriz|authorized to work|legally (authorized|eligible)",
+        "TODO: fill in yourself -- work authorization status",
+        "multi_value_single_select",
+    ),
+    (
+        r"sponsor(ship)?",
+        "TODO: fill in yourself -- visa sponsorship needs",
+        "multi_value_single_select",
+    ),
+    (
+        r"veteran|disab(led|ility)|race|ethnicity|gender( identity)?|sexual orientation",
+        "TODO: fill in yourself -- EEOC/demographic question, optional on most forms",
+        "multi_value_single_select",
+    ),
+    (
+        r"security clearance|ts/sci|polygraph",
+        "TODO: fill in yourself -- clearance status",
+        "multi_value_single_select",
+    ),
+    (
+        r"salary expectat|desired salary|compensation expectat",
+        "TODO: fill in yourself -- salary expectations",
+        "input_text",
+    ),
 ]
 
 
 def main() -> None:
     if not ANSWERS_PATH.exists():
-        sys.exit(f"{ANSWERS_PATH.name} not found -- copy answers.example.yaml to it and fill in your details")
+        sys.exit(
+            f"{ANSWERS_PATH.name} not found -- copy answers.example.yaml to it and fill in your details"
+        )
     real_answers = [RESUME_ANSWER] + load_real_answers(ANSWERS_PATH)
     conn = db.connect(DB_PATH)
     for pattern, answer, field_type in real_answers + TODO_PLACEHOLDERS:

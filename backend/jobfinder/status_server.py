@@ -111,7 +111,11 @@ def build_status() -> dict:
 def _render_html(status: dict) -> str:
     progress = status["progress"]
     if status["scraping"] and progress:
-        pct = round(100 * progress["boards_done"] / progress["boards_total"]) if progress["boards_total"] else 0
+        pct = (
+            round(100 * progress["boards_done"] / progress["boards_total"])
+            if progress["boards_total"]
+            else 0
+        )
         in_flight_seconds = status["in_flight_seconds"]
         if in_flight_seconds is not None:
             board_line = (
@@ -129,17 +133,17 @@ def _render_html(status: dict) -> str:
             board_line = f"-- last completed <code>{progress['adapter']}:{progress['token']}</code>"
             stall_html = ""
         progress_html = f"""
-        <p><strong>Scraping now</strong> -- profile <code>{progress['profile']}</code></p>
-        <p>Board {progress['boards_done']} of {progress['boards_total']} ({pct}%) {board_line}</p>
+        <p><strong>Scraping now</strong> -- profile <code>{progress["profile"]}</code></p>
+        <p>Board {progress["boards_done"]} of {progress["boards_total"]} ({pct}%) {board_line}</p>
         {stall_html}
-        <p>{progress['total_stored']} posting(s) stored/updated so far this run, started {progress['started_at']}</p>
+        <p>{progress["total_stored"]} posting(s) stored/updated so far this run, started {progress["started_at"]}</p>
         """
     elif progress:
         progress_html = f"""
-        <p><strong>Idle</strong> -- last run (<code>{progress['profile']}</code>) finished
-           {progress.get('finished_at', 'unknown')}</p>
-        <p>{progress['boards_done']} of {progress['boards_total']} boards,
-           {progress['total_stored']} posting(s) stored/updated</p>
+        <p><strong>Idle</strong> -- last run (<code>{progress["profile"]}</code>) finished
+           {progress.get("finished_at", "unknown")}</p>
+        <p>{progress["boards_done"]} of {progress["boards_total"]} boards,
+           {progress["total_stored"]} posting(s) stored/updated</p>
         """
     else:
         progress_html = "<p>No scrape has run yet since this container started.</p>"
@@ -170,12 +174,12 @@ h1 {{ font-size: 1.3rem; }} h2 {{ font-size: 1rem; color: #aaa; margin-top: 2rem
 <h1>jobfinder scrape status</h1>
 {progress_html}
 <h2>Last completed scrape</h2>
-<p>{status['last_scrape_at'] or 'never'}</p>
+<p>{status["last_scrape_at"] or "never"}</p>
 <h2>Total jobs in DB</h2>
-<p>{status['board_health']['total_jobs']}</p>
-<h2>Board health -- {len(status['board_health']['failing'])} of {status['board_health']['total_boards']} currently failing</h2>
+<p>{status["board_health"]["total_jobs"]}</p>
+<h2>Board health -- {len(status["board_health"]["failing"])} of {status["board_health"]["total_boards"]} currently failing</h2>
 {failing_html}
-<p style="color:#666; font-size:0.8rem; margin-top:2rem;">Checked {status['checked_at']} -- refreshes every 15s.</p>
+<p style="color:#666; font-size:0.8rem; margin-top:2rem;">Checked {status["checked_at"]} -- refreshes every 15s.</p>
 </body></html>"""
 
 

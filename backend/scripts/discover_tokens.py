@@ -68,7 +68,9 @@ def _probe_ashby(slug: str) -> tuple[bool, int]:
 
 
 def _probe_smartrecruiters(slug: str) -> tuple[bool, int]:
-    resp = requests.get(f"https://api.smartrecruiters.com/v1/companies/{slug}/postings", timeout=TIMEOUT)
+    resp = requests.get(
+        f"https://api.smartrecruiters.com/v1/companies/{slug}/postings", timeout=TIMEOUT
+    )
     if resp.status_code != 200:
         return False, 0
     jobs = resp.json().get("content", [])
@@ -89,7 +91,9 @@ def _probe_workable(slug: str) -> tuple[bool, int]:
 
 
 def _probe_rippling(slug: str) -> tuple[bool, int]:
-    resp = requests.get(f"https://api.rippling.com/platform/api/ats/v1/board/{slug}/jobs", timeout=TIMEOUT)
+    resp = requests.get(
+        f"https://api.rippling.com/platform/api/ats/v1/board/{slug}/jobs", timeout=TIMEOUT
+    )
     if resp.status_code != 200:
         return False, 0
     jobs = resp.json()
@@ -126,7 +130,14 @@ def probe_company(company_name: str, *, sleep: float = SLEEP_BETWEEN_REQUESTS) -
                 confirmed, job_count = False, 0
             time.sleep(sleep)
             if confirmed:
-                hits.append({"company": company_name, "adapter": adapter, "token": slug, "job_count": job_count})
+                hits.append(
+                    {
+                        "company": company_name,
+                        "adapter": adapter,
+                        "token": slug,
+                        "job_count": job_count,
+                    }
+                )
     return hits
 
 
@@ -168,7 +179,14 @@ def discover_from_aggregator(db_path: str = "jobfinder.db") -> list[dict]:
             key = ("workday", workday_ids["tenant"], workday_ids["wd"], workday_ids["site"])
             if key not in seen:
                 seen.add(key)
-                hits.append({"company": row["company"], "adapter": "workday", "job_count": None, **workday_ids})
+                hits.append(
+                    {
+                        "company": row["company"],
+                        "adapter": "workday",
+                        "job_count": None,
+                        **workday_ids,
+                    }
+                )
             continue
 
         for adapter, pattern in _URL_PATTERNS:
@@ -179,7 +197,9 @@ def discover_from_aggregator(db_path: str = "jobfinder.db") -> list[dict]:
             if (adapter, token) in seen:
                 continue
             seen.add((adapter, token))
-            hits.append({"company": row["company"], "adapter": adapter, "token": token, "job_count": None})
+            hits.append(
+                {"company": row["company"], "adapter": adapter, "token": token, "job_count": None}
+            )
     return hits
 
 
@@ -191,11 +211,16 @@ def _print_yaml_fragment(hits: list[dict]) -> None:
     for adapter, adapter_hits in sorted(by_adapter.items()):
         print(f"  {adapter}:")
         for hit in adapter_hits:
-            note = f"{hit['job_count']} jobs" if hit.get("job_count") is not None else "via aggregator"
+            note = (
+                f"{hit['job_count']} jobs" if hit.get("job_count") is not None else "via aggregator"
+            )
             if adapter == "workday":
                 entry = {
-                    "company": hit["company"], "token": hit["tenant"],
-                    "tenant": hit["tenant"], "wd": hit["wd"], "site": hit["site"],
+                    "company": hit["company"],
+                    "token": hit["tenant"],
+                    "tenant": hit["tenant"],
+                    "wd": hit["wd"],
+                    "site": hit["site"],
                 }
             else:
                 entry = {"company": hit["company"], "token": hit["token"]}
@@ -208,7 +233,10 @@ def _print_yaml_fragment(hits: list[dict]) -> None:
 
 def main(argv: list[str]) -> None:
     if not argv:
-        print("usage: discover_tokens.py --from-aggregator | <company name> [<company name> ...]", file=sys.stderr)
+        print(
+            "usage: discover_tokens.py --from-aggregator | <company name> [<company name> ...]",
+            file=sys.stderr,
+        )
         raise SystemExit(1)
 
     if argv[0] == "--from-aggregator":

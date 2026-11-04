@@ -9,14 +9,28 @@ from jobfinder.models import RawJob
 
 DASHBOARD_SRC = Path(__file__).parent.parent.parent / "frontend" / "src"
 
-SENSITIVE_SUBSTRINGS = ["answer", "resume", "pattern", "outcome", "notes", "reasons", "submitted", "status"]
+SENSITIVE_SUBSTRINGS = [
+    "answer",
+    "resume",
+    "pattern",
+    "outcome",
+    "notes",
+    "reasons",
+    "submitted",
+    "status",
+]
 
 
 def _job(**overrides):
     base = dict(
-        adapter="greenhouse", company="Acme", board_token="acme", external_id="1",
-        title="Security Engineer", location="Boston, MA",
-        url="https://boards.greenhouse.io/acme/jobs/1", body="secret internal notes",
+        adapter="greenhouse",
+        company="Acme",
+        board_token="acme",
+        external_id="1",
+        title="Security Engineer",
+        location="Boston, MA",
+        url="https://boards.greenhouse.io/acme/jobs/1",
+        body="secret internal notes",
     )
     base.update(overrides)
     return RawJob(**base)
@@ -33,7 +47,12 @@ def _seeded_conn():
 # What actually ends up in an exported row: PUBLIC_FIELDS minus the raw
 # content_hash column (renamed to the opaque `id`), plus the two fields
 # export_data() computes rather than selects directly.
-EXPORTED_ROW_FIELDS = (set(dashboard.PUBLIC_FIELDS) - {"content_hash"}) | {"id", "apply_urls", "featured", "defense"}
+EXPORTED_ROW_FIELDS = (set(dashboard.PUBLIC_FIELDS) - {"content_hash"}) | {
+    "id",
+    "apply_urls",
+    "featured",
+    "defense",
+}
 
 
 def test_export_shape_is_the_public_allowlist_only(tmp_path):
@@ -111,10 +130,14 @@ def test_export_uses_an_explicit_generated_at_instead_of_now_when_given(tmp_path
 def test_fields_metadata_reads_label_and_subfields_from_field_yaml(tmp_path):
     fields_dir = tmp_path / "fields"
     fields_dir.mkdir()
-    (fields_dir / "security.yaml").write_text(yaml.safe_dump({
-        "label": "Security",
-        "subfields": [{"tag": "appsec", "label": "AppSec", "pattern": "appsec"}],
-    }))
+    (fields_dir / "security.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "label": "Security",
+                "subfields": [{"tag": "appsec", "label": "AppSec", "pattern": "appsec"}],
+            }
+        )
+    )
     # A field with no label at all (no dashboard-facing name yet) shouldn't
     # show up in fields.json -- filters can still work for it.
     (fields_dir / "no_label.yaml").write_text(yaml.safe_dump({"filters": {}}))
@@ -124,7 +147,11 @@ def test_fields_metadata_reads_label_and_subfields_from_field_yaml(tmp_path):
     fields = dashboard._load_fields_metadata(fields_dir=fields_dir)
     assert fields == [
         {"slug": "qa", "label": "QA", "subfields": []},
-        {"slug": "security", "label": "Security", "subfields": [{"tag": "appsec", "label": "AppSec"}]},
+        {
+            "slug": "security",
+            "label": "Security",
+            "subfields": [{"tag": "appsec", "label": "AppSec"}],
+        },
     ]
 
 
@@ -147,4 +174,3 @@ def test_data_json_is_compact_and_still_the_same_list_shape(tmp_path):
     # The browser parses every byte of this file, so whitespace is pure cost.
     assert text == json.dumps(json.loads(text), separators=(",", ":"))
     assert isinstance(json.loads(text), list)
-

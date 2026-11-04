@@ -8,8 +8,13 @@ from jobfinder.models import RawJob
 
 def _job(**overrides):
     base = dict(
-        adapter="greenhouse", company="Acme", board_token="acme", external_id="1",
-        title="Security Engineer", location="Boston, MA", url="https://example.com",
+        adapter="greenhouse",
+        company="Acme",
+        board_token="acme",
+        external_id="1",
+        title="Security Engineer",
+        location="Boston, MA",
+        url="https://example.com",
         body="",
     )
     base.update(overrides)

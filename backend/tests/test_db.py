@@ -17,9 +17,14 @@ def conn():
 
 def _job(**overrides):
     base = dict(
-        adapter="greenhouse", company="Acme", board_token="acme", external_id="1",
-        title="Security Engineer", location="Boston, MA",
-        url="https://boards.greenhouse.io/acme/jobs/1", body="",
+        adapter="greenhouse",
+        company="Acme",
+        board_token="acme",
+        external_id="1",
+        title="Security Engineer",
+        location="Boston, MA",
+        url="https://boards.greenhouse.io/acme/jobs/1",
+        body="",
     )
     base.update(overrides)
     return RawJob(**base)
@@ -40,11 +45,15 @@ def test_upsert_is_idempotent(conn):
 
 def test_cross_source_dedup_links_one_job_two_sightings(conn):
     aggregator_job = _job(
-        adapter="simplify_listings", board_token="new-grad", external_id="sl-1",
+        adapter="simplify_listings",
+        board_token="new-grad",
+        external_id="sl-1",
         url="https://simplify.jobs/redirect/1",
     )
     native_job = _job(
-        adapter="greenhouse", board_token="acme", external_id="1",
+        adapter="greenhouse",
+        board_token="acme",
+        external_id="1",
         url="https://boards.greenhouse.io/acme/jobs/1",
     )
 
@@ -62,7 +71,9 @@ def test_cross_source_dedup_links_one_job_two_sightings(conn):
 def test_native_apply_url_is_never_downgraded(conn):
     native_job = _job(adapter="greenhouse", board_token="acme", external_id="1")
     aggregator_job = _job(
-        adapter="simplify_listings", board_token="new-grad", external_id="sl-1",
+        adapter="simplify_listings",
+        board_token="new-grad",
+        external_id="sl-1",
         url="https://simplify.jobs/redirect/1",
     )
 
@@ -80,13 +91,18 @@ def test_closure_flips_status_when_board_stops_listing_it(conn):
     closed = db.close_stale_sightings(conn, "greenhouse", "acme", "t2")
 
     assert closed == 1
-    assert db.get_job(conn, db.normalize.content_hash(job.company, job.title, job.location))["status"] == "closed"
+    assert (
+        db.get_job(conn, db.normalize.content_hash(job.company, job.title, job.location))["status"]
+        == "closed"
+    )
 
 
 def test_closure_spares_a_job_still_open_via_another_source(conn):
     native_job = _job(adapter="greenhouse", board_token="acme", external_id="1")
     aggregator_job = _job(
-        adapter="simplify_listings", board_token="new-grad", external_id="sl-1",
+        adapter="simplify_listings",
+        board_token="new-grad",
+        external_id="sl-1",
         url="https://simplify.jobs/redirect/1",
     )
 
@@ -109,10 +125,14 @@ def test_a_failing_board_is_never_passed_to_closure(conn):
     job = _job()
     db.upsert_job(conn, job, profile="p", is_native=True, now="t1")
 
-    job_row_before = db.get_job(conn, db.normalize.content_hash(job.company, job.title, job.location))
+    job_row_before = db.get_job(
+        conn, db.normalize.content_hash(job.company, job.title, job.location)
+    )
     assert job_row_before["status"] == "new"
     # no close_stale_sightings call here -- board fetch "failed"
-    job_row_after = db.get_job(conn, db.normalize.content_hash(job.company, job.title, job.location))
+    job_row_after = db.get_job(
+        conn, db.normalize.content_hash(job.company, job.title, job.location)
+    )
     assert job_row_after["status"] == "new"
 
 
@@ -164,10 +184,26 @@ def test_board_health_records_failure_without_wiping_last_ok(conn):
 
 
 def test_seed_answer_then_question_is_no_longer_novel(conn):
-    db.add_questions(conn, "greenhouse:acme:1", [
-        {"name": "q1", "label": "Are you authorized to work in the US?", "field_type": "boolean", "required": True, "values": []},
-        {"name": "q2", "label": "What is your favorite color?", "field_type": "input_text", "required": True, "values": []},
-    ])
+    db.add_questions(
+        conn,
+        "greenhouse:acme:1",
+        [
+            {
+                "name": "q1",
+                "label": "Are you authorized to work in the US?",
+                "field_type": "boolean",
+                "required": True,
+                "values": [],
+            },
+            {
+                "name": "q2",
+                "label": "What is your favorite color?",
+                "field_type": "input_text",
+                "required": True,
+                "values": [],
+            },
+        ],
+    )
 
     novel = db.unanswered_questions(conn)
     assert len(novel) == 2
@@ -180,10 +216,22 @@ def test_seed_answer_then_question_is_no_longer_novel(conn):
 
 
 def test_todo_placeholder_answer_still_counts_as_unanswered(conn):
-    db.add_questions(conn, "greenhouse:acme:1", [
-        {"name": "q1", "label": "Are you authorized to work in the US?", "field_type": "boolean", "required": True, "values": []},
-    ])
-    db.seed_answer(conn, r"authorized to work", "TODO: fill in yourself -- work authorization status")
+    db.add_questions(
+        conn,
+        "greenhouse:acme:1",
+        [
+            {
+                "name": "q1",
+                "label": "Are you authorized to work in the US?",
+                "field_type": "boolean",
+                "required": True,
+                "values": [],
+            },
+        ],
+    )
+    db.seed_answer(
+        conn, r"authorized to work", "TODO: fill in yourself -- work authorization status"
+    )
 
     novel = db.unanswered_questions(conn)
     assert len(novel) == 1
@@ -191,12 +239,32 @@ def test_todo_placeholder_answer_still_counts_as_unanswered(conn):
 
 
 def test_unanswered_questions_batches_by_norm_label_with_count(conn):
-    db.add_questions(conn, "greenhouse:acme:1", [
-        {"name": "q1", "label": "Are You Authorized?", "field_type": "boolean", "required": True, "values": []},
-    ])
-    db.add_questions(conn, "greenhouse:acme:2", [
-        {"name": "q1", "label": "are you authorized?", "field_type": "boolean", "required": True, "values": []},
-    ])
+    db.add_questions(
+        conn,
+        "greenhouse:acme:1",
+        [
+            {
+                "name": "q1",
+                "label": "Are You Authorized?",
+                "field_type": "boolean",
+                "required": True,
+                "values": [],
+            },
+        ],
+    )
+    db.add_questions(
+        conn,
+        "greenhouse:acme:2",
+        [
+            {
+                "name": "q1",
+                "label": "are you authorized?",
+                "field_type": "boolean",
+                "required": True,
+                "values": [],
+            },
+        ],
+    )
 
     novel = db.unanswered_questions(conn)
     assert len(novel) == 1
@@ -211,7 +279,9 @@ def test_sync_fields_mirrors_yaml_label_and_subfields(conn, tmp_path):
 
     field = conn.execute("SELECT * FROM fields WHERE slug = 'finance'").fetchone()
     assert field["label"] == "Finance"
-    subfield = conn.execute("SELECT * FROM subfields WHERE field_slug = 'finance' AND tag = 'trading'").fetchone()
+    subfield = conn.execute(
+        "SELECT * FROM subfields WHERE field_slug = 'finance' AND tag = 'trading'"
+    ).fetchone()
     assert subfield["label"] == "Sales & Trading"
 
 
@@ -233,7 +303,9 @@ def test_set_job_fields_replaces_rather_than_accumulates_on_reclassify(conn):
     db.set_job_fields(conn, hash_, ["finance"], [("finance", "trading")])
     db.set_job_fields(conn, hash_, ["mechanical-engineering"], [])
 
-    assert [r["field_slug"] for r in conn.execute("SELECT * FROM job_fields")] == ["mechanical-engineering"]
+    assert [r["field_slug"] for r in conn.execute("SELECT * FROM job_fields")] == [
+        "mechanical-engineering"
+    ]
     assert conn.execute("SELECT * FROM job_subfields").fetchall() == []
 
 
@@ -248,6 +320,7 @@ def test_set_job_fields_self_registers_a_slug_sync_fields_never_saw(conn):
 
     field = conn.execute("SELECT * FROM fields WHERE slug = 'unregistered-field'").fetchone()
     assert field["label"] == "unregistered-field"
-    assert conn.execute(
-        "SELECT * FROM job_fields WHERE field_slug = 'unregistered-field'"
-    ).fetchone() is not None
+    assert (
+        conn.execute("SELECT * FROM job_fields WHERE field_slug = 'unregistered-field'").fetchone()
+        is not None
+    )

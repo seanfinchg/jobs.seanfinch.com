@@ -9,8 +9,13 @@ from jobfinder.models import RawJob
 
 def _job(**overrides):
     base = dict(
-        adapter="greenhouse", company="Acme", board_token="acme", external_id="1",
-        title="Software Engineer", location="Remote", url="https://example.com",
+        adapter="greenhouse",
+        company="Acme",
+        board_token="acme",
+        external_id="1",
+        title="Software Engineer",
+        location="Remote",
+        url="https://example.com",
         body="",
     )
     base.update(overrides)
@@ -42,7 +47,10 @@ def test_hardware_test_engineer_titles_are_filtered_out_of_qa():
     # Hardware Engineering", "Senior HiL Test Engineer - Automotive". These
     # aren't software QA/SDET work.
     profile = _profile()
-    for title in ["Bench Test Engineer - Hardware Engineering", "Senior HiL Test Engineer - Automotive"]:
+    for title in [
+        "Bench Test Engineer - Hardware Engineering",
+        "Senior HiL Test Engineer - Automotive",
+    ]:
         assert not passes_filters(_job(title=title), profile["filters"]), title
 
 

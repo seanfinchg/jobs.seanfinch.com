@@ -37,8 +37,13 @@ def test_slug_variants_dedupes_when_spacing_variants_collide():
 
 def _sighting_job(url: str, company: str = "Acme", token: str = "acme-1") -> RawJob:
     return RawJob(
-        adapter="simplify_listings", company=company, board_token=token, external_id=token,
-        title="Software Engineer", location="Remote", url=url,
+        adapter="simplify_listings",
+        company=company,
+        board_token=token,
+        external_id=token,
+        title="Software Engineer",
+        location="Remote",
+        url=url,
     )
 
 
@@ -47,14 +52,19 @@ def test_discover_from_aggregator_reverse_engineers_token_from_apply_url(tmp_pat
     db_path = tmp_path / "jobfinder.db"
     conn = db.connect(str(db_path))
     db.upsert_job(
-        conn, _sighting_job("https://boards.greenhouse.io/acme/jobs/12345", token="gh-1"),
-        profile="p", is_native=False, now="t1",
+        conn,
+        _sighting_job("https://boards.greenhouse.io/acme/jobs/12345", token="gh-1"),
+        profile="p",
+        is_native=False,
+        now="t1",
     )
     conn.close()
 
     hits = module.discover_from_aggregator(db_path=str(db_path))
 
-    assert hits == [{"company": "Acme", "adapter": "greenhouse", "token": "acme", "job_count": None}]
+    assert hits == [
+        {"company": "Acme", "adapter": "greenhouse", "token": "acme", "job_count": None}
+    ]
 
 
 def test_discover_from_aggregator_handles_workday_urls_as_a_special_case(tmp_path):
@@ -64,14 +74,23 @@ def test_discover_from_aggregator_handles_workday_urls_as_a_special_case(tmp_pat
     db.upsert_job(
         conn,
         _sighting_job("https://acme.wd5.myworkdayjobs.com/careers/job/x/y_123", token="wd-1"),
-        profile="p", is_native=False, now="t1",
+        profile="p",
+        is_native=False,
+        now="t1",
     )
     conn.close()
 
     hits = module.discover_from_aggregator(db_path=str(db_path))
 
     assert hits == [
-        {"company": "Acme", "adapter": "workday", "job_count": None, "tenant": "acme", "wd": "wd5", "site": "careers"}
+        {
+            "company": "Acme",
+            "adapter": "workday",
+            "job_count": None,
+            "tenant": "acme",
+            "wd": "wd5",
+            "site": "careers",
+        }
     ]
 
 
@@ -83,12 +102,18 @@ def test_discover_from_aggregator_dedupes_workday_by_tenant_wd_site_not_by_url(t
     db_path = tmp_path / "jobfinder.db"
     conn = db.connect(str(db_path))
     db.upsert_job(
-        conn, _sighting_job("https://acme.wd5.myworkdayjobs.com/careers/job/a/x_1", token="wd-1"),
-        profile="p", is_native=False, now="t1",
+        conn,
+        _sighting_job("https://acme.wd5.myworkdayjobs.com/careers/job/a/x_1", token="wd-1"),
+        profile="p",
+        is_native=False,
+        now="t1",
     )
     db.upsert_job(
-        conn, _sighting_job("https://acme.wd5.myworkdayjobs.com/careers/job/b/y_2", token="wd-2"),
-        profile="p", is_native=False, now="t1",
+        conn,
+        _sighting_job("https://acme.wd5.myworkdayjobs.com/careers/job/b/y_2", token="wd-2"),
+        profile="p",
+        is_native=False,
+        now="t1",
     )
     conn.close()
 
@@ -102,12 +127,18 @@ def test_discover_from_aggregator_dedupes_repeat_tokens_across_sightings(tmp_pat
     db_path = tmp_path / "jobfinder.db"
     conn = db.connect(str(db_path))
     db.upsert_job(
-        conn, _sighting_job("https://boards.greenhouse.io/acme/jobs/1", token="gh-1"),
-        profile="p", is_native=False, now="t1",
+        conn,
+        _sighting_job("https://boards.greenhouse.io/acme/jobs/1", token="gh-1"),
+        profile="p",
+        is_native=False,
+        now="t1",
     )
     db.upsert_job(
-        conn, _sighting_job("https://boards.greenhouse.io/acme/jobs/2", token="gh-2"),
-        profile="p", is_native=False, now="t1",
+        conn,
+        _sighting_job("https://boards.greenhouse.io/acme/jobs/2", token="gh-2"),
+        profile="p",
+        is_native=False,
+        now="t1",
     )
     conn.close()
 
@@ -121,8 +152,13 @@ def test_discover_from_aggregator_ignores_sightings_from_other_adapters(tmp_path
     db_path = tmp_path / "jobfinder.db"
     conn = db.connect(str(db_path))
     job = RawJob(
-        adapter="greenhouse", company="Acme", board_token="acme", external_id="1",
-        title="Software Engineer", location="Remote", url="https://boards.greenhouse.io/acme/jobs/1",
+        adapter="greenhouse",
+        company="Acme",
+        board_token="acme",
+        external_id="1",
+        title="Software Engineer",
+        location="Remote",
+        url="https://boards.greenhouse.io/acme/jobs/1",
     )
     db.upsert_job(conn, job, profile="p", is_native=True, now="t1")
     conn.close()
@@ -143,7 +179,9 @@ def test_probe_company_collects_confirmed_hits_and_swallows_request_errors(monke
     def fake_lever(slug):
         return False, 0
 
-    monkeypatch.setattr(module, "ADAPTER_PROBES", {"greenhouse": fake_greenhouse, "lever": fake_lever})
+    monkeypatch.setattr(
+        module, "ADAPTER_PROBES", {"greenhouse": fake_greenhouse, "lever": fake_lever}
+    )
 
     hits = module.probe_company("Acme", sleep=0)
 
@@ -154,7 +192,14 @@ def test_print_yaml_fragment_formats_plain_and_workday_hits(capsys):
     module = _load_module()
     hits = [
         {"company": "Acme", "adapter": "greenhouse", "token": "acme", "job_count": 12},
-        {"company": "Globex", "adapter": "workday", "job_count": None, "tenant": "globex", "wd": "wd1", "site": "careers"},
+        {
+            "company": "Globex",
+            "adapter": "workday",
+            "job_count": None,
+            "tenant": "globex",
+            "wd": "wd1",
+            "site": "careers",
+        },
     ]
 
     module._print_yaml_fragment(hits)

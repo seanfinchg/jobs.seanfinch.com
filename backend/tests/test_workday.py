@@ -12,8 +12,14 @@ def test_does_not_flag_other_hosts():
 
 
 def test_parse_workday_url_extracts_tenant_wd_and_site():
-    url = "https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite/job/US-CA-Santa-Clara/x_JR1"
-    assert parse_workday_url(url) == {"tenant": "nvidia", "wd": "wd5", "site": "NVIDIAExternalCareerSite"}
+    url = (
+        "https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite/job/US-CA-Santa-Clara/x_JR1"
+    )
+    assert parse_workday_url(url) == {
+        "tenant": "nvidia",
+        "wd": "wd5",
+        "site": "NVIDIAExternalCareerSite",
+    }
 
 
 def test_parse_workday_url_returns_none_for_a_non_workday_url():

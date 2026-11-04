@@ -5,9 +5,18 @@ from jobfinder.models import RawJob
 def _job(conn, company, title, now):
     return db.upsert_job(
         conn,
-        RawJob(adapter="greenhouse", company=company, board_token=company.lower(), external_id=company,
-               title=title, location="Boston, MA", url=f"https://example.com/{company}"),
-        profile="p", is_native=True, now=now,
+        RawJob(
+            adapter="greenhouse",
+            company=company,
+            board_token=company.lower(),
+            external_id=company,
+            title=title,
+            location="Boston, MA",
+            url=f"https://example.com/{company}",
+        ),
+        profile="p",
+        is_native=True,
+        now=now,
     )
 
 
@@ -36,7 +45,10 @@ def test_open_stays_on_same_job_without_changing_status():
     opened = []
 
     review.review_loop(
-        conn, [db.get_job(conn, h1)], ask=_scripted(["o", "n"]), opener=lambda url: opened.append(url)
+        conn,
+        [db.get_job(conn, h1)],
+        ask=_scripted(["o", "n"]),
+        opener=lambda url: opened.append(url),
     )
 
     assert opened == ["https://example.com/Acme"]

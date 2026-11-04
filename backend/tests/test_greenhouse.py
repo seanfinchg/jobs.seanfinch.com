@@ -44,8 +44,13 @@ def test_fetch_questions_parses_schema(monkeypatch):
     monkeypatch.setattr(greenhouse.session, "get", lambda *a, **k: _FakeResponse(payload))
 
     job = greenhouse.RawJob(
-        adapter="greenhouse", company="Acme", board_token="acme",
-        external_id="1001", title="", location="", url="",
+        adapter="greenhouse",
+        company="Acme",
+        board_token="acme",
+        external_id="1001",
+        title="",
+        location="",
+        url="",
     )
     questions = greenhouse.GreenhouseAdapter().fetch_questions(job)
 

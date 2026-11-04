@@ -7,7 +7,15 @@ from jobfinder.adapters.base import Adapter
 
 def test_available_includes_the_shipped_adapters():
     names = registry.available()
-    for expected in ["greenhouse", "lever", "ashby", "smartrecruiters", "workable", "simplify_listings", "bamboohr"]:
+    for expected in [
+        "greenhouse",
+        "lever",
+        "ashby",
+        "smartrecruiters",
+        "workable",
+        "simplify_listings",
+        "bamboohr",
+    ]:
         assert expected in names
 
 

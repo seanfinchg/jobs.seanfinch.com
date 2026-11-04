@@ -123,7 +123,9 @@ def _acquire_run_lock(db_path: Path | str) -> Path | None:
                 "Refusing to start a second one against the same real "
                 "boards at the same time."
             )
-        logger.warning("stale run lock at %s (%.0fs old) -- treating as abandoned, proceeding", lock_path, age)
+        logger.warning(
+            "stale run lock at %s (%.0fs old) -- treating as abandoned, proceeding", lock_path, age
+        )
     lock_path.write_text(datetime.now(timezone.utc).isoformat())
     return lock_path
 
@@ -161,9 +163,13 @@ def _progress_snapshot(
     the two apart by that field rather than needing separate names, since
     only one is ever true at a time."""
     return {
-        "profile": profile_name, "adapter": adapter_key, "token": token,
-        "boards_done": boards_done, "boards_total": boards_total,
-        "total_stored": total_stored, "started_at": run_started_at,
+        "profile": profile_name,
+        "adapter": adapter_key,
+        "token": token,
+        "boards_done": boards_done,
+        "boards_total": boards_total,
+        "total_stored": total_stored,
+        "started_at": run_started_at,
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "in_flight_since": in_flight_since,
         "finished_at": finished_at,
@@ -213,8 +219,13 @@ def _load_yaml(path: Path) -> dict:
 # that doesn't declare `level`/`fields` behaves exactly as before: flat
 # filters straight off its own YAML.
 _LIST_FILTER_KEYS = [
-    "title_include", "title_include_weak", "body_include_for_weak_title",
-    "title_exclude", "location_include", "location_exclude", "body_exclude",
+    "title_include",
+    "title_include_weak",
+    "body_include_for_weak_title",
+    "title_exclude",
+    "location_include",
+    "location_exclude",
+    "body_exclude",
 ]
 
 
@@ -247,8 +258,12 @@ def load_profile(name: str, profiles_dir: Path = PROFILES_DIR) -> dict:
     field_names = profile.pop("fields", None) or []
 
     if level_name or field_names:
-        level_layer = _load_yaml(profiles_dir / "levels" / f"{level_name}.yaml") if level_name else {}
-        field_layers = {name: _load_yaml(profiles_dir / "fields" / f"{name}.yaml") for name in field_names}
+        level_layer = (
+            _load_yaml(profiles_dir / "levels" / f"{level_name}.yaml") if level_name else {}
+        )
+        field_layers = {
+            name: _load_yaml(profiles_dir / "fields" / f"{name}.yaml") for name in field_names
+        }
         persona_layer = profile  # own filters apply last, always active
 
         layers = [level_layer, *field_layers.values(), persona_layer]
@@ -310,7 +325,9 @@ def _passes_title_and_location_filters(job: RawJob, filters: dict) -> bool:
     if title_exclude and _matches_any(job.title, title_exclude):
         return False
     if title_include or title_include_weak:
-        if not (_matches_any(job.title, title_include) or _matches_any(job.title, title_include_weak)):
+        if not (
+            _matches_any(job.title, title_include) or _matches_any(job.title, title_include_weak)
+        ):
             return False
     if location_exclude and _matches_any(job.location, location_exclude):
         return False
@@ -368,26 +385,44 @@ def run(
 
             for board in board_list:
                 token = board.get("token", "")
-                _write_progress(progress_path, _progress_snapshot(
-                    profile_name=profile_name, adapter_key=adapter_key, token=token,
-                    boards_done=boards_done, boards_total=boards_total,
-                    total_stored=total_stored, run_started_at=run_started_at,
-                    in_flight_since=datetime.now(timezone.utc).isoformat(),
-                ))
+                _write_progress(
+                    progress_path,
+                    _progress_snapshot(
+                        profile_name=profile_name,
+                        adapter_key=adapter_key,
+                        token=token,
+                        boards_done=boards_done,
+                        boards_total=boards_total,
+                        total_stored=total_stored,
+                        run_started_at=run_started_at,
+                        in_flight_since=datetime.now(timezone.utc).isoformat(),
+                    ),
+                )
                 _touch_run_lock(lock_path)
                 try:
                     jobs = _call_with_deadline(
-                        lambda: adapter.fetch(board), BOARD_FETCH_DEADLINE_SECONDS, f"{adapter_key}:{token}",
+                        lambda: adapter.fetch(board),
+                        BOARD_FETCH_DEADLINE_SECONDS,
+                        f"{adapter_key}:{token}",
                     )
                 except Exception as exc:
                     logger.error("skipping %s:%s, fetch failed: %s", adapter_key, token, exc)
-                    db.record_board_health(conn, adapter_key, token, ok=False, error=str(exc), now=run_started_at)
+                    db.record_board_health(
+                        conn, adapter_key, token, ok=False, error=str(exc), now=run_started_at
+                    )
                     boards_done += 1
-                    _write_progress(progress_path, _progress_snapshot(
-                        profile_name=profile_name, adapter_key=adapter_key, token=token,
-                        boards_done=boards_done, boards_total=boards_total,
-                        total_stored=total_stored, run_started_at=run_started_at,
-                    ))
+                    _write_progress(
+                        progress_path,
+                        _progress_snapshot(
+                            profile_name=profile_name,
+                            adapter_key=adapter_key,
+                            token=token,
+                            boards_done=boards_done,
+                            boards_total=boards_total,
+                            total_stored=total_stored,
+                            run_started_at=run_started_at,
+                        ),
+                    )
                     _touch_run_lock(lock_path)
                     if throttle:
                         time.sleep(BOARD_FETCH_DELAY_SECONDS)
@@ -414,7 +449,9 @@ def run(
                     if fetches_body:
                         try:
                             body = _call_with_deadline(
-                                lambda: adapter.fetch_body(job), BODY_FETCH_DEADLINE_SECONDS, source_uid(job),
+                                lambda: adapter.fetch_body(job),
+                                BODY_FETCH_DEADLINE_SECONDS,
+                                source_uid(job),
                             )
                         except Exception as exc:
                             logger.error("fetch_body failed for %s: %s", source_uid(job), exc)
@@ -430,10 +467,12 @@ def run(
                     salary_min, salary_max = scoring.extract_salary_range(job.body)
                     matched_fields = classify.classify_fields(job.title)
                     target_hash = db.upsert_job(
-                        conn, job,
+                        conn,
+                        job,
                         profile=profile_name,
                         is_native=adapter.is_native,
-                        salary_min=salary_min, salary_max=salary_max,
+                        salary_min=salary_min,
+                        salary_max=salary_max,
                         level=classify.classify_level(job.title),
                         matched_fields=matched_fields,
                         matched_subfields=classify.classify_subfields(job.title),
@@ -441,24 +480,39 @@ def run(
                         now=run_started_at,
                     )
                     db.set_job_fields(
-                        conn, target_hash, matched_fields,
+                        conn,
+                        target_hash,
+                        matched_fields,
                         classify.classify_subfields_by_field(job.title),
                     )
                     stored_count += 1
 
-                db.record_board_health(conn, adapter_key, token, ok=True, job_count=len(jobs), now=run_started_at)
+                db.record_board_health(
+                    conn, adapter_key, token, ok=True, job_count=len(jobs), now=run_started_at
+                )
                 successful_boards.append((adapter_key, token))
                 total_stored += stored_count
                 boards_done += 1
                 logger.info(
                     "%s:%s -- fetched %d, stored %d (running total: %d)",
-                    adapter_key, token, len(jobs), stored_count, total_stored,
+                    adapter_key,
+                    token,
+                    len(jobs),
+                    stored_count,
+                    total_stored,
                 )
-                _write_progress(progress_path, _progress_snapshot(
-                    profile_name=profile_name, adapter_key=adapter_key, token=token,
-                    boards_done=boards_done, boards_total=boards_total,
-                    total_stored=total_stored, run_started_at=run_started_at,
-                ))
+                _write_progress(
+                    progress_path,
+                    _progress_snapshot(
+                        profile_name=profile_name,
+                        adapter_key=adapter_key,
+                        token=token,
+                        boards_done=boards_done,
+                        boards_total=boards_total,
+                        total_stored=total_stored,
+                        run_started_at=run_started_at,
+                    ),
+                )
                 _touch_run_lock(lock_path)
                 if throttle:
                     time.sleep(BOARD_FETCH_DELAY_SECONDS)
@@ -472,14 +526,22 @@ def run(
 
         logger.info(
             "run complete: %d board(s) succeeded, %d posting(s) stored/updated this run",
-            len(successful_boards), total_stored,
+            len(successful_boards),
+            total_stored,
         )
-        _write_progress(progress_path, _progress_snapshot(
-            profile_name=profile_name, adapter_key=None, token=None,
-            boards_done=boards_done, boards_total=boards_total,
-            total_stored=total_stored, run_started_at=run_started_at,
-            finished_at=datetime.now(timezone.utc).isoformat(),
-        ))
+        _write_progress(
+            progress_path,
+            _progress_snapshot(
+                profile_name=profile_name,
+                adapter_key=None,
+                token=None,
+                boards_done=boards_done,
+                boards_total=boards_total,
+                total_stored=total_stored,
+                run_started_at=run_started_at,
+                finished_at=datetime.now(timezone.utc).isoformat(),
+            ),
+        )
     finally:
         _release_run_lock(lock_path)
         if own_conn:
@@ -519,9 +581,15 @@ def reclassify(
 
     for row in rows:
         job = RawJob(
-            adapter="", company=row["company"], board_token="", external_id=row["content_hash"],
-            title=row["title"], location=row["location"] or "", url=row["best_apply_url"] or "",
-            body=row["body"] or "", posted_at=row["posted_at"],
+            adapter="",
+            company=row["company"],
+            board_token="",
+            external_id=row["content_hash"],
+            title=row["title"],
+            location=row["location"] or "",
+            url=row["best_apply_url"] or "",
+            body=row["body"] or "",
+            posted_at=row["posted_at"],
         )
         if not passes_filters(job, profile.get("filters") or {}):
             db.set_status(conn, row["content_hash"], "skipped")
@@ -535,7 +603,8 @@ def reclassify(
                level = ?, matched_fields = ?, matched_subfields = ?, grad_year = ?
                WHERE content_hash = ?""",
             (
-                salary_min, salary_max,
+                salary_min,
+                salary_max,
                 classify.classify_level(job.title),
                 json.dumps(matched_fields),
                 json.dumps(classify.classify_subfields(job.title)),
@@ -544,7 +613,9 @@ def reclassify(
             ),
         )
         db.set_job_fields(
-            conn, row["content_hash"], matched_fields,
+            conn,
+            row["content_hash"],
+            matched_fields,
             classify.classify_subfields_by_field(job.title),
         )
         updated += 1

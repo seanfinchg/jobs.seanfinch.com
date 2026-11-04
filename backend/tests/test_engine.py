@@ -16,8 +16,13 @@ from jobfinder.models import RawJob
 
 def _job(**overrides):
     base = dict(
-        adapter="fake", company="Acme", board_token="acme", external_id="1",
-        title="Security Engineer", location="Boston, MA", url="https://example.com/1",
+        adapter="fake",
+        company="Acme",
+        board_token="acme",
+        external_id="1",
+        title="Security Engineer",
+        location="Boston, MA",
+        url="https://example.com/1",
         body="",
     )
     base.update(overrides)
@@ -32,7 +37,14 @@ def test_engine_source_has_no_seniority_keyword():
 
 def test_engine_imports_no_concrete_adapter_module():
     source = inspect.getsource(engine)
-    for concrete in ["greenhouse", "lever", "ashby", "smartrecruiters", "workable", "simplify_listings"]:
+    for concrete in [
+        "greenhouse",
+        "lever",
+        "ashby",
+        "smartrecruiters",
+        "workable",
+        "simplify_listings",
+    ]:
         assert f"adapters.{concrete}" not in source
         assert f"adapters import {concrete}" not in source
 
@@ -92,11 +104,13 @@ def test_load_profile_merges_included_boards(tmp_path):
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
     (profiles_dir / "test-profile.yaml").write_text(
-        yaml.safe_dump({
-            "include": "boards/shared.yaml",
-            "boards": {"greenhouse": [{"token": "own-co"}]},
-            "filters": {},
-        })
+        yaml.safe_dump(
+            {
+                "include": "boards/shared.yaml",
+                "boards": {"greenhouse": [{"token": "own-co"}]},
+                "filters": {},
+            }
+        )
     )
 
     profile = engine.load_profile("test-profile", profiles_dir)
@@ -115,16 +129,20 @@ def test_load_profile_merges_a_list_of_included_board_files(tmp_path):
         yaml.safe_dump({"boards": {"greenhouse": [{"token": "first-co"}]}})
     )
     (boards_dir / "second.yaml").write_text(
-        yaml.safe_dump({"boards": {"greenhouse": [{"token": "second-co"}], "manual": [{"token": "manual-co"}]}})
+        yaml.safe_dump(
+            {"boards": {"greenhouse": [{"token": "second-co"}], "manual": [{"token": "manual-co"}]}}
+        )
     )
 
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
     (profiles_dir / "test-profile.yaml").write_text(
-        yaml.safe_dump({
-            "include": ["boards/first.yaml", "boards/second.yaml"],
-            "filters": {},
-        })
+        yaml.safe_dump(
+            {
+                "include": ["boards/first.yaml", "boards/second.yaml"],
+                "filters": {},
+            }
+        )
     )
 
     profile = engine.load_profile("test-profile", profiles_dir)
@@ -147,14 +165,22 @@ def test_two_profiles_same_raw_postings_different_matches(tmp_path, monkeypatch)
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
 
-    (profiles_dir / "wide.yaml").write_text(yaml.safe_dump({
-        "boards": {"fake-engine-test": [{"token": "acme"}]},
-        "filters": {},
-    }))
-    (profiles_dir / "narrow.yaml").write_text(yaml.safe_dump({
-        "boards": {"fake-engine-test": [{"token": "acme"}]},
-        "filters": {"title_include": [r"security"]},
-    }))
+    (profiles_dir / "wide.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "boards": {"fake-engine-test": [{"token": "acme"}]},
+                "filters": {},
+            }
+        )
+    )
+    (profiles_dir / "narrow.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "boards": {"fake-engine-test": [{"token": "acme"}]},
+                "filters": {"title_include": [r"security"]},
+            }
+        )
+    )
 
     conn_wide = db.connect(":memory:")
     engine.run("wide", db_path=":memory:", profiles_dir=profiles_dir, conn=conn_wide)
@@ -171,10 +197,14 @@ def test_two_profiles_same_raw_postings_different_matches(tmp_path, monkeypatch)
 def test_reclassify_skips_jobs_that_no_longer_pass_a_tightened_filter(tmp_path):
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
-    (profiles_dir / "loose.yaml").write_text(yaml.safe_dump({
-        "boards": {"fake-reclassify-test": [{"token": "acme"}]},
-        "filters": {"title_include": [r"systems engineer"]},
-    }))
+    (profiles_dir / "loose.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "boards": {"fake-reclassify-test": [{"token": "acme"}]},
+                "filters": {"title_include": [r"systems engineer"]},
+            }
+        )
+    )
 
     @register
     class _FakeReclassifyAdapter(Adapter):
@@ -188,13 +218,17 @@ def test_reclassify_skips_jobs_that_no_longer_pass_a_tightened_filter(tmp_path):
     assert {row["title"] for row in db.open_jobs(conn)} == {"GTM Systems Engineer"}
 
     # Tighten the same profile file in place, as if a real filter fix landed.
-    (profiles_dir / "loose.yaml").write_text(yaml.safe_dump({
-        "boards": {"fake-reclassify-test": [{"token": "acme"}]},
-        "filters": {
-            "title_include": [r"systems engineer"],
-            "title_exclude": [r"gtm systems engineer"],
-        },
-    }))
+    (profiles_dir / "loose.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "boards": {"fake-reclassify-test": [{"token": "acme"}]},
+                "filters": {
+                    "title_include": [r"systems engineer"],
+                    "title_exclude": [r"gtm systems engineer"],
+                },
+            }
+        )
+    )
 
     updated, newly_skipped = engine.reclassify("loose", profiles_dir=profiles_dir, conn=conn)
     assert newly_skipped == 1
@@ -205,10 +239,14 @@ def test_reclassify_skips_jobs_that_no_longer_pass_a_tightened_filter(tmp_path):
 def test_reclassify_updates_matched_fields_for_jobs_that_still_pass(tmp_path):
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
-    (profiles_dir / "reclass.yaml").write_text(yaml.safe_dump({
-        "boards": {"fake-reclass-test": [{"token": "acme"}]},
-        "filters": {"title_include": [r"security"]},
-    }))
+    (profiles_dir / "reclass.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "boards": {"fake-reclass-test": [{"token": "acme"}]},
+                "filters": {"title_include": [r"security"]},
+            }
+        )
+    )
 
     @register
     class _FakeReclassAdapter(Adapter):
@@ -230,20 +268,28 @@ def test_reclassify_updates_matched_fields_for_jobs_that_still_pass(tmp_path):
 def test_run_trims_whitespace_from_company_title_location(tmp_path):
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
-    (profiles_dir / "trim.yaml").write_text(yaml.safe_dump({
-        "boards": {"fake-trim-test": [{"token": "acme"}]},
-        "filters": {},
-    }))
+    (profiles_dir / "trim.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "boards": {"fake-trim-test": [{"token": "acme"}]},
+                "filters": {},
+            }
+        )
+    )
 
     @register
     class _FakeTrimAdapter(Adapter):
         name = "fake-trim-test"
 
         def fetch(self, board):
-            return [_job(
-                company=" Acme Corp ", title="Security Operations Analyst ",
-                location=" Boston, MA", external_id="1",
-            )]
+            return [
+                _job(
+                    company=" Acme Corp ",
+                    title="Security Operations Analyst ",
+                    location=" Boston, MA",
+                    external_id="1",
+                )
+            ]
 
     conn = db.connect(":memory:")
     engine.run("trim", db_path=":memory:", profiles_dir=profiles_dir, conn=conn)
@@ -282,10 +328,14 @@ def test_engine_skips_fetch_body_entirely_for_adapters_that_dont_override_it(tmp
 
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
-    (profiles_dir / "plain.yaml").write_text(yaml.safe_dump({
-        "boards": {"fake-plain-body-test": [{"token": "acme"}]},
-        "filters": {"title_include": [r"security"]},
-    }))
+    (profiles_dir / "plain.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "boards": {"fake-plain-body-test": [{"token": "acme"}]},
+                "filters": {"title_include": [r"security"]},
+            }
+        )
+    )
 
     conn = db.connect(":memory:")
     engine.run("plain", db_path=":memory:", profiles_dir=profiles_dir, conn=conn)
@@ -313,10 +363,14 @@ def test_engine_calls_fetch_body_only_after_the_cheap_title_filter_passes(tmp_pa
 
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
-    (profiles_dir / "lazy.yaml").write_text(yaml.safe_dump({
-        "boards": {"fake-lazy-body-test": [{"token": "acme"}]},
-        "filters": {"title_include": [r"security"]},
-    }))
+    (profiles_dir / "lazy.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "boards": {"fake-lazy-body-test": [{"token": "acme"}]},
+                "filters": {"title_include": [r"security"]},
+            }
+        )
+    )
 
     conn = db.connect(":memory:")
     engine.run("lazy", db_path=":memory:", profiles_dir=profiles_dir, conn=conn)
@@ -340,10 +394,17 @@ def test_engine_applies_body_exclude_after_lazy_fetch(tmp_path):
 
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
-    (profiles_dir / "lazy-exclude.yaml").write_text(yaml.safe_dump({
-        "boards": {"fake-lazy-exclude-test": [{"token": "acme"}]},
-        "filters": {"title_include": [r"security"], "body_exclude": [r"security clearance"]},
-    }))
+    (profiles_dir / "lazy-exclude.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "boards": {"fake-lazy-exclude-test": [{"token": "acme"}]},
+                "filters": {
+                    "title_include": [r"security"],
+                    "body_exclude": [r"security clearance"],
+                },
+            }
+        )
+    )
 
     conn = db.connect(":memory:")
     engine.run("lazy-exclude", db_path=":memory:", profiles_dir=profiles_dir, conn=conn)
@@ -354,10 +415,14 @@ def test_engine_applies_body_exclude_after_lazy_fetch(tmp_path):
 def test_unknown_adapter_in_profile_is_logged_and_skipped(tmp_path, caplog):
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
-    (profiles_dir / "bad.yaml").write_text(yaml.safe_dump({
-        "boards": {"not-a-real-adapter": [{"token": "x"}]},
-        "filters": {},
-    }))
+    (profiles_dir / "bad.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "boards": {"not-a-real-adapter": [{"token": "x"}]},
+                "filters": {},
+            }
+        )
+    )
 
     conn = db.connect(":memory:")
     engine.run("bad", db_path=":memory:", profiles_dir=profiles_dir, conn=conn)  # should not raise
@@ -370,9 +435,13 @@ def test_grad_years_placeholder_is_substituted_with_the_real_year_window(tmp_pat
     profiles/levels/new-grad.yaml's body_bonus for the real shipped case."""
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
-    (profiles_dir / "gradyear.yaml").write_text(yaml.safe_dump({
-        "filters": {"title_include": [r"engineer.*(new grad|{grad_years})"]},
-    }))
+    (profiles_dir / "gradyear.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "filters": {"title_include": [r"engineer.*(new grad|{grad_years})"]},
+            }
+        )
+    )
 
     profile = engine.load_profile("gradyear", profiles_dir)
     pattern = classify.grad_year_pattern()
@@ -380,7 +449,9 @@ def test_grad_years_placeholder_is_substituted_with_the_real_year_window(tmp_pat
     assert pattern in profile["filters"]["title_include"][0]
 
     a_real_year = pattern.split("|")[0]
-    assert engine.passes_filters(_job(title=f"Software Engineer ({a_real_year} Grad)"), profile["filters"])
+    assert engine.passes_filters(
+        _job(title=f"Software Engineer ({a_real_year} Grad)"), profile["filters"]
+    )
 
 
 def test_memory_db_never_creates_a_run_lock():
@@ -473,10 +544,14 @@ def test_run_writes_progress_file_for_the_status_server(tmp_path):
 
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
-    (profiles_dir / "progress-test.yaml").write_text(yaml.safe_dump({
-        "boards": {"fake-progress-test": [{"token": "acme"}, {"token": "widgets"}]},
-        "filters": {},
-    }))
+    (profiles_dir / "progress-test.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "boards": {"fake-progress-test": [{"token": "acme"}, {"token": "widgets"}]},
+                "filters": {},
+            }
+        )
+    )
 
     @register
     class _FakeProgressAdapter(Adapter):
@@ -508,10 +583,14 @@ def test_run_marks_a_board_in_flight_before_fetching_it_and_clears_it_after(tmp_
 
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
-    (profiles_dir / "in-flight-test.yaml").write_text(yaml.safe_dump({
-        "boards": {"fake-in-flight-test": [{"token": "acme"}]},
-        "filters": {},
-    }))
+    (profiles_dir / "in-flight-test.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "boards": {"fake-in-flight-test": [{"token": "acme"}]},
+                "filters": {},
+            }
+        )
+    )
 
     @register
     class _FakeInFlightAdapter(Adapter):
@@ -563,10 +642,14 @@ def test_run_abandons_a_hung_board_and_still_finishes_the_rest(tmp_path, monkeyp
 
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
-    (profiles_dir / "hung-test.yaml").write_text(yaml.safe_dump({
-        "boards": {"fake-hung-test": [{"token": "stuck"}, {"token": "fine"}]},
-        "filters": {},
-    }))
+    (profiles_dir / "hung-test.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "boards": {"fake-hung-test": [{"token": "stuck"}, {"token": "fine"}]},
+                "filters": {},
+            }
+        )
+    )
 
     @register
     class _FakeHungAdapter(Adapter):

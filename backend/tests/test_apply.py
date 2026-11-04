@@ -25,7 +25,9 @@ def _conn_with_answers():
     conn = db.connect(":memory:")
     db.seed_answer(conn, r"first name", "Sean")
     db.seed_answer(conn, r"resume", "/tmp/resume.pdf", "input_file")
-    db.seed_answer(conn, r"authorized to work", "TODO: fill in yourself", "multi_value_single_select")
+    db.seed_answer(
+        conn, r"authorized to work", "TODO: fill in yourself", "multi_value_single_select"
+    )
     return conn
 
 
@@ -33,7 +35,12 @@ def test_fill_form_fills_known_fields_and_uploads_resume():
     conn = _conn_with_answers()
     filler = _FakeFiller()
     fields = [
-        {"label": "First Name", "selector": "#first_name", "field_type": "input_text", "required": True},
+        {
+            "label": "First Name",
+            "selector": "#first_name",
+            "field_type": "input_text",
+            "required": True,
+        },
         {"label": "Resume/CV", "selector": "#resume", "field_type": "input_file", "required": True},
     ]
 
@@ -47,7 +54,14 @@ def test_fill_form_fills_known_fields_and_uploads_resume():
 def test_fill_form_leaves_required_field_with_no_answer_unresolved():
     conn = _conn_with_answers()
     filler = _FakeFiller()
-    fields = [{"label": "What is your favorite color?", "selector": "#color", "field_type": "input_text", "required": True}]
+    fields = [
+        {
+            "label": "What is your favorite color?",
+            "selector": "#color",
+            "field_type": "input_text",
+            "required": True,
+        }
+    ]
 
     unresolved = apply.fill_form(conn, fields, filler)
 
@@ -58,7 +72,14 @@ def test_fill_form_leaves_required_field_with_no_answer_unresolved():
 def test_fill_form_treats_todo_placeholder_as_unresolved():
     conn = _conn_with_answers()
     filler = _FakeFiller()
-    fields = [{"label": "Are you authorized to work in the US?", "selector": "#auth", "field_type": "multi_value_single_select", "required": True}]
+    fields = [
+        {
+            "label": "Are you authorized to work in the US?",
+            "selector": "#auth",
+            "field_type": "multi_value_single_select",
+            "required": True,
+        }
+    ]
 
     unresolved = apply.fill_form(conn, fields, filler)
 
@@ -68,7 +89,14 @@ def test_fill_form_treats_todo_placeholder_as_unresolved():
 def test_optional_unanswered_field_is_not_flagged():
     conn = _conn_with_answers()
     filler = _FakeFiller()
-    fields = [{"label": "Anything else?", "selector": "#other", "field_type": "input_text", "required": False}]
+    fields = [
+        {
+            "label": "Anything else?",
+            "selector": "#other",
+            "field_type": "input_text",
+            "required": False,
+        }
+    ]
 
     unresolved = apply.fill_form(conn, fields, filler)
 
@@ -103,11 +131,21 @@ def test_workday_jobs_are_routed_to_manual_open_not_autofill(monkeypatch):
     conn = db.connect(":memory:")
     job_url = "https://acme.wd5.myworkdayjobs.com/careers/job/x/y_123"
     from jobfinder.models import RawJob
+
     hash_ = db.upsert_job(
         conn,
-        RawJob(adapter="greenhouse", company="Acme", board_token="acme", external_id="1",
-               title="Security Engineer", location="Boston, MA", url=job_url),
-        profile="p", is_native=True, now="t1",
+        RawJob(
+            adapter="greenhouse",
+            company="Acme",
+            board_token="acme",
+            external_id="1",
+            title="Security Engineer",
+            location="Boston, MA",
+            url=job_url,
+        ),
+        profile="p",
+        is_native=True,
+        now="t1",
     )
     db.set_status(conn, hash_, "queued")
 

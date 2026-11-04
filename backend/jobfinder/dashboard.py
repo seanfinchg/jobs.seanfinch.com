@@ -20,9 +20,19 @@ DASHBOARD_PUBLIC_DIR = Path("..") / "frontend" / "public"
 # data) -- gives the frontend a stable React key and lets it look up every
 # apply_url a job was seen at, not just the single best one.
 PUBLIC_FIELDS = [
-    "content_hash", "company", "title", "location",
-    "best_apply_url", "first_seen", "posted_at", "salary_min", "salary_max",
-    "level", "matched_fields", "matched_subfields", "grad_year",
+    "content_hash",
+    "company",
+    "title",
+    "location",
+    "best_apply_url",
+    "first_seen",
+    "posted_at",
+    "salary_min",
+    "salary_max",
+    "level",
+    "matched_fields",
+    "matched_subfields",
+    "grad_year",
 ]
 
 
@@ -93,7 +103,9 @@ def export_data(
     # docker-entrypoint.sh's deploy()). Defaults to now for plain ad hoc
     # `jobfinder dashboard` CLI usage, which has no other timestamp to use.
     meta_path = docs_dir / "meta.json"
-    meta_path.write_text(json.dumps({"generated_at": generated_at or datetime.now(timezone.utc).isoformat()}))
+    meta_path.write_text(
+        json.dumps({"generated_at": generated_at or datetime.now(timezone.utc).isoformat()})
+    )
 
     # Also separate from data.json: per-field display metadata (label,
     # subfields) doesn't change per job row, so it belongs in its own file

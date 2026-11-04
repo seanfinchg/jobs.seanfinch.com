@@ -57,7 +57,9 @@ class BambooHRAdapter(Adapter):
         return jobs
 
     def fetch_body(self, job: RawJob) -> str | None:
-        resp = session.get(DETAIL_URL.format(token=job.board_token, job_id=job.external_id), timeout=15)
+        resp = session.get(
+            DETAIL_URL.format(token=job.board_token, job_id=job.external_id), timeout=15
+        )
         resp.raise_for_status()
         job_opening = (resp.json().get("result") or {}).get("jobOpening") or {}
         return strip_html(job_opening.get("description") or "")

@@ -43,13 +43,20 @@ def test_falls_back_to_ats_location_when_domestic_location_is_empty(monkeypatch)
 
 
 def test_fetch_body_strips_html(monkeypatch):
-    detail_payload = {"result": {"jobOpening": {"description": "<p>Ship <b>security</b> tooling.</p>"}}}
+    detail_payload = {
+        "result": {"jobOpening": {"description": "<p>Ship <b>security</b> tooling.</p>"}}
+    }
     monkeypatch.setattr(bamboohr.session, "get", lambda *a, **k: _FakeResponse(detail_payload))
 
     body = bamboohr.BambooHRAdapter().fetch_body(
         bamboohr.RawJob(
-            adapter="bamboohr", company="Acme", board_token="acme",
-            external_id="823", title="x", location="x", url="x",
+            adapter="bamboohr",
+            company="Acme",
+            board_token="acme",
+            external_id="823",
+            title="x",
+            location="x",
+            url="x",
         )
     )
 

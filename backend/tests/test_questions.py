@@ -6,9 +6,14 @@ from jobfinder.models import RawJob
 
 def _job(**overrides):
     base = dict(
-        adapter="fake-questions-test", company="Acme", board_token="acme",
-        external_id="1", title="Security Engineer", location="Boston, MA",
-        url="https://example.com/1", body="",
+        adapter="fake-questions-test",
+        company="Acme",
+        board_token="acme",
+        external_id="1",
+        title="Security Engineer",
+        location="Boston, MA",
+        url="https://example.com/1",
+        body="",
     )
     base.update(overrides)
     return RawJob(**base)
@@ -22,7 +27,15 @@ class _FakeQuestionsAdapter(Adapter):
         return []
 
     def fetch_questions(self, job):
-        return [{"name": "q1", "label": "Are you authorized?", "field_type": "boolean", "required": True, "values": []}]
+        return [
+            {
+                "name": "q1",
+                "label": "Are you authorized?",
+                "field_type": "boolean",
+                "required": True,
+                "values": [],
+            }
+        ]
 
 
 @register

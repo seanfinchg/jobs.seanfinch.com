@@ -33,8 +33,11 @@ def test_real_exact_string_variants_from_live_data_are_featured():
     # not "Motorola Solutions," "Hewlett Packard Enterprise" not "HPE").
     # is_featured() does an exact match, so both variants need to be listed.
     for company in [
-        "Micron Technology", "Motorola", "Hewlett Packard Enterprise",
-        "Hewlett Packard (HP)", "JP Morgan Chase",
+        "Micron Technology",
+        "Motorola",
+        "Hewlett Packard Enterprise",
+        "Hewlett Packard (HP)",
+        "JP Morgan Chase",
     ]:
         assert is_featured(company), company
 
@@ -45,12 +48,30 @@ def test_user_requested_and_high_frequency_real_companies_are_featured():
     # list and picking out the ones with genuine mainstream (not just
     # tech-industry) brand recognition.
     for company in [
-        "Tesla", "TikTok", "ByteDance", "The Walt Disney Company",
-        "Charles Schwab", "American Express", "Fidelity Investments",
-        "Capital One", "Goldman Sachs", "Dropbox", "Squarespace", "Roblox",
-        "Blue Origin", "Neuralink", "The Boeing Company", "General Motors",
-        "Nokia", "Honeywell", "Northrop Grumman", "RTX",
-        "L3Harris Technologies", "Twilio", "Asana", "Deloitte",
+        "Tesla",
+        "TikTok",
+        "ByteDance",
+        "The Walt Disney Company",
+        "Charles Schwab",
+        "American Express",
+        "Fidelity Investments",
+        "Capital One",
+        "Goldman Sachs",
+        "Dropbox",
+        "Squarespace",
+        "Roblox",
+        "Blue Origin",
+        "Neuralink",
+        "The Boeing Company",
+        "General Motors",
+        "Nokia",
+        "Honeywell",
+        "Northrop Grumman",
+        "RTX",
+        "L3Harris Technologies",
+        "Twilio",
+        "Asana",
+        "Deloitte",
     ]:
         assert is_featured(company), company
 
@@ -61,13 +82,39 @@ def test_niche_b2b_companies_were_removed_as_not_broadly_recognizable():
     # that "random" unfamiliar companies were showing up as "featured."
     # Not exhaustive, just guards the specific ones flagged.
     for company in [
-        "Roper Technologies", "Trimble", "Arrow Electronics", "Jabil",
-        "TE Connectivity", "Amphenol", "Keysight Technologies", "Teradyne",
-        "Zebra Technologies", "Fiserv", "Synopsys", "Cadence Design Systems",
-        "Analog Devices", "Applied Materials", "Lam Research", "KLA",
-        "Juniper Networks", "F5", "VeriSign", "Cargill", "SambaNova Systems",
-        "Cerebras Systems", "Vanta", "HashiCorp", "PagerDuty", "Confluent",
-        "Grafana Labs", "JetBrains", "Carta", "Samsara", "Klaviyo",
-        "Rippling", "Cohere", "Gusto",
+        "Roper Technologies",
+        "Trimble",
+        "Arrow Electronics",
+        "Jabil",
+        "TE Connectivity",
+        "Amphenol",
+        "Keysight Technologies",
+        "Teradyne",
+        "Zebra Technologies",
+        "Fiserv",
+        "Synopsys",
+        "Cadence Design Systems",
+        "Analog Devices",
+        "Applied Materials",
+        "Lam Research",
+        "KLA",
+        "Juniper Networks",
+        "F5",
+        "VeriSign",
+        "Cargill",
+        "SambaNova Systems",
+        "Cerebras Systems",
+        "Vanta",
+        "HashiCorp",
+        "PagerDuty",
+        "Confluent",
+        "Grafana Labs",
+        "JetBrains",
+        "Carta",
+        "Samsara",
+        "Klaviyo",
+        "Rippling",
+        "Cohere",
+        "Gusto",
     ]:
         assert not is_featured(company), company

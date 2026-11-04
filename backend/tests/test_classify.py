@@ -74,12 +74,16 @@ def test_mlops_and_applied_ai_titles_get_mlops_subfield():
 
 def test_release_and_observability_titles_get_devops_sre_subfields():
     assert "release-engineering" in classify_subfields("Release Engineer | Consumer Devices")
-    assert "release-engineering" in classify_subfields("Staff Site Reliability Engineer - Release Engineering")
+    assert "release-engineering" in classify_subfields(
+        "Staff Site Reliability Engineer - Release Engineering"
+    )
     assert "observability" in classify_subfields("Senior Observability Engineer, Platform")
 
 
 def test_cross_platform_mobile_titles_get_subfield():
-    assert "cross-platform" in classify_subfields("React Native Engineer, Merchant Experience Mobile")
+    assert "cross-platform" in classify_subfields(
+        "React Native Engineer, Merchant Experience Mobile"
+    )
     assert "cross-platform" in classify_subfields("Staff Flutter Engineer")
 
 
@@ -109,9 +113,12 @@ def test_grad_year_extracted_from_title():
 
 
 def test_grad_year_falls_back_to_body_when_title_has_none():
-    assert classify_grad_year(
-        "Software Engineer Intern", "Join our Summer 2027 internship class.", today=_TODAY
-    ) == 2027
+    assert (
+        classify_grad_year(
+            "Software Engineer Intern", "Join our Summer 2027 internship class.", today=_TODAY
+        )
+        == 2027
+    )
 
 
 def test_grad_year_none_when_not_stated():
@@ -139,8 +146,12 @@ def test_lean_six_sigma_business_titles_do_not_classify_as_mechanical_engineerin
 
 
 def test_six_sigma_engineer_title_still_classifies_as_mechanical_engineering():
-    assert "mechanical-engineering" in classify_fields("Manufacturing Engineer - Six Sigma Black Belt")
-    assert "quality-six-sigma" in classify_subfields("Manufacturing Engineer - Six Sigma Black Belt")
+    assert "mechanical-engineering" in classify_fields(
+        "Manufacturing Engineer - Six Sigma Black Belt"
+    )
+    assert "quality-six-sigma" in classify_subfields(
+        "Manufacturing Engineer - Six Sigma Black Belt"
+    )
 
 
 def test_hardware_portfolio_analyst_does_not_classify_as_finance():
@@ -205,10 +216,14 @@ def test_classify_subfields_reads_tag_pattern_from_field_yaml(tmp_path):
     # the real shipped YAML files).
     fields_dir = tmp_path / "profiles" / "fields"
     fields_dir.mkdir(parents=True)
-    (fields_dir / "widgets.yaml").write_text(yaml.safe_dump({
-        "label": "Widgets",
-        "subfields": [{"tag": "gizmo", "label": "Gizmo", "pattern": r"gizmo engineer"}],
-    }))
+    (fields_dir / "widgets.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "label": "Widgets",
+                "subfields": [{"tag": "gizmo", "label": "Gizmo", "pattern": r"gizmo engineer"}],
+            }
+        )
+    )
 
     classify._field_subfield_patterns_cache.clear()
     try:

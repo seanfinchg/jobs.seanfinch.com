@@ -8,7 +8,10 @@ BACKEND_DIR = Path(__file__).parent.parent
 SCRIPT_PATH = BACKEND_DIR / "scripts" / "seed_answers.py"
 EXAMPLE_PATH = BACKEND_DIR / "answers.example.yaml"
 
-BANNED = re.compile(r"authoriz|sponsor|veteran|disab|race|ethnicity|gender|clearance|salary|compensation", re.IGNORECASE)
+BANNED = re.compile(
+    r"authoriz|sponsor|veteran|disab|race|ethnicity|gender|clearance|salary|compensation",
+    re.IGNORECASE,
+)
 
 
 def _load_module():
@@ -27,8 +30,12 @@ def test_todo_placeholders_are_clearly_marked():
 def test_legal_and_personal_categories_are_never_in_real_answers():
     module = _load_module()
     for pattern, answer, _ in module.load_real_answers(EXAMPLE_PATH):
-        assert not BANNED.search(pattern), f"legal/personal pattern leaked into real answers: {pattern}"
-        assert not BANNED.search(answer), f"legal/personal content leaked into real answers: {answer}"
+        assert not BANNED.search(pattern), (
+            f"legal/personal pattern leaked into real answers: {pattern}"
+        )
+        assert not BANNED.search(answer), (
+            f"legal/personal content leaked into real answers: {answer}"
+        )
 
 
 def test_example_file_loads_and_every_pattern_compiles():

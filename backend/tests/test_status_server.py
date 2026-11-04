@@ -36,7 +36,9 @@ def test_read_progress_returns_none_when_file_missing(tmp_path, monkeypatch):
 
 def test_read_progress_parses_real_content(tmp_path, monkeypatch):
     progress_path = tmp_path / "jobfinder.db.scrape-progress.json"
-    progress_path.write_text(json.dumps({"profile": "broad-cs", "boards_done": 5, "boards_total": 10}))
+    progress_path.write_text(
+        json.dumps({"profile": "broad-cs", "boards_done": 5, "boards_total": 10})
+    )
     monkeypatch.setattr(status_server, "PROGRESS_PATH", progress_path)
     progress = status_server._read_progress()
     assert progress == {"profile": "broad-cs", "boards_done": 5, "boards_total": 10}
@@ -74,11 +76,20 @@ def test_build_status_flags_stalled_past_the_warning_threshold(tmp_path, monkeyp
     stale_since = (
         datetime.now(timezone.utc) - timedelta(seconds=status_server.STALL_WARNING_SECONDS + 60)
     ).isoformat()
-    progress_path.write_text(json.dumps({
-        "profile": "broad-cs", "adapter": "workday", "token": "leidos",
-        "boards_done": 123, "boards_total": 172, "total_stored": 7022,
-        "started_at": "t0", "in_flight_since": stale_since,
-    }))
+    progress_path.write_text(
+        json.dumps(
+            {
+                "profile": "broad-cs",
+                "adapter": "workday",
+                "token": "leidos",
+                "boards_done": 123,
+                "boards_total": 172,
+                "total_stored": 7022,
+                "started_at": "t0",
+                "in_flight_since": stale_since,
+            }
+        )
+    )
     monkeypatch.setattr(status_server, "PROGRESS_PATH", progress_path)
     monkeypatch.setattr(status_server, "DB_PATH", tmp_path / "jobfinder.db")
 

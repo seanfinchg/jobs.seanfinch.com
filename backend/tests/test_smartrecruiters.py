@@ -37,17 +37,30 @@ def test_fetch_body_strips_html_across_sections(monkeypatch):
     detail_payload = {
         "jobAd": {
             "sections": {
-                "jobDescription": {"title": "Job Description", "text": "<p>Ship <b>security</b> tooling.</p>"},
-                "qualifications": {"title": "Qualifications", "text": "<ul><li>CS degree</li></ul>"},
+                "jobDescription": {
+                    "title": "Job Description",
+                    "text": "<p>Ship <b>security</b> tooling.</p>",
+                },
+                "qualifications": {
+                    "title": "Qualifications",
+                    "text": "<ul><li>CS degree</li></ul>",
+                },
             }
         }
     }
-    monkeypatch.setattr(smartrecruiters.session, "get", lambda *a, **k: _FakeResponse(detail_payload))
+    monkeypatch.setattr(
+        smartrecruiters.session, "get", lambda *a, **k: _FakeResponse(detail_payload)
+    )
 
     body = smartrecruiters.SmartRecruitersAdapter().fetch_body(
         smartrecruiters.RawJob(
-            adapter="smartrecruiters", company="Acme", board_token="acme",
-            external_id="9001", title="x", location="x", url="x",
+            adapter="smartrecruiters",
+            company="Acme",
+            board_token="acme",
+            external_id="9001",
+            title="x",
+            location="x",
+            url="x",
         )
     )
 

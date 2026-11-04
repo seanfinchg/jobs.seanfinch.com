@@ -16,7 +16,8 @@ def main() -> None:
     run_parser.add_argument("--questions", action="store_true")
 
     reclassify_parser = subparsers.add_parser(
-        "reclassify", help="re-classify/re-filter already-ingested jobs against a profile's current rules, no network fetch"
+        "reclassify",
+        help="re-classify/re-filter already-ingested jobs against a profile's current rules, no network fetch",
     )
     reclassify_parser.add_argument("--profile", required=True)
 
@@ -29,7 +30,9 @@ def main() -> None:
     )
 
     apply_parser = subparsers.add_parser("apply")
-    apply_parser.add_argument("--headless", action="store_true", help="testing only, never use for a real run")
+    apply_parser.add_argument(
+        "--headless", action="store_true", help="testing only, never use for a real run"
+    )
 
     subparsers.add_parser("review", help="interactively triage new jobs and queue them for apply")
 
@@ -48,7 +51,9 @@ def main() -> None:
         engine.run(args.profile, harvest_questions=args.questions)
     elif args.command == "reclassify":
         updated, newly_skipped = engine.reclassify(args.profile)
-        print(f"reclassified {updated} job(s), newly skipped {newly_skipped} job(s) that no longer pass filters")
+        print(
+            f"reclassified {updated} job(s), newly skipped {newly_skipped} job(s) that no longer pass filters"
+        )
     elif args.command == "dashboard":
         from jobfinder import dashboard
 

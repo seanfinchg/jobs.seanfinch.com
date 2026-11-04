@@ -553,7 +553,6 @@ export default function App(): React.JSX.Element {
                   disciplineOptions={DISCIPLINE_FILTER_OPTIONS}
                   disciplineCounts={disciplineCounts}
                   onDisciplineChange={setDisciplineFilter}
-                  roleFilterDisabled={discipline === null}
                   locationTags={locationTags}
                   onLocationTagsChange={setLocationTags}
                   locationTree={locationTree}
@@ -601,7 +600,6 @@ export default function App(): React.JSX.Element {
               disciplineOptions={DISCIPLINE_FILTER_OPTIONS}
               disciplineCounts={disciplineCounts}
               onDisciplineChange={setDisciplineFilter}
-              roleFilterDisabled={discipline === null}
               locationTags={locationTags}
               onLocationTagsChange={setLocationTags}
               locationTree={locationTree}

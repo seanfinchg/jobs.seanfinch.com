@@ -592,7 +592,7 @@ function parseSegment(rawSegment: string): LocationSegment[] {
   const remote = REMOTE_RE.test(raw);
   const hybrid = HYBRID_RE.test(raw);
 
-  let working = raw
+  const working = raw
     .replace(/\([^)]*\)/g, " ") // balanced parentheticals, e.g. "(Travel-Required)"
     .replace(/[()]/g, " ") // any left dangling by a mid-parenthetical split (e.g. "X | Y)" from "(X | Y)")
     .replace(/remote[-\s]friendly,?/gi, " ")

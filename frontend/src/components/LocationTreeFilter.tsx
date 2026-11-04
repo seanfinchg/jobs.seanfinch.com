@@ -125,21 +125,21 @@ export default function LocationTreeFilter({
   counts,
 }: LocationTreeFilterProps): React.JSX.Element {
   const [open, setOpen] = useState(false);
+  // The query clears on close: reopening shows the full list, not what was last typed.
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent): void {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setQuery("");
+      }
     }
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
-
-  useEffect(() => {
-    if (!open) setQuery("");
-  }, [open]);
 
   function toggle(value: string): void {
     onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
@@ -162,7 +162,10 @@ export default function LocationTreeFilter({
     <div className="relative w-full" ref={ref}>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          if (open) setQuery("");
+          setOpen(!open);
+        }}
         className={`flex w-full items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition-colors ${
           selected.length > 0
             ? "border-accent/40 bg-accent/10 text-light-mode"

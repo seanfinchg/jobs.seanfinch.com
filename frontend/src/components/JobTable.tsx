@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { FieldMeta, Job, SortKey } from "@/types";
 import { LEVEL_LABELS, LEVEL_ORDER } from "@/types";
 import { relativeDate } from "@/lib/date";
@@ -163,9 +163,11 @@ export default function JobTable({ jobs, fields }: JobTableProps): React.JSX.Ele
   // how large the filtered set gets. Reset to page 1 whenever the filtered
   // set OR the sort changes -- a re-sort should show the new top results,
   // not leave you stranded on what's now an arbitrary slice.
-  useEffect(() => {
+  const [pageScope, setPageScope] = useState({ jobs, sortKey, sortDir });
+  if (pageScope.jobs !== jobs || pageScope.sortKey !== sortKey || pageScope.sortDir !== sortDir) {
+    setPageScope({ jobs, sortKey, sortDir });
     setPage(0);
-  }, [jobs, sortKey, sortDir]);
+  }
 
   function toggleSort(key: SortKey): void {
     setSortDir((prevDir) => (key === sortKey ? (-prevDir as 1 | -1) : -1));

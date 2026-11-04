@@ -94,7 +94,7 @@ export function useAppliedTracking(): AppliedTracking {
 
   useEffect(() => {
     let cancelled = false;
-    fetchAppliedIds().then((ids) => {
+    void fetchAppliedIds().then((ids) => {
       if (!cancelled) setAppliedIds(ids);
     });
     return () => {

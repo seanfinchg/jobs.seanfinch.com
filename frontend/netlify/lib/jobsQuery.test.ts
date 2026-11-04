@@ -254,7 +254,7 @@ test("bad params are rejected with a message", () => {
   for (const params of bad) {
     const r = parseQuery(new URLSearchParams(params), NOW);
     assert.equal(r.ok, false, JSON.stringify(params));
-    if (!r.ok) assert.ok(r.message.length > 0);
+    assert.ok(r.message.length > 0);
   }
 });
 

@@ -72,7 +72,9 @@ export default function CompanyTracker({
               <button
                 type="button"
                 onClick={() => onSelectCompany(s.company)}
-                title={active ? `Clear the ${s.company} filter` : `Filter the table to ${s.company}`}
+                title={
+                  active ? `Clear the ${s.company} filter` : `Filter the table to ${s.company}`
+                }
                 className={`flex w-full items-center justify-between gap-3 rounded px-1 py-2 text-left text-sm hover:bg-white/5 sm:py-1 ${
                   active ? "bg-accent/10" : ""
                 }`}

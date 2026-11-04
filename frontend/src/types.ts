@@ -28,9 +28,18 @@ export type SortKey = "company" | "title" | "location" | "posted" | "level";
 // this list (shouldn't happen, but the classifier defaults unknowns to
 // "mid") sorts after everything named here.
 export const LEVEL_ORDER = [
-  "intern", "new-grad", "mid", "senior", "staff", "senior-staff",
-  "principal", "senior-principal", "distinguished",
-  "manager", "director", "vp",
+  "intern",
+  "new-grad",
+  "mid",
+  "senior",
+  "staff",
+  "senior-staff",
+  "principal",
+  "senior-principal",
+  "distinguished",
+  "manager",
+  "director",
+  "vp",
 ];
 
 export const LEVEL_LABELS: Record<string, string> = {

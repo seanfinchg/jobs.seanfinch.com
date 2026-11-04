@@ -65,7 +65,9 @@ async function loadDataset(req: Request): Promise<Dataset> {
     ]);
     if (!Array.isArray(jobs)) throw new Error("data.json is not an array");
     const generatedAt =
-      meta && typeof meta === "object" && typeof (meta as Record<string, unknown>).generated_at === "string"
+      meta &&
+      typeof meta === "object" &&
+      typeof (meta as Record<string, unknown>).generated_at === "string"
         ? ((meta as Record<string, unknown>).generated_at as string)
         : null;
     cache = {
@@ -86,7 +88,10 @@ const CACHE_HEADERS = { "Cache-Control": "public, max-age=60" };
 
 export async function handleApi(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: { ...CORS, "Access-Control-Max-Age": "86400" } });
+    return new Response(null, {
+      status: 204,
+      headers: { ...CORS, "Access-Control-Max-Age": "86400" },
+    });
   }
   if (req.method !== "GET") {
     return errorResponse(405, "method_not_allowed", "Only GET and OPTIONS are supported.", {
@@ -101,9 +106,14 @@ export async function handleApi(req: Request): Promise<Response> {
   try {
     data = await loadDataset(req);
   } catch {
-    return errorResponse(503, "unavailable", "Job data is temporarily unavailable. Retry shortly.", {
-      "Retry-After": "30",
-    });
+    return errorResponse(
+      503,
+      "unavailable",
+      "Job data is temporarily unavailable. Retry shortly.",
+      {
+        "Retry-After": "30",
+      },
+    );
   }
 
   if (path === "/api/meta") {

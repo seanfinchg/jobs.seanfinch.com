@@ -18,7 +18,9 @@ export function relativeDate(iso: string): RelativeDate {
   const title = Number.isNaN(date.getTime())
     ? iso
     : date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
-  const time = Number.isNaN(date.getTime()) ? "" : date.toLocaleTimeString(undefined, { timeStyle: "short" });
+  const time = Number.isNaN(date.getTime())
+    ? ""
+    : date.toLocaleTimeString(undefined, { timeStyle: "short" });
 
   if (Number.isNaN(date.getTime())) return { label: iso, title, time };
 

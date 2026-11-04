@@ -46,9 +46,7 @@ export interface Query {
   offset: number;
 }
 
-export type ParseResult =
-  | { ok: true; query: Query }
-  | { ok: false; message: string };
+export type ParseResult = { ok: true; query: Query } | { ok: false; message: string };
 
 export const DEFAULT_LIMIT = 25;
 export const MAX_LIMIT = 100;

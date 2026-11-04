@@ -20,17 +20,27 @@ const COLUMNS: { key: SortKey; label: string; className?: string }[] = [
   { key: "posted", label: "Posted" },
 ];
 
-function fieldLabelMaps(fields: FieldMeta[]): { fieldLabels: Record<string, string>; subfieldLabels: Record<string, string> } {
+function fieldLabelMaps(fields: FieldMeta[]): {
+  fieldLabels: Record<string, string>;
+  subfieldLabels: Record<string, string>;
+} {
   return {
     fieldLabels: Object.fromEntries(fields.map((f) => [f.slug, f.label])),
-    subfieldLabels: Object.fromEntries(fields.flatMap((f) => f.subfields.map((s) => [s.tag, s.label]))),
+    subfieldLabels: Object.fromEntries(
+      fields.flatMap((f) => f.subfields.map((s) => [s.tag, s.label])),
+    ),
   };
 }
 
-function roleLabel(job: Job, fieldLabels: Record<string, string>, subfieldLabels: Record<string, string>): string {
-  const labels = job.matched_subfields.length > 0
-    ? job.matched_subfields.map((s) => subfieldLabels[s] ?? s)
-    : job.matched_fields.map((f) => fieldLabels[f] ?? f);
+function roleLabel(
+  job: Job,
+  fieldLabels: Record<string, string>,
+  subfieldLabels: Record<string, string>,
+): string {
+  const labels =
+    job.matched_subfields.length > 0
+      ? job.matched_subfields.map((s) => subfieldLabels[s] ?? s)
+      : job.matched_fields.map((f) => fieldLabels[f] ?? f);
   return labels.length > 0 ? labels.join(", ") : "—";
 }
 
@@ -90,7 +100,12 @@ function ApplyCell({ job, expanded, onToggleExpanded }: ApplyCellProps): React.J
   const otherUrls = job.apply_urls.filter((url) => url !== job.best_apply_url);
   return (
     <>
-      <a href={job.best_apply_url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+      <a
+        href={job.best_apply_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-accent hover:underline"
+      >
         apply
       </a>
       {otherUrls.length > 0 && (
@@ -153,7 +168,7 @@ export default function JobTable({ jobs, fields }: JobTableProps): React.JSX.Ele
   }, [jobs, sortKey, sortDir]);
 
   function toggleSort(key: SortKey): void {
-    setSortDir((prevDir) => (key === sortKey ? ((-prevDir) as 1 | -1) : -1));
+    setSortDir((prevDir) => (key === sortKey ? (-prevDir as 1 | -1) : -1));
     setSortKey(key);
   }
 
@@ -230,11 +245,16 @@ export default function JobTable({ jobs, fields }: JobTableProps): React.JSX.Ele
                         the 3-column layout) -- folding them into a subtext
                         line here removes 2 columns' worth of width demand
                         instead of widening the whole page layout. */}
-                    {(roleLabel(job, fieldLabels, subfieldLabels) !== "—" || job.salary_min != null || job.salary_max != null) && (
+                    {(roleLabel(job, fieldLabels, subfieldLabels) !== "—" ||
+                      job.salary_min != null ||
+                      job.salary_max != null) && (
                       <p className="mt-0.5 text-xs text-ultra-light-mode/50">
                         {roleLabel(job, fieldLabels, subfieldLabels)}
                         {(job.salary_min != null || job.salary_max != null) && (
-                          <span className="tabular-nums"> · {formatSalary(job.salary_min, job.salary_max)}</span>
+                          <span className="tabular-nums">
+                            {" "}
+                            · {formatSalary(job.salary_min, job.salary_max)}
+                          </span>
                         )}
                       </p>
                     )}
@@ -252,7 +272,9 @@ export default function JobTable({ jobs, fields }: JobTableProps): React.JSX.Ele
                     <ApplyCell
                       job={job}
                       expanded={expandedId === job.id}
-                      onToggleExpanded={() => setExpandedId((cur) => (cur === job.id ? null : job.id))}
+                      onToggleExpanded={() =>
+                        setExpandedId((cur) => (cur === job.id ? null : job.id))
+                      }
                     />
                   </td>
                 </tr>
@@ -292,7 +314,9 @@ export default function JobTable({ jobs, fields }: JobTableProps): React.JSX.Ele
                 <span title={job.location}>{displayLocation(job)}</span>
                 {job.level && <span>{LEVEL_LABELS[job.level] ?? job.level}</span>}
                 {(job.salary_min != null || job.salary_max != null) && (
-                  <span className="tabular-nums">{formatSalary(job.salary_min, job.salary_max)}</span>
+                  <span className="tabular-nums">
+                    {formatSalary(job.salary_min, job.salary_max)}
+                  </span>
                 )}
               </div>
               {(job.matched_fields.length > 0 || job.matched_subfields.length > 0) && (

@@ -12,26 +12,99 @@
         "operationId": "listJobs",
         "summary": "Search and filter job postings",
         "parameters": [
-          { "name": "q", "in": "query", "description": "Case-insensitive substring of title or company.", "schema": { "type": "string" } },
-          { "name": "company", "in": "query", "description": "Comma-separated exact company names, case-insensitive.", "schema": { "type": "string" } },
-          { "name": "level", "in": "query", "description": "Comma-separated levels (intern, new-grad, mid, senior, ...).", "schema": { "type": "string" } },
-          { "name": "field", "in": "query", "description": "Comma-separated field slugs matched against matched_fields.", "schema": { "type": "string" } },
-          { "name": "subfield", "in": "query", "description": "Comma-separated subfield tags matched against matched_subfields.", "schema": { "type": "string" } },
-          { "name": "location", "in": "query", "description": "Case-insensitive substring of the location string.", "schema": { "type": "string" } },
-          { "name": "salary_min", "in": "query", "description": "Only postings whose salary_min is at least this value (USD/year).", "schema": { "type": "integer", "minimum": 0 } },
-          { "name": "has_salary", "in": "query", "description": "true: only postings with a salary; false: only postings without.", "schema": { "type": "boolean" } },
-          { "name": "posted_since", "in": "query", "description": "ISO date (2026-01-31) or relative (12h, 7d, 2w). Uses posted_at, falling back to first_seen.", "schema": { "type": "string" } },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Case-insensitive substring of title or company.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "company",
+            "in": "query",
+            "description": "Comma-separated exact company names, case-insensitive.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "description": "Comma-separated levels (intern, new-grad, mid, senior, ...).",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "field",
+            "in": "query",
+            "description": "Comma-separated field slugs matched against matched_fields.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "subfield",
+            "in": "query",
+            "description": "Comma-separated subfield tags matched against matched_subfields.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "location",
+            "in": "query",
+            "description": "Case-insensitive substring of the location string.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "salary_min",
+            "in": "query",
+            "description": "Only postings whose salary_min is at least this value (USD/year).",
+            "schema": { "type": "integer", "minimum": 0 }
+          },
+          {
+            "name": "has_salary",
+            "in": "query",
+            "description": "true: only postings with a salary; false: only postings without.",
+            "schema": { "type": "boolean" }
+          },
+          {
+            "name": "posted_since",
+            "in": "query",
+            "description": "ISO date (2026-01-31) or relative (12h, 7d, 2w). Uses posted_at, falling back to first_seen.",
+            "schema": { "type": "string" }
+          },
           { "name": "featured", "in": "query", "schema": { "type": "boolean" } },
-          { "name": "exclude_defense", "in": "query", "description": "true omits postings flagged as defense/surveillance employers.", "schema": { "type": "boolean" } },
-          { "name": "ats", "in": "query", "description": "Comma-separated ATS names derived from the apply URL.", "schema": { "type": "string", "examples": ["greenhouse,lever"] } },
-          { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["newest", "salary_desc", "company"], "default": "newest" } },
-          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 25 } },
-          { "name": "offset", "in": "query", "schema": { "type": "integer", "minimum": 0, "default": 0 } }
+          {
+            "name": "exclude_defense",
+            "in": "query",
+            "description": "true omits postings flagged as defense/surveillance employers.",
+            "schema": { "type": "boolean" }
+          },
+          {
+            "name": "ats",
+            "in": "query",
+            "description": "Comma-separated ATS names derived from the apply URL.",
+            "schema": { "type": "string", "examples": ["greenhouse,lever"] }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["newest", "salary_desc", "company"],
+              "default": "newest"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 25 }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 0, "default": 0 }
+          }
         ],
         "responses": {
           "200": {
             "description": "A page of postings.",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/JobList" } } }
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/JobList" } }
+            }
           },
           "400": { "$ref": "#/components/responses/Error" },
           "429": { "description": "Rate limit exceeded. Back off and retry." },
@@ -43,11 +116,15 @@
       "get": {
         "operationId": "getJob",
         "summary": "Get one posting with its apply details",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
         "responses": {
           "200": {
             "description": "The posting.",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/JobDetail" } } }
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/JobDetail" } }
+            }
           },
           "404": { "$ref": "#/components/responses/Error" },
           "429": { "description": "Rate limit exceeded. Back off and retry." },
@@ -102,8 +179,15 @@
           "grad_year": { "type": ["integer", "null"] },
           "featured": { "type": "boolean" },
           "defense": { "type": "boolean" },
-          "ats": { "type": "string", "description": "greenhouse, lever, ashby, workday, smartrecruiters, workable, rippling, bamboohr, or other." },
-          "apply_url": { "type": "string", "format": "uri", "description": "Same as best_apply_url." }
+          "ats": {
+            "type": "string",
+            "description": "greenhouse, lever, ashby, workday, smartrecruiters, workable, rippling, bamboohr, or other."
+          },
+          "apply_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Same as best_apply_url."
+          }
         }
       },
       "JobList": {
@@ -113,7 +197,10 @@
           "total": { "type": "integer" },
           "limit": { "type": "integer" },
           "offset": { "type": "integer" },
-          "next_offset": { "type": ["integer", "null"], "description": "Pass as offset to get the next page; null at the end." },
+          "next_offset": {
+            "type": ["integer", "null"],
+            "description": "Pass as offset to get the next page; null at the end."
+          },
           "generated_at": { "type": ["string", "null"], "format": "date-time" },
           "jobs": { "type": "array", "items": { "$ref": "#/components/schemas/Job" } }
         }

@@ -41,7 +41,9 @@ const JOBS = [
   },
 ];
 
-const FIELDS = [{ slug: "security", label: "Security", subfields: [{ tag: "appsec", label: "AppSec" }] }];
+const FIELDS = [
+  { slug: "security", label: "Security", subfields: [{ tag: "appsec", label: "AppSec" }] },
+];
 const META = { generated_at: "2026-10-31T06:00:00+00:00" };
 
 const realFetch = globalThis.fetch;

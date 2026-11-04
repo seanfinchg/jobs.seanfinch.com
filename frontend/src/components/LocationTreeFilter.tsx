@@ -41,7 +41,16 @@ interface TreeRowProps {
   counts: Record<string, number>;
 }
 
-function TreeRow({ node, depth, selected, onToggle, expanded, onToggleExpand, forceExpanded, counts }: TreeRowProps): React.JSX.Element {
+function TreeRow({
+  node,
+  depth,
+  selected,
+  onToggle,
+  expanded,
+  onToggleExpand,
+  forceExpanded,
+  counts,
+}: TreeRowProps): React.JSX.Element {
   const hasChildren = node.children.length > 0;
   const isExpanded = forceExpanded || expanded.has(node.value);
   const count = counts[node.value] ?? 0;
@@ -73,7 +82,9 @@ function TreeRow({ node, depth, selected, onToggle, expanded, onToggleExpand, fo
               onChange={() => onToggle(node.value)}
               className="accent-accent"
             />
-            <span className={`truncate text-sm ${isZero ? "text-ultra-light-mode/40" : "text-ultra-light-mode/80"}`}>
+            <span
+              className={`truncate text-sm ${isZero ? "text-ultra-light-mode/40" : "text-ultra-light-mode/80"}`}
+            >
               {node.label}
             </span>
           </label>
@@ -107,7 +118,12 @@ function TreeRow({ node, depth, selected, onToggle, expanded, onToggleExpand, fo
 // country or state matches every job under it directly -- see
 // lib/location.ts's locationTagsFor, which tags a job with every level its
 // location resolves to, not just the most specific one.
-export default function LocationTreeFilter({ tree, selected, onChange, counts }: LocationTreeFilterProps): React.JSX.Element {
+export default function LocationTreeFilter({
+  tree,
+  selected,
+  onChange,
+  counts,
+}: LocationTreeFilterProps): React.JSX.Element {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -214,7 +230,9 @@ export default function LocationTreeFilter({ tree, selected, onChange, counts }:
               clear all
             </button>
           )}
-          {visibleTree.length === 0 && <p className="px-2 py-3 text-center text-xs text-ultra-light-mode/40">no matches</p>}
+          {visibleTree.length === 0 && (
+            <p className="px-2 py-3 text-center text-xs text-ultra-light-mode/40">no matches</p>
+          )}
           {visibleTree.map((node) => (
             <TreeRow
               key={node.value}

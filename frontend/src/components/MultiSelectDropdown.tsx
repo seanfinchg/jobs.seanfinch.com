@@ -76,7 +76,9 @@ export default function MultiSelectDropdown({
 
   const q = query.trim().toLowerCase();
   const visibleOptions = q
-    ? options.filter((opt) => opt.label.toLowerCase().includes(q) || opt.group?.toLowerCase().includes(q))
+    ? options.filter(
+        (opt) => opt.label.toLowerCase().includes(q) || opt.group?.toLowerCase().includes(q),
+      )
     : options;
 
   // Preserve the order groups first appear in `options` -- ungrouped
@@ -226,7 +228,11 @@ export default function MultiSelectDropdown({
                           />
                           {opt.label}
                         </span>
-                        {counts && <span className="font-mono text-xs text-ultra-light-mode/40">{count}</span>}
+                        {counts && (
+                          <span className="font-mono text-xs text-ultra-light-mode/40">
+                            {count}
+                          </span>
+                        )}
                       </label>
                     );
                   })}

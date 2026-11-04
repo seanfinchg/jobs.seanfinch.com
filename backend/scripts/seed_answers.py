@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 import yaml
+from pydantic import BaseModel, ConfigDict
 
 from jobfinder import db
 from jobfinder.engine import DB_PATH
@@ -28,9 +29,22 @@ RESUME_PATH = BACKEND_DIR / "resume.pdf"
 RESUME_ANSWER = (r"resume|cv", str(RESUME_PATH), "input_file")
 
 
+class _Answer(BaseModel):
+    # An unquoted number in the YAML (a zip code, a year) is still an answer.
+    model_config = ConfigDict(coerce_numbers_to_str=True)
+
+    pattern: str
+    answer: str
+    field_type: str
+
+
+class _AnswersFile(BaseModel):
+    answers: list[_Answer] = []
+
+
 def load_real_answers(path: Path) -> list[tuple[str, str, str]]:
-    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    return [(row["pattern"], row["answer"], row["field_type"]) for row in data.get("answers", [])]
+    data = _AnswersFile.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")) or {})
+    return [(row.pattern, row.answer, row.field_type) for row in data.answers]
 
 
 TODO_PLACEHOLDERS = [

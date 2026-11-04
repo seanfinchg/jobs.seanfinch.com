@@ -22,12 +22,42 @@ import re
 import sys
 import time
 from collections.abc import Callable
+from typing import NotRequired, TypedDict, TypeGuard
 
 import requests
 import yaml
+from pydantic import BaseModel
+
+from jobfinder.config import required_str
 
 TIMEOUT = 15
 SLEEP_BETWEEN_REQUESTS = 0.3
+
+
+class Hit(TypedDict):
+    """One confirmed board: a probed slug (token) or, for workday, the
+    tenant/wd/site triple read off an apply URL."""
+
+    company: str
+    adapter: str
+    job_count: int | None
+    token: NotRequired[str]
+    tenant: NotRequired[str]
+    wd: NotRequired[str]
+    site: NotRequired[str]
+
+
+class _BambooMeta(BaseModel):
+    totalCount: int | None = 0
+
+
+class _BambooList(BaseModel):
+    meta: _BambooMeta | None = None
+
+
+def _is_list(value: object) -> TypeGuard[list[object]]:
+    return isinstance(value, list)
+
 
 _STRIP_SUFFIXES = [" inc", " corp", " corporation", " co", " llc", " ltd", " limited", " company"]
 
@@ -55,8 +85,8 @@ def _probe_lever(slug: str) -> tuple[bool, int]:
     resp = requests.get(f"https://api.lever.co/v0/postings/{slug}?mode=json", timeout=TIMEOUT)
     if resp.status_code != 200:
         return False, 0
-    jobs = resp.json()
-    return (bool(jobs), len(jobs)) if isinstance(jobs, list) else (False, 0)
+    jobs: object = resp.json()
+    return (bool(jobs), len(jobs)) if _is_list(jobs) else (False, 0)
 
 
 def _probe_ashby(slug: str) -> tuple[bool, int]:
@@ -96,17 +126,17 @@ def _probe_rippling(slug: str) -> tuple[bool, int]:
     )
     if resp.status_code != 200:
         return False, 0
-    jobs = resp.json()
-    return (bool(jobs), len(jobs)) if isinstance(jobs, list) else (False, 0)
+    jobs: object = resp.json()
+    return (bool(jobs), len(jobs)) if _is_list(jobs) else (False, 0)
 
 
 def _probe_bamboohr(slug: str) -> tuple[bool, int]:
     resp = requests.get(f"https://{slug}.bamboohr.com/careers/list", timeout=TIMEOUT)
     if resp.status_code != 200:
         return False, 0
-    payload = resp.json()
-    count = (payload.get("meta") or {}).get("totalCount", 0)
-    return bool(count), count
+    payload = _BambooList.model_validate(resp.json())
+    count = (payload.meta or _BambooMeta()).totalCount
+    return bool(count), count or 0
 
 
 ADAPTER_PROBES: dict[str, Callable[[str], tuple[bool, int]]] = {
@@ -120,8 +150,8 @@ ADAPTER_PROBES: dict[str, Callable[[str], tuple[bool, int]]] = {
 }
 
 
-def probe_company(company_name: str, *, sleep: float = SLEEP_BETWEEN_REQUESTS) -> list[dict]:
-    hits = []
+def probe_company(company_name: str, *, sleep: float = SLEEP_BETWEEN_REQUESTS) -> list[Hit]:
+    hits: list[Hit] = []
     for slug in slug_variants(company_name):
         for adapter, probe in ADAPTER_PROBES.items():
             try:
@@ -143,7 +173,7 @@ def probe_company(company_name: str, *, sleep: float = SLEEP_BETWEEN_REQUESTS) -
 
 # Recognizable per-adapter URL fingerprints, for reverse-engineering a token
 # out of an apply URL with zero requests.
-_URL_PATTERNS: list[tuple[str, re.Pattern]] = [
+_URL_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("ashby", re.compile(r"jobs\.ashbyhq\.com/([^/]+)/")),
     ("greenhouse", re.compile(r"boards\.greenhouse\.io/([^/]+)/")),
     ("lever", re.compile(r"jobs\.lever\.co/([^/]+)/")),
@@ -154,7 +184,7 @@ _URL_PATTERNS: list[tuple[str, re.Pattern]] = [
 ]
 
 
-def discover_from_aggregator(db_path: str = "jobfinder.db") -> list[dict]:
+def discover_from_aggregator(db_path: str = "jobfinder.db") -> list[Hit]:
     from jobfinder import db as jobfinder_db
     from jobfinder.adapters.workday import parse_workday_url
 
@@ -166,8 +196,8 @@ def discover_from_aggregator(db_path: str = "jobfinder.db") -> list[dict]:
     ).fetchall()
     conn.close()
 
-    seen: set[tuple] = set()
-    hits = []
+    seen: set[tuple[str, ...]] = set()
+    hits: list[Hit] = []
     for row in rows:
         url = row["apply_url"] or ""
 
@@ -184,7 +214,9 @@ def discover_from_aggregator(db_path: str = "jobfinder.db") -> list[dict]:
                         "company": row["company"],
                         "adapter": "workday",
                         "job_count": None,
-                        **workday_ids,
+                        "tenant": workday_ids["tenant"],
+                        "wd": workday_ids["wd"],
+                        "site": workday_ids["site"],
                     }
                 )
             continue
@@ -203,8 +235,8 @@ def discover_from_aggregator(db_path: str = "jobfinder.db") -> list[dict]:
     return hits
 
 
-def _print_yaml_fragment(hits: list[dict]) -> None:
-    by_adapter: dict[str, list[dict]] = {}
+def _print_yaml_fragment(hits: list[Hit]) -> None:
+    by_adapter: dict[str, list[Hit]] = {}
     for hit in hits:
         by_adapter.setdefault(hit["adapter"], []).append(hit)
 
@@ -217,13 +249,13 @@ def _print_yaml_fragment(hits: list[dict]) -> None:
             if adapter == "workday":
                 entry = {
                     "company": hit["company"],
-                    "token": hit["tenant"],
-                    "tenant": hit["tenant"],
-                    "wd": hit["wd"],
-                    "site": hit["site"],
+                    "token": required_str(hit, "tenant"),
+                    "tenant": required_str(hit, "tenant"),
+                    "wd": required_str(hit, "wd"),
+                    "site": required_str(hit, "site"),
                 }
             else:
-                entry = {"company": hit["company"], "token": hit["token"]}
+                entry = {"company": hit["company"], "token": required_str(hit, "token")}
             # width=1000 avoids yaml.safe_dump wrapping a long flow-style
             # entry (workday's 5 keys) across multiple lines -- this is
             # meant to be a ready-to-paste single-line fragment.
@@ -242,7 +274,7 @@ def main(argv: list[str]) -> None:
     if argv[0] == "--from-aggregator":
         hits = discover_from_aggregator()
     else:
-        hits = []
+        hits: list[Hit] = []
         for name in argv:
             hits.extend(probe_company(name))
 

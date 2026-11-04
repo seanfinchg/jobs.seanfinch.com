@@ -1,10 +1,11 @@
 from jobfinder import db, questions
 from jobfinder.adapters.base import Adapter
 from jobfinder.adapters.registry import register
-from jobfinder.models import RawJob
+from jobfinder.config import Board
+from jobfinder.models import Question, RawJob
 
 
-def _job(**overrides):
+def _job(**overrides: str) -> RawJob:
     base = dict(
         adapter="fake-questions-test",
         company="Acme",
@@ -23,10 +24,10 @@ def _job(**overrides):
 class _FakeQuestionsAdapter(Adapter):
     name = "fake-questions-test"
 
-    def fetch(self, board):
+    def fetch(self, board: Board) -> list[RawJob]:
         return []
 
-    def fetch_questions(self, job):
+    def fetch_questions(self, job: RawJob) -> list[Question] | None:
         return [
             {
                 "name": "q1",
@@ -42,11 +43,11 @@ class _FakeQuestionsAdapter(Adapter):
 class _FakeNoQuestionsAdapter(Adapter):
     name = "fake-no-questions-test"
 
-    def fetch(self, board):
+    def fetch(self, board: Board) -> list[RawJob]:
         return []
 
 
-def test_harvest_matched_stores_questions_for_open_jobs():
+def test_harvest_matched_stores_questions_for_open_jobs() -> None:
     conn = db.connect(":memory:")
     job = _job()
     db.upsert_job(conn, job, profile="p", is_native=True, now="t1")
@@ -59,7 +60,7 @@ def test_harvest_matched_stores_questions_for_open_jobs():
     assert rows[0]["label"] == "Are you authorized?"
 
 
-def test_harvest_skips_adapters_with_no_question_schema():
+def test_harvest_skips_adapters_with_no_question_schema() -> None:
     conn = db.connect(":memory:")
     job = _job(adapter="fake-no-questions-test")
     db.upsert_job(conn, job, profile="p", is_native=True, now="t1")
@@ -70,7 +71,7 @@ def test_harvest_skips_adapters_with_no_question_schema():
     assert conn.execute("SELECT * FROM questions").fetchall() == []
 
 
-def test_harvest_matched_skips_postings_already_harvested():
+def test_harvest_matched_skips_postings_already_harvested() -> None:
     # Real cost this guards against: without this, a live run with
     # --questions re-requests every open posting's schema again every day,
     # a cost that only grows as the backlog of open postings grows.
@@ -86,7 +87,7 @@ def test_harvest_matched_skips_postings_already_harvested():
     assert len(conn.execute("SELECT * FROM questions").fetchall()) == 1
 
 
-def test_harvest_ignores_closed_jobs():
+def test_harvest_ignores_closed_jobs() -> None:
     conn = db.connect(":memory:")
     job = _job()
     hash_ = db.upsert_job(conn, job, profile="p", is_native=True, now="t1")

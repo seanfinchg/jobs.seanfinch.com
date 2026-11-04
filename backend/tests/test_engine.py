@@ -11,10 +11,11 @@ import yaml
 from jobfinder import classify, db, engine
 from jobfinder.adapters.base import Adapter
 from jobfinder.adapters.registry import register
+from jobfinder.config import Board, Filters, Profile, required_str
 from jobfinder.models import RawJob
 
 
-def _job(**overrides):
+def _job(**overrides: str) -> RawJob:
     base = dict(
         adapter="fake",
         company="Acme",
@@ -29,13 +30,19 @@ def _job(**overrides):
     return RawJob(**base)
 
 
-def test_engine_source_has_no_seniority_keyword():
+def _tokens(profile: Profile, adapter_key: str) -> list[str]:
+    boards = profile.get("boards")
+    assert boards is not None
+    return [required_str(board, "token") for board in boards[adapter_key]]
+
+
+def test_engine_source_has_no_seniority_keyword() -> None:
     source = inspect.getsource(engine)
     for banned in ["new grad", "intern", "senior"]:
         assert banned not in source.lower()
 
 
-def test_engine_imports_no_concrete_adapter_module():
+def test_engine_imports_no_concrete_adapter_module() -> None:
     source = inspect.getsource(engine)
     for concrete in [
         "greenhouse",
@@ -49,8 +56,8 @@ def test_engine_imports_no_concrete_adapter_module():
         assert f"adapters import {concrete}" not in source
 
 
-def test_passes_filters_include_exclude():
-    filters = {
+def test_passes_filters_include_exclude() -> None:
+    filters: Filters = {
         "title_include": [r"security"],
         "title_exclude": [r"senior|manager"],
     }
@@ -58,8 +65,8 @@ def test_passes_filters_include_exclude():
     assert not engine.passes_filters(_job(title="Senior Security Engineer"), filters)
 
 
-def test_weak_title_alone_is_rejected_without_body_support():
-    filters = {
+def test_weak_title_alone_is_rejected_without_body_support() -> None:
+    filters: Filters = {
         "title_include": [r"\bsecurity\b"],
         "title_include_weak": [r"software engineer.*new grad"],
         "body_include_for_weak_title": [r"\bsecurity\b", r"cyber"],
@@ -68,8 +75,8 @@ def test_weak_title_alone_is_rejected_without_body_support():
     assert not engine.passes_filters(generic, filters)
 
 
-def test_weak_title_passes_with_body_support():
-    filters = {
+def test_weak_title_passes_with_body_support() -> None:
+    filters: Filters = {
         "title_include": [r"\bsecurity\b"],
         "title_include_weak": [r"software engineer.*new grad"],
         "body_include_for_weak_title": [r"\bsecurity\b", r"cyber"],
@@ -78,8 +85,8 @@ def test_weak_title_passes_with_body_support():
     assert engine.passes_filters(supported, filters)
 
 
-def test_strong_title_bypasses_the_weak_tier_entirely():
-    filters = {
+def test_strong_title_bypasses_the_weak_tier_entirely() -> None:
+    filters: Filters = {
         "title_include": [r"\bsecurity\b"],
         "title_include_weak": [r"software engineer.*new grad"],
         "body_include_for_weak_title": [r"\bsecurity\b"],
@@ -88,13 +95,13 @@ def test_strong_title_bypasses_the_weak_tier_entirely():
     assert engine.passes_filters(strong, filters)
 
 
-def test_weak_tier_alone_with_no_body_requirement_configured_passes():
-    filters = {"title_include_weak": [r"software engineer"]}
+def test_weak_tier_alone_with_no_body_requirement_configured_passes() -> None:
+    filters: Filters = {"title_include_weak": [r"software engineer"]}
     assert engine.passes_filters(_job(title="Software Engineer", body=""), filters)
     assert not engine.passes_filters(_job(title="Sales Manager"), filters)
 
 
-def test_load_profile_merges_included_boards(tmp_path):
+def test_load_profile_merges_included_boards(tmp_path: Path) -> None:
     boards_dir = tmp_path / "boards"
     boards_dir.mkdir()
     (boards_dir / "shared.yaml").write_text(
@@ -114,11 +121,11 @@ def test_load_profile_merges_included_boards(tmp_path):
     )
 
     profile = engine.load_profile("test-profile", profiles_dir)
-    tokens = [b["token"] for b in profile["boards"]["greenhouse"]]
+    tokens = _tokens(profile, "greenhouse")
     assert tokens == ["shared-co", "own-co"]
 
 
-def test_load_profile_merges_a_list_of_included_board_files(tmp_path):
+def test_load_profile_merges_a_list_of_included_board_files(tmp_path: Path) -> None:
     # boards/manual.yaml needs to layer on top of boards/broad-tech.yaml
     # within the same profile -- `include` accepting a list, not just one
     # path, is what makes that possible without duplicating board entries
@@ -146,17 +153,19 @@ def test_load_profile_merges_a_list_of_included_board_files(tmp_path):
     )
 
     profile = engine.load_profile("test-profile", profiles_dir)
-    tokens = [b["token"] for b in profile["boards"]["greenhouse"]]
+    tokens = _tokens(profile, "greenhouse")
     assert tokens == ["first-co", "second-co"]
-    assert [b["token"] for b in profile["boards"]["manual"]] == ["manual-co"]
+    assert _tokens(profile, "manual") == ["manual-co"]
 
 
-def test_two_profiles_same_raw_postings_different_matches(tmp_path, monkeypatch):
+def test_two_profiles_same_raw_postings_different_matches(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     @register
     class _FakeAdapter(Adapter):
         name = "fake-engine-test"
 
-        def fetch(self, board):
+        def fetch(self, board: Board) -> list[RawJob]:
             return [
                 _job(adapter=self.name, title="Security Engineer, New Grad", external_id="1"),
                 _job(adapter=self.name, title="Sales Manager", external_id="2"),
@@ -194,7 +203,7 @@ def test_two_profiles_same_raw_postings_different_matches(tmp_path, monkeypatch)
     assert narrow_titles == {"Security Engineer, New Grad"}
 
 
-def test_reclassify_skips_jobs_that_no_longer_pass_a_tightened_filter(tmp_path):
+def test_reclassify_skips_jobs_that_no_longer_pass_a_tightened_filter(tmp_path: Path) -> None:
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
     (profiles_dir / "loose.yaml").write_text(
@@ -210,7 +219,7 @@ def test_reclassify_skips_jobs_that_no_longer_pass_a_tightened_filter(tmp_path):
     class _FakeReclassifyAdapter(Adapter):
         name = "fake-reclassify-test"
 
-        def fetch(self, board):
+        def fetch(self, board: Board) -> list[RawJob]:
             return [_job(title="GTM Systems Engineer", external_id="1")]
 
     conn = db.connect(":memory:")
@@ -236,7 +245,7 @@ def test_reclassify_skips_jobs_that_no_longer_pass_a_tightened_filter(tmp_path):
     assert db.open_jobs(conn) == []
 
 
-def test_reclassify_updates_matched_fields_for_jobs_that_still_pass(tmp_path):
+def test_reclassify_updates_matched_fields_for_jobs_that_still_pass(tmp_path: Path) -> None:
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
     (profiles_dir / "reclass.yaml").write_text(
@@ -252,7 +261,7 @@ def test_reclassify_updates_matched_fields_for_jobs_that_still_pass(tmp_path):
     class _FakeReclassAdapter(Adapter):
         name = "fake-reclass-test"
 
-        def fetch(self, board):
+        def fetch(self, board: Board) -> list[RawJob]:
             return [_job(title="Security Engineer", external_id="1")]
 
     conn = db.connect(":memory:")
@@ -265,7 +274,7 @@ def test_reclassify_updates_matched_fields_for_jobs_that_still_pass(tmp_path):
     assert newly_skipped == 0
 
 
-def test_run_trims_whitespace_from_company_title_location(tmp_path):
+def test_run_trims_whitespace_from_company_title_location(tmp_path: Path) -> None:
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
     (profiles_dir / "trim.yaml").write_text(
@@ -281,7 +290,7 @@ def test_run_trims_whitespace_from_company_title_location(tmp_path):
     class _FakeTrimAdapter(Adapter):
         name = "fake-trim-test"
 
-        def fetch(self, board):
+        def fetch(self, board: Board) -> list[RawJob]:
             return [
                 _job(
                     company=" Acme Corp ",
@@ -299,21 +308,23 @@ def test_run_trims_whitespace_from_company_title_location(tmp_path):
     assert row["location"] == "Boston, MA"
 
 
-def test_default_fetch_body_returns_none():
+def test_default_fetch_body_returns_none() -> None:
     class _NoBodyFetch(Adapter):
         name = "fake-default-fetch-body-test"
 
-        def fetch(self, board):
+        def fetch(self, board: Board) -> list[RawJob]:
             return []
 
     assert _NoBodyFetch().fetch_body(_job()) is None
 
 
-def test_engine_skips_fetch_body_entirely_for_adapters_that_dont_override_it(tmp_path, monkeypatch):
-    calls = []
+def test_engine_skips_fetch_body_entirely_for_adapters_that_dont_override_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[RawJob] = []
     original = Adapter.fetch_body
 
-    def spy(self, job):
+    def spy(self: Adapter, job: RawJob) -> str | None:
         calls.append(job)
         return original(self, job)
 
@@ -323,7 +334,7 @@ def test_engine_skips_fetch_body_entirely_for_adapters_that_dont_override_it(tmp
     class _PlainAdapter(Adapter):
         name = "fake-plain-body-test"
 
-        def fetch(self, board):
+        def fetch(self, board: Board) -> list[RawJob]:
             return [_job(title="Security Engineer, New Grad")]
 
     profiles_dir = tmp_path / "profiles"
@@ -344,20 +355,20 @@ def test_engine_skips_fetch_body_entirely_for_adapters_that_dont_override_it(tmp
     assert {row["title"] for row in db.open_jobs(conn)} == {"Security Engineer, New Grad"}
 
 
-def test_engine_calls_fetch_body_only_after_the_cheap_title_filter_passes(tmp_path):
-    fetched_ids = []
+def test_engine_calls_fetch_body_only_after_the_cheap_title_filter_passes(tmp_path: Path) -> None:
+    fetched_ids: list[str] = []
 
     @register
     class _LazyBodyAdapter(Adapter):
         name = "fake-lazy-body-test"
 
-        def fetch(self, board):
+        def fetch(self, board: Board) -> list[RawJob]:
             return [
                 _job(title="Security Engineer, New Grad", external_id="1"),
                 _job(title="Sales Manager", external_id="2"),
             ]
 
-        def fetch_body(self, job):
+        def fetch_body(self, job: RawJob) -> str | None:
             fetched_ids.append(job.external_id)
             return "we run a bug bounty program"
 
@@ -381,15 +392,15 @@ def test_engine_calls_fetch_body_only_after_the_cheap_title_filter_passes(tmp_pa
     assert jobs[0]["body"] == "we run a bug bounty program"
 
 
-def test_engine_applies_body_exclude_after_lazy_fetch(tmp_path):
+def test_engine_applies_body_exclude_after_lazy_fetch(tmp_path: Path) -> None:
     @register
     class _LazyExcludeAdapter(Adapter):
         name = "fake-lazy-exclude-test"
 
-        def fetch(self, board):
+        def fetch(self, board: Board) -> list[RawJob]:
             return [_job(title="Security Engineer, New Grad", external_id="1")]
 
-        def fetch_body(self, job):
+        def fetch_body(self, job: RawJob) -> str | None:
             return "this role requires an active security clearance"
 
     profiles_dir = tmp_path / "profiles"
@@ -412,7 +423,9 @@ def test_engine_applies_body_exclude_after_lazy_fetch(tmp_path):
     assert db.open_jobs(conn) == []
 
 
-def test_unknown_adapter_in_profile_is_logged_and_skipped(tmp_path, caplog):
+def test_unknown_adapter_in_profile_is_logged_and_skipped(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
     (profiles_dir / "bad.yaml").write_text(
@@ -429,7 +442,7 @@ def test_unknown_adapter_in_profile_is_logged_and_skipped(tmp_path, caplog):
     assert db.open_jobs(conn) == []
 
 
-def test_grad_years_placeholder_is_substituted_with_the_real_year_window(tmp_path):
+def test_grad_years_placeholder_is_substituted_with_the_real_year_window(tmp_path: Path) -> None:
     """{grad_years} lets a profile/level/field regex reference "graduating
     soon" without a literal year a human has to remember to bump -- see
     profiles/levels/new-grad.yaml's body_bonus for the real shipped case."""
@@ -445,23 +458,25 @@ def test_grad_years_placeholder_is_substituted_with_the_real_year_window(tmp_pat
 
     profile = engine.load_profile("gradyear", profiles_dir)
     pattern = classify.grad_year_pattern()
-    assert "{grad_years}" not in profile["filters"]["title_include"][0]
-    assert pattern in profile["filters"]["title_include"][0]
+    filters = profile.get("filters")
+    assert filters is not None
+    title_include = filters.get("title_include")
+    assert title_include is not None
+    assert "{grad_years}" not in title_include[0]
+    assert pattern in title_include[0]
 
     a_real_year = pattern.split("|")[0]
-    assert engine.passes_filters(
-        _job(title=f"Software Engineer ({a_real_year} Grad)"), profile["filters"]
-    )
+    assert engine.passes_filters(_job(title=f"Software Engineer ({a_real_year} Grad)"), filters)
 
 
-def test_memory_db_never_creates_a_run_lock():
+def test_memory_db_never_creates_a_run_lock() -> None:
     # :memory: is exclusively a test/isolated-check path -- no real network
     # calls ever happen against it, so it has no concurrent-real-run problem
     # to guard against, and shouldn't pay the lock-file overhead either.
     assert engine._acquire_run_lock(":memory:") is None
 
 
-def test_run_lock_blocks_a_second_concurrent_run_against_the_same_db(tmp_path):
+def test_run_lock_blocks_a_second_concurrent_run_against_the_same_db(tmp_path: Path) -> None:
     db_path = tmp_path / "jobfinder.db"
     lock_path = engine._acquire_run_lock(db_path)
     assert lock_path is not None
@@ -475,7 +490,7 @@ def test_run_lock_blocks_a_second_concurrent_run_against_the_same_db(tmp_path):
     assert not lock_path.exists()
 
 
-def test_stale_run_lock_is_treated_as_abandoned_not_blocking(tmp_path):
+def test_stale_run_lock_is_treated_as_abandoned_not_blocking(tmp_path: Path) -> None:
     # A lock left over from a process that crashed (not a clean exit)
     # shouldn't block every future run forever -- age it past the stale
     # threshold and confirm a new run proceeds instead of raising.
@@ -490,7 +505,9 @@ def test_stale_run_lock_is_treated_as_abandoned_not_blocking(tmp_path):
     engine._release_run_lock(new_lock_path)
 
 
-def test_touch_run_lock_refreshes_mtime_so_a_long_real_run_never_looks_stale(tmp_path):
+def test_touch_run_lock_refreshes_mtime_so_a_long_real_run_never_looks_stale(
+    tmp_path: Path,
+) -> None:
     # A real run can now legitimately take many hours (Workday's page size
     # is capped at 20 by the real server) -- "stale" has to track "no
     # activity recently," not "running longer than X," or a genuinely
@@ -509,7 +526,7 @@ def test_touch_run_lock_refreshes_mtime_so_a_long_real_run_never_looks_stale(tmp
     engine._release_run_lock(lock_path)
 
 
-def test_run_raises_run_already_in_progress_when_a_lock_already_exists(tmp_path):
+def test_run_raises_run_already_in_progress_when_a_lock_already_exists(tmp_path: Path) -> None:
     db_path = tmp_path / "jobfinder.db"
     lock_path = Path(str(db_path) + ".run-lock")
     lock_path.write_text("already running")
@@ -527,7 +544,7 @@ def test_run_raises_run_already_in_progress_when_a_lock_already_exists(tmp_path)
     lock_path.unlink()
 
 
-def test_run_releases_its_own_lock_after_a_clean_run(tmp_path):
+def test_run_releases_its_own_lock_after_a_clean_run(tmp_path: Path) -> None:
     db_path = tmp_path / "jobfinder.db"
     lock_path = Path(str(db_path) + ".run-lock")
 
@@ -540,7 +557,7 @@ def test_run_releases_its_own_lock_after_a_clean_run(tmp_path):
     assert not lock_path.exists()
 
 
-def test_run_writes_progress_file_for_the_status_server(tmp_path):
+def test_run_writes_progress_file_for_the_status_server(tmp_path: Path) -> None:
     db_path = tmp_path / "jobfinder.db"
     progress_path = Path(str(db_path) + ".scrape-progress.json")
 
@@ -559,8 +576,8 @@ def test_run_writes_progress_file_for_the_status_server(tmp_path):
     class _FakeProgressAdapter(Adapter):
         name = "fake-progress-test"
 
-        def fetch(self, board):
-            return [_job(external_id=board["token"])]
+        def fetch(self, board: Board) -> list[RawJob]:
+            return [_job(external_id=required_str(board, "token"))]
 
     engine.run("progress-test", db_path=db_path, profiles_dir=profiles_dir)
 
@@ -573,7 +590,7 @@ def test_run_writes_progress_file_for_the_status_server(tmp_path):
     assert progress["finished_at"] is not None
 
 
-def test_run_marks_a_board_in_flight_before_fetching_it_and_clears_it_after(tmp_path):
+def test_run_marks_a_board_in_flight_before_fetching_it_and_clears_it_after(tmp_path: Path) -> None:
     # Real incident (2026-10-02): a board hung for 9+ hours with zero
     # network activity, and the status dashboard just kept showing the last
     # board that *had* completed -- nothing distinguished "fetching this
@@ -581,7 +598,7 @@ def test_run_marks_a_board_in_flight_before_fetching_it_and_clears_it_after(tmp_
     # the status server now uses to tell those apart.
     db_path = tmp_path / "jobfinder.db"
     progress_path = Path(str(db_path) + ".scrape-progress.json")
-    seen_in_flight = []
+    seen_in_flight: list[str | None] = []
 
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
@@ -598,9 +615,9 @@ def test_run_marks_a_board_in_flight_before_fetching_it_and_clears_it_after(tmp_
     class _FakeInFlightAdapter(Adapter):
         name = "fake-in-flight-test"
 
-        def fetch(self, board):
+        def fetch(self, board: Board) -> list[RawJob]:
             seen_in_flight.append(json.loads(progress_path.read_text())["in_flight_since"])
-            return [_job(external_id=board["token"])]
+            return [_job(external_id=required_str(board, "token"))]
 
     engine.run("in-flight-test", db_path=db_path, profiles_dir=profiles_dir)
 
@@ -610,7 +627,7 @@ def test_run_marks_a_board_in_flight_before_fetching_it_and_clears_it_after(tmp_
     assert final_progress["in_flight_since"] is None
 
 
-def test_call_with_deadline_returns_the_value_and_reraises_errors():
+def test_call_with_deadline_returns_the_value_and_reraises_errors() -> None:
     assert engine._call_with_deadline(lambda: 42, 5, "ok") == 42
 
     def boom():
@@ -620,7 +637,9 @@ def test_call_with_deadline_returns_the_value_and_reraises_errors():
         engine._call_with_deadline(boom, 5, "err")
 
 
-def test_call_with_deadline_abandons_a_hung_call_and_dumps_stacks(capfd):
+def test_call_with_deadline_abandons_a_hung_call_and_dumps_stacks(
+    capfd: pytest.CaptureFixture[str],
+) -> None:
     release = threading.Event()
     try:
         with pytest.raises(engine.DeadlineExceeded):
@@ -635,7 +654,9 @@ def test_call_with_deadline_abandons_a_hung_call_and_dumps_stacks(capfd):
         release.set()
 
 
-def test_run_abandons_a_hung_board_and_still_finishes_the_rest(tmp_path, monkeypatch):
+def test_run_abandons_a_hung_board_and_still_finishes_the_rest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     # Real incident: one board hung for 9+ hours and the whole run sat behind
     # it. A wall-clock cap per board turns that into one recorded failure.
     monkeypatch.setattr(engine, "BOARD_FETCH_DEADLINE_SECONDS", 0.2)
@@ -657,10 +678,15 @@ def test_run_abandons_a_hung_board_and_still_finishes_the_rest(tmp_path, monkeyp
     class _FakeHungAdapter(Adapter):
         name = "fake-hung-test"
 
-        def fetch(self, board):
-            if board["token"] == "stuck":
+        def fetch(self, board: Board) -> list[RawJob]:
+            if required_str(board, "token") == "stuck":
                 release.wait(30)
-            return [_job(external_id=board["token"], board_token=board["token"])]
+            return [
+                _job(
+                    external_id=required_str(board, "token"),
+                    board_token=required_str(board, "token"),
+                )
+            ]
 
     try:
         engine.run("hung-test", db_path=db_path, profiles_dir=profiles_dir)

@@ -1,5 +1,8 @@
 import json
+from collections.abc import Callable
 from pathlib import Path
+
+import pytest
 
 from jobfinder.adapters import bamboohr
 
@@ -7,19 +10,26 @@ FIXTURE = Path(__file__).parent / "fixtures" / "bamboohr_sample.json"
 
 
 class _FakeResponse:
-    def __init__(self, payload):
+    def __init__(self, payload: object) -> None:
         self._payload = payload
 
-    def raise_for_status(self):
+    def raise_for_status(self) -> None:
         pass
 
-    def json(self):
+    def json(self) -> object:
         return self._payload
 
 
-def test_fetch_parses_jobs(monkeypatch):
+def _respond(payload: object) -> Callable[..., _FakeResponse]:
+    def fake(*args: object, **kwargs: object) -> _FakeResponse:
+        return _FakeResponse(payload)
+
+    return fake
+
+
+def test_fetch_parses_jobs(monkeypatch: pytest.MonkeyPatch) -> None:
     payload = json.loads(FIXTURE.read_text())
-    monkeypatch.setattr(bamboohr.session, "get", lambda *a, **k: _FakeResponse(payload))
+    monkeypatch.setattr(bamboohr.session, "get", _respond(payload))
 
     jobs = bamboohr.BambooHRAdapter().fetch({"company": "Acme", "token": "acme"})
 
@@ -33,20 +43,22 @@ def test_fetch_parses_jobs(monkeypatch):
     assert job.team == "Engineering"
 
 
-def test_falls_back_to_ats_location_when_domestic_location_is_empty(monkeypatch):
+def test_falls_back_to_ats_location_when_domestic_location_is_empty(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     payload = json.loads(FIXTURE.read_text())
-    monkeypatch.setattr(bamboohr.session, "get", lambda *a, **k: _FakeResponse(payload))
+    monkeypatch.setattr(bamboohr.session, "get", _respond(payload))
 
     jobs = bamboohr.BambooHRAdapter().fetch({"company": "Acme", "token": "acme"})
 
     assert jobs[1].location == "Rochester, New York, United States"
 
 
-def test_fetch_body_strips_html(monkeypatch):
+def test_fetch_body_strips_html(monkeypatch: pytest.MonkeyPatch) -> None:
     detail_payload = {
         "result": {"jobOpening": {"description": "<p>Ship <b>security</b> tooling.</p>"}}
     }
-    monkeypatch.setattr(bamboohr.session, "get", lambda *a, **k: _FakeResponse(detail_payload))
+    monkeypatch.setattr(bamboohr.session, "get", _respond(detail_payload))
 
     body = bamboohr.BambooHRAdapter().fetch_body(
         bamboohr.RawJob(

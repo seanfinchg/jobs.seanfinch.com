@@ -1,6 +1,7 @@
 import importlib.util
 from pathlib import Path
 
+import pytest
 import requests
 
 from jobfinder import db
@@ -17,19 +18,19 @@ def _load_module():
     return module
 
 
-def test_slug_variants_strips_common_corporate_suffixes():
+def test_slug_variants_strips_common_corporate_suffixes() -> None:
     module = _load_module()
     assert module.slug_variants("Acme Corporation") == ["acme"]
     assert module.slug_variants("Acme Inc.") == ["acme"]
     assert module.slug_variants("Acme, LLC") == ["acme"]
 
 
-def test_slug_variants_returns_both_spacing_conventions_for_multiword_names():
+def test_slug_variants_returns_both_spacing_conventions_for_multiword_names() -> None:
     module = _load_module()
     assert module.slug_variants("Blue Origin") == ["blue-origin", "blueorigin"]
 
 
-def test_slug_variants_dedupes_when_spacing_variants_collide():
+def test_slug_variants_dedupes_when_spacing_variants_collide() -> None:
     module = _load_module()
     # A single-word name has only one variant either way -- both the
     # no-space and hyphenated forms collapse to the same string.
@@ -48,7 +49,7 @@ def _sighting_job(url: str, company: str = "Acme", token: str = "acme-1") -> Raw
     )
 
 
-def test_discover_from_aggregator_reverse_engineers_token_from_apply_url(tmp_path):
+def test_discover_from_aggregator_reverse_engineers_token_from_apply_url(tmp_path: Path) -> None:
     module = _load_module()
     db_path = tmp_path / "jobfinder.db"
     conn = db.connect(str(db_path))
@@ -68,7 +69,7 @@ def test_discover_from_aggregator_reverse_engineers_token_from_apply_url(tmp_pat
     ]
 
 
-def test_discover_from_aggregator_handles_workday_urls_as_a_special_case(tmp_path):
+def test_discover_from_aggregator_handles_workday_urls_as_a_special_case(tmp_path: Path) -> None:
     module = _load_module()
     db_path = tmp_path / "jobfinder.db"
     conn = db.connect(str(db_path))
@@ -95,7 +96,9 @@ def test_discover_from_aggregator_handles_workday_urls_as_a_special_case(tmp_pat
     ]
 
 
-def test_discover_from_aggregator_dedupes_workday_by_tenant_wd_site_not_by_url(tmp_path):
+def test_discover_from_aggregator_dedupes_workday_by_tenant_wd_site_not_by_url(
+    tmp_path: Path,
+) -> None:
     # Workday hits dedupe on a different key (tenant, wd, site) than the
     # single-token adapters above (adapter, token) -- two distinct postings
     # at the same tenant/pod/site must still collapse to one hit.
@@ -123,7 +126,7 @@ def test_discover_from_aggregator_dedupes_workday_by_tenant_wd_site_not_by_url(t
     assert len(hits) == 1
 
 
-def test_discover_from_aggregator_dedupes_repeat_tokens_across_sightings(tmp_path):
+def test_discover_from_aggregator_dedupes_repeat_tokens_across_sightings(tmp_path: Path) -> None:
     module = _load_module()
     db_path = tmp_path / "jobfinder.db"
     conn = db.connect(str(db_path))
@@ -148,7 +151,7 @@ def test_discover_from_aggregator_dedupes_repeat_tokens_across_sightings(tmp_pat
     assert len(hits) == 1
 
 
-def test_discover_from_aggregator_ignores_sightings_from_other_adapters(tmp_path):
+def test_discover_from_aggregator_ignores_sightings_from_other_adapters(tmp_path: Path) -> None:
     module = _load_module()
     db_path = tmp_path / "jobfinder.db"
     conn = db.connect(str(db_path))
@@ -169,15 +172,17 @@ def test_discover_from_aggregator_ignores_sightings_from_other_adapters(tmp_path
     assert hits == []
 
 
-def test_probe_company_collects_confirmed_hits_and_swallows_request_errors(monkeypatch):
+def test_probe_company_collects_confirmed_hits_and_swallows_request_errors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     module = _load_module()
 
-    def fake_greenhouse(slug):
+    def fake_greenhouse(slug: str) -> tuple[bool, int]:
         if slug == "acme":
             return True, 12
         raise requests.RequestException("boom")
 
-    def fake_lever(slug):
+    def fake_lever(slug: str) -> tuple[bool, int]:
         return False, 0
 
     monkeypatch.setattr(
@@ -189,7 +194,9 @@ def test_probe_company_collects_confirmed_hits_and_swallows_request_errors(monke
     assert hits == [{"company": "Acme", "adapter": "greenhouse", "token": "acme", "job_count": 12}]
 
 
-def test_print_yaml_fragment_formats_plain_and_workday_hits(capsys):
+def test_print_yaml_fragment_formats_plain_and_workday_hits(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     module = _load_module()
     hits = [
         {"company": "Acme", "adapter": "greenhouse", "token": "acme", "job_count": 12},

@@ -1,4 +1,5 @@
 import sqlite3
+from pathlib import Path
 
 import pytest
 
@@ -22,7 +23,7 @@ def conn():
     connection.close()
 
 
-def _job(**overrides):
+def _job(**overrides: str) -> RawJob:
     base = dict(
         adapter="greenhouse",
         company="Acme",
@@ -37,7 +38,7 @@ def _job(**overrides):
     return RawJob(**base)
 
 
-def test_upsert_is_idempotent(conn):
+def test_upsert_is_idempotent(conn: sqlite3.Connection) -> None:
     job = _job()
     db.upsert_job(conn, job, profile="p", is_native=True, now="2026-01-01T00:00:00")
     db.upsert_job(conn, job, profile="p", is_native=True, now="2026-01-01T01:00:00")
@@ -50,7 +51,7 @@ def test_upsert_is_idempotent(conn):
     assert len(sightings) == 1
 
 
-def test_cross_source_dedup_links_one_job_two_sightings(conn):
+def test_cross_source_dedup_links_one_job_two_sightings(conn: sqlite3.Connection) -> None:
     aggregator_job = _job(
         adapter="simplify_listings",
         board_token="new-grad",
@@ -75,7 +76,7 @@ def test_cross_source_dedup_links_one_job_two_sightings(conn):
     assert len(sightings) == 2
 
 
-def test_native_apply_url_is_never_downgraded(conn):
+def test_native_apply_url_is_never_downgraded(conn: sqlite3.Connection) -> None:
     native_job = _job(adapter="greenhouse", board_token="acme", external_id="1")
     aggregator_job = _job(
         adapter="simplify_listings",
@@ -91,7 +92,7 @@ def test_native_apply_url_is_never_downgraded(conn):
     assert job["best_apply_url"] == native_job.url
 
 
-def test_closure_flips_status_when_board_stops_listing_it(conn):
+def test_closure_flips_status_when_board_stops_listing_it(conn: sqlite3.Connection) -> None:
     job = _job()
     db.upsert_job(conn, job, profile="p", is_native=True, now="t1")
     # second run: board no longer returns this job at all
@@ -104,7 +105,7 @@ def test_closure_flips_status_when_board_stops_listing_it(conn):
     )
 
 
-def test_closure_spares_a_job_still_open_via_another_source(conn):
+def test_closure_spares_a_job_still_open_via_another_source(conn: sqlite3.Connection) -> None:
     native_job = _job(adapter="greenhouse", board_token="acme", external_id="1")
     aggregator_job = _job(
         adapter="simplify_listings",
@@ -126,7 +127,7 @@ def test_closure_spares_a_job_still_open_via_another_source(conn):
     assert _job_row(conn, hash_)["status"] == "new"
 
 
-def test_a_failing_board_is_never_passed_to_closure(conn):
+def test_a_failing_board_is_never_passed_to_closure(conn: sqlite3.Connection) -> None:
     # simulates engine.py's behavior: close_stale_sightings is simply never
     # called for a board whose fetch raised this run.
     job = _job()
@@ -139,7 +140,7 @@ def test_a_failing_board_is_never_passed_to_closure(conn):
     assert job_row_after["status"] == "new"
 
 
-def test_closure_does_not_touch_a_different_boards_jobs(conn):
+def test_closure_does_not_touch_a_different_boards_jobs(conn: sqlite3.Connection) -> None:
     job_a = _job(board_token="acme", external_id="a1")
     job_b = _job(company="Other Co", board_token="other", external_id="b1")
 
@@ -152,7 +153,7 @@ def test_closure_does_not_touch_a_different_boards_jobs(conn):
     assert _job_row(conn, hash_b)["status"] == "new"
 
 
-def test_touch_sighting_prevents_false_closure_when_filtered_out(conn):
+def test_touch_sighting_prevents_false_closure_when_filtered_out(conn: sqlite3.Connection) -> None:
     job = _job()
     db.upsert_job(conn, job, profile="p", is_native=True, now="t1")
 
@@ -164,7 +165,7 @@ def test_touch_sighting_prevents_false_closure_when_filtered_out(conn):
     assert closed == 0
 
 
-def test_queued_or_applied_status_is_not_clobbered_by_closure(conn):
+def test_queued_or_applied_status_is_not_clobbered_by_closure(conn: sqlite3.Connection) -> None:
     job = _job()
     hash_ = db.upsert_job(conn, job, profile="p", is_native=True, now="t1")
     db.set_status(conn, hash_, "queued")
@@ -174,7 +175,7 @@ def test_queued_or_applied_status_is_not_clobbered_by_closure(conn):
     assert _job_row(conn, hash_)["status"] == "queued"
 
 
-def test_board_health_records_failure_without_wiping_last_ok(conn):
+def test_board_health_records_failure_without_wiping_last_ok(conn: sqlite3.Connection) -> None:
     db.record_board_health(conn, "greenhouse", "acme", ok=True, job_count=5, now="t1")
     db.record_board_health(conn, "greenhouse", "acme", ok=False, error="404", now="t2")
 
@@ -186,7 +187,7 @@ def test_board_health_records_failure_without_wiping_last_ok(conn):
     assert row["job_count"] == 5
 
 
-def test_seed_answer_then_question_is_no_longer_novel(conn):
+def test_seed_answer_then_question_is_no_longer_novel(conn: sqlite3.Connection) -> None:
     db.add_questions(
         conn,
         "greenhouse:acme:1",
@@ -218,7 +219,7 @@ def test_seed_answer_then_question_is_no_longer_novel(conn):
     assert novel[0]["label"] == "What is your favorite color?"
 
 
-def test_todo_placeholder_answer_still_counts_as_unanswered(conn):
+def test_todo_placeholder_answer_still_counts_as_unanswered(conn: sqlite3.Connection) -> None:
     db.add_questions(
         conn,
         "greenhouse:acme:1",
@@ -241,7 +242,7 @@ def test_todo_placeholder_answer_still_counts_as_unanswered(conn):
     assert novel[0]["label"] == "Are you authorized to work in the US?"
 
 
-def test_unanswered_questions_batches_by_norm_label_with_count(conn):
+def test_unanswered_questions_batches_by_norm_label_with_count(conn: sqlite3.Connection) -> None:
     db.add_questions(
         conn,
         "greenhouse:acme:1",
@@ -274,7 +275,9 @@ def test_unanswered_questions_batches_by_norm_label_with_count(conn):
     assert novel[0]["count"] == 2
 
 
-def test_sync_fields_mirrors_yaml_label_and_subfields(conn, tmp_path):
+def test_sync_fields_mirrors_yaml_label_and_subfields(
+    conn: sqlite3.Connection, tmp_path: Path
+) -> None:
     (tmp_path / "finance.yaml").write_text(
         "label: Finance\nsubfields:\n  - tag: trading\n    label: Sales & Trading\n"
     )
@@ -288,7 +291,7 @@ def test_sync_fields_mirrors_yaml_label_and_subfields(conn, tmp_path):
     assert subfield["label"] == "Sales & Trading"
 
 
-def test_set_job_fields_populates_join_tables_and_is_queryable(conn):
+def test_set_job_fields_populates_join_tables_and_is_queryable(conn: sqlite3.Connection) -> None:
     job = _job(title="Sales & Trading Analyst")
     hash_ = db.upsert_job(conn, job, profile="p", is_native=True, now="t1")
     db.set_job_fields(conn, hash_, ["finance"], [("finance", "trading")])
@@ -300,7 +303,9 @@ def test_set_job_fields_populates_join_tables_and_is_queryable(conn):
     assert [r["content_hash"] for r in matches] == [hash_]
 
 
-def test_set_job_fields_replaces_rather_than_accumulates_on_reclassify(conn):
+def test_set_job_fields_replaces_rather_than_accumulates_on_reclassify(
+    conn: sqlite3.Connection,
+) -> None:
     job = _job()
     hash_ = db.upsert_job(conn, job, profile="p", is_native=True, now="t1")
     db.set_job_fields(conn, hash_, ["finance"], [("finance", "trading")])
@@ -312,7 +317,9 @@ def test_set_job_fields_replaces_rather_than_accumulates_on_reclassify(conn):
     assert conn.execute("SELECT * FROM job_subfields").fetchall() == []
 
 
-def test_set_job_fields_self_registers_a_slug_sync_fields_never_saw(conn):
+def test_set_job_fields_self_registers_a_slug_sync_fields_never_saw(
+    conn: sqlite3.Connection,
+) -> None:
     """set_job_fields() must not depend on sync_fields() having already run
     for the same fields_dir -- classify.py's own cache can be warm from a
     different dir (see db.py's set_job_fields() docstring), so this needs to

@@ -1,42 +1,42 @@
 from jobfinder.normalize import content_hash, location_bucket, norm
 
 
-def test_norm_collapses_known_variants():
+def test_norm_collapses_known_variants() -> None:
     assert norm("Sr. Software Engineer") == norm("Senior Software Engineer")
     assert norm("SWE II") == norm("Software Engineer II")
 
 
-def test_location_bucket_collides_new_york_variants():
+def test_location_bucket_collides_new_york_variants() -> None:
     assert location_bucket("New York, NY") == location_bucket("New York, New York, United States")
 
 
-def test_location_bucket_distinguishes_regions():
+def test_location_bucket_distinguishes_regions() -> None:
     assert location_bucket("Boston, MA") != location_bucket("New York, NY")
 
 
-def test_content_hash_collides_same_role_different_source_text():
+def test_content_hash_collides_same_role_different_source_text() -> None:
     a = content_hash("Acme", "Senior Software Engineer", "New York, NY")
     b = content_hash("Acme", "Sr. Software Engineer", "New York, New York, United States")
     assert a == b
 
 
-def test_content_hash_distinguishes_different_roles():
+def test_content_hash_distinguishes_different_roles() -> None:
     a = content_hash("Acme", "Security Engineer", "Boston, MA")
     b = content_hash("Acme", "Sales Engineer", "Boston, MA")
     assert a != b
 
 
-def test_location_bucket_does_not_confuse_cambridge_uk_with_massachusetts():
+def test_location_bucket_does_not_confuse_cambridge_uk_with_massachusetts() -> None:
     assert location_bucket("Cambridge, UK") != location_bucket("Cambridge, MA")
     assert location_bucket("Cambridge, MA") == "boston"
 
 
-def test_location_bucket_does_not_confuse_lexington_sc_with_massachusetts():
+def test_location_bucket_does_not_confuse_lexington_sc_with_massachusetts() -> None:
     assert location_bucket("Lexington, SC") != "boston"
     assert location_bucket("Lexington, MA") == "boston"
 
 
-def test_content_hash_omitting_team_matches_the_pre_team_hash():
+def test_content_hash_omitting_team_matches_the_pre_team_hash() -> None:
     # Adapters/rows with no team info must hash identically to before this
     # parameter existed, so already-ingested rows don't all shift hash on
     # the next run just because the function signature grew.
@@ -45,13 +45,13 @@ def test_content_hash_omitting_team_matches_the_pre_team_hash():
     )
 
 
-def test_content_hash_distinguishes_same_role_different_team():
+def test_content_hash_distinguishes_same_role_different_team() -> None:
     a = content_hash("Acme", "Software Engineer", "Boston, MA", "Platform")
     b = content_hash("Acme", "Software Engineer", "Boston, MA", "Sales")
     assert a != b
 
 
-def test_content_hash_with_team_still_collides_on_text_variants():
+def test_content_hash_with_team_still_collides_on_text_variants() -> None:
     a = content_hash("Acme", "Senior Software Engineer", "New York, NY", "Platform")
     b = content_hash(
         "Acme", "Sr. Software Engineer", "New York, New York, United States", "platform"

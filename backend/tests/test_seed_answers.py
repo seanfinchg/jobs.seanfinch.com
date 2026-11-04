@@ -22,13 +22,13 @@ def _load_module():
     return module
 
 
-def test_todo_placeholders_are_clearly_marked():
+def test_todo_placeholders_are_clearly_marked() -> None:
     module = _load_module()
     for _, answer, _ in module.TODO_PLACEHOLDERS:
         assert answer.startswith("TODO:")
 
 
-def test_legal_and_personal_categories_are_never_in_real_answers():
+def test_legal_and_personal_categories_are_never_in_real_answers() -> None:
     module = _load_module()
     for pattern, answer, _ in module.load_real_answers(EXAMPLE_PATH):
         assert not BANNED.search(pattern), (
@@ -39,7 +39,7 @@ def test_legal_and_personal_categories_are_never_in_real_answers():
         )
 
 
-def test_example_file_loads_and_every_pattern_compiles():
+def test_example_file_loads_and_every_pattern_compiles() -> None:
     module = _load_module()
     rows = module.load_real_answers(EXAMPLE_PATH)
     assert rows
@@ -48,13 +48,15 @@ def test_example_file_loads_and_every_pattern_compiles():
         assert answer and field_type
 
 
-def test_word_boundary_patterns_survive_yaml_loading():
+def test_word_boundary_patterns_survive_yaml_loading() -> None:
     module = _load_module()
     patterns = {pattern for pattern, _, _ in module.load_real_answers(EXAMPLE_PATH)}
     assert r"\bemail\b" in patterns
 
 
-def test_missing_local_file_exits_with_pointer_to_example(monkeypatch, tmp_path):
+def test_missing_local_file_exits_with_pointer_to_example(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     module = _load_module()
     monkeypatch.setattr(module, "ANSWERS_PATH", tmp_path / "answers.local.yaml")
     with pytest.raises(SystemExit) as exc:

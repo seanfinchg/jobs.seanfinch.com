@@ -7,6 +7,9 @@ import time
 from datetime import UTC, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from typing import TypedDict
+
+from pydantic import TypeAdapter, ValidationError
 
 from jobfinder.engine import DB_PATH, RUN_LOCK_MAX_AGE_SECONDS
 
@@ -31,12 +34,54 @@ LAST_SCRAPE_PATH = Path(os.environ.get("JOBFINDER_DATA_DIR", "/data")) / "last-s
 STALL_WARNING_SECONDS = 10 * 60
 
 
-def _read_progress() -> dict | None:
+class ProgressFile(TypedDict, total=False):
+    """engine.Progress as read back from disk. Every key is optional: the
+    file may come from an older engine or be read mid-write."""
+
+    profile: str
+    adapter: str | None
+    token: str | None
+    boards_done: int
+    boards_total: int
+    total_stored: int
+    started_at: str
+    updated_at: str
+    in_flight_since: str | None
+    finished_at: str | None
+
+
+class FailingBoard(TypedDict):
+    adapter: str
+    board_token: str
+    last_ok: str | None
+    last_error: str | None
+
+
+class BoardHealth(TypedDict):
+    total_boards: int
+    failing: list[FailingBoard]
+    total_jobs: int | None
+
+
+class Status(TypedDict):
+    scraping: bool
+    progress: ProgressFile | None
+    in_flight_seconds: float | None
+    stalled: bool
+    last_scrape_at: str | None
+    board_health: BoardHealth
+    checked_at: str
+
+
+_PROGRESS_FILE: TypeAdapter[ProgressFile] = TypeAdapter(ProgressFile)
+
+
+def _read_progress() -> ProgressFile | None:
     if not PROGRESS_PATH.exists():
         return None
     try:
-        return json.loads(PROGRESS_PATH.read_text())
-    except (OSError, json.JSONDecodeError):
+        return _PROGRESS_FILE.validate_json(PROGRESS_PATH.read_text())
+    except (OSError, ValidationError):
         return None
 
 
@@ -61,7 +106,7 @@ def _last_scrape_iso() -> str | None:
     return datetime.fromtimestamp(epoch, tz=UTC).isoformat()
 
 
-def _board_health_summary() -> dict:
+def _board_health_summary() -> BoardHealth:
     """Read-only against the live DB -- board_health is written by engine.py
     mid-run, so this needs to tolerate reading while a write is in flight
     rather than lock the writer out (SQLite's WAL mode already makes that
@@ -73,8 +118,13 @@ def _board_health_summary() -> dict:
     try:
         conn.row_factory = sqlite3.Row
         total_boards = conn.execute("SELECT COUNT(*) FROM board_health").fetchone()[0]
-        failing = [
-            dict(row)
+        failing: list[FailingBoard] = [
+            {
+                "adapter": row["adapter"],
+                "board_token": row["board_token"],
+                "last_ok": row["last_ok"],
+                "last_error": row["last_error"],
+            }
             for row in conn.execute(
                 """SELECT adapter, board_token, last_ok, last_error FROM board_health
                    WHERE last_error IS NOT NULL ORDER BY adapter, board_token LIMIT 50"""
@@ -86,14 +136,15 @@ def _board_health_summary() -> dict:
         conn.close()
 
 
-def _in_flight_seconds(progress: dict | None) -> float | None:
-    if not progress or not progress.get("in_flight_since"):
+def _in_flight_seconds(progress: ProgressFile | None) -> float | None:
+    in_flight_since = progress.get("in_flight_since") if progress else None
+    if not in_flight_since:
         return None
-    since = datetime.fromisoformat(progress["in_flight_since"])
+    since = datetime.fromisoformat(in_flight_since)
     return (datetime.now(UTC) - since).total_seconds()
 
 
-def build_status() -> dict:
+def build_status() -> Status:
     progress = _read_progress()
     health = _board_health_summary()
     in_flight_seconds = _in_flight_seconds(progress)
@@ -108,18 +159,15 @@ def build_status() -> dict:
     }
 
 
-def _render_html(status: dict) -> str:
+def _render_html(status: Status) -> str:
     progress = status["progress"]
     if status["scraping"] and progress:
-        pct = (
-            round(100 * progress["boards_done"] / progress["boards_total"])
-            if progress["boards_total"]
-            else 0
-        )
+        boards_total = progress.get("boards_total")
+        pct = round(100 * progress.get("boards_done", 0) / boards_total) if boards_total else 0
         in_flight_seconds = status["in_flight_seconds"]
         if in_flight_seconds is not None:
             board_line = (
-                f"-- currently fetching <code>{progress['adapter']}:{progress['token']}</code> "
+                f"-- currently fetching <code>{progress.get('adapter')}:{progress.get('token')}</code> "
                 f"(started {round(in_flight_seconds)}s ago)"
             )
             stall_html = (
@@ -130,20 +178,22 @@ def _render_html(status: dict) -> str:
                 else ""
             )
         else:
-            board_line = f"-- last completed <code>{progress['adapter']}:{progress['token']}</code>"
+            board_line = (
+                f"-- last completed <code>{progress.get('adapter')}:{progress.get('token')}</code>"
+            )
             stall_html = ""
         progress_html = f"""
-        <p><strong>Scraping now</strong> -- profile <code>{progress["profile"]}</code></p>
-        <p>Board {progress["boards_done"]} of {progress["boards_total"]} ({pct}%) {board_line}</p>
+        <p><strong>Scraping now</strong> -- profile <code>{progress.get("profile")}</code></p>
+        <p>Board {progress.get("boards_done")} of {boards_total} ({pct}%) {board_line}</p>
         {stall_html}
-        <p>{progress["total_stored"]} posting(s) stored/updated so far this run, started {progress["started_at"]}</p>
+        <p>{progress.get("total_stored")} posting(s) stored/updated so far this run, started {progress.get("started_at")}</p>
         """
     elif progress:
         progress_html = f"""
-        <p><strong>Idle</strong> -- last run (<code>{progress["profile"]}</code>) finished
+        <p><strong>Idle</strong> -- last run (<code>{progress.get("profile")}</code>) finished
            {progress.get("finished_at", "unknown")}</p>
-        <p>{progress["boards_done"]} of {progress["boards_total"]} boards,
-           {progress["total_stored"]} posting(s) stored/updated</p>
+        <p>{progress.get("boards_done")} of {progress.get("boards_total")} boards,
+           {progress.get("total_stored")} posting(s) stored/updated</p>
         """
     else:
         progress_html = "<p>No scrape has run yet since this container started.</p>"

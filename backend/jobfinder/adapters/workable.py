@@ -1,19 +1,36 @@
 from __future__ import annotations
 
-from jobfinder.adapters.base import Adapter
+from jobfinder.adapters.base import Adapter, ApiModel
 from jobfinder.adapters.registry import register
+from jobfinder.config import Board, required_str
 from jobfinder.http import session
 from jobfinder.models import RawJob
 
 JOBS_URL = "https://apply.workable.com/api/v3/accounts/{token}/jobs"
 
 
+class _WorkableLocation(ApiModel):
+    city: str | None = None
+    country: str | None = None
+
+
+class _WorkableJob(ApiModel):
+    shortcode: str | None = ""
+    title: str | None = ""
+    published: str | None = None
+    location: _WorkableLocation | None = None
+
+
+class _WorkableResults(ApiModel):
+    results: list[_WorkableJob] = []
+
+
 @register
 class WorkableAdapter(Adapter):
     name = "workable"
 
-    def fetch(self, board: dict) -> list[RawJob]:
-        token = board["token"]
+    def fetch(self, board: Board) -> list[RawJob]:
+        token = required_str(board, "token")
         company = board.get("company", token)
 
         resp = session.post(
@@ -23,7 +40,7 @@ class WorkableAdapter(Adapter):
             timeout=15,
         )
         resp.raise_for_status()
-        payload = resp.json()
+        payload = _WorkableResults.model_validate(resp.json())
 
         # Same tradeoff as smartrecruiters: the search endpoint has no
         # description field and there's no documented public detail endpoint,
@@ -39,23 +56,21 @@ class WorkableAdapter(Adapter):
         # rate limit (429, Retry-After ~8.4 hours) mid-session --
         # not worth guessing the field's exact shape unverified. Revisit and
         # confirm live before adding it.
-        jobs = []
-        for item in payload.get("results", []):
-            location = item.get("location") or {}
-            location_str = ", ".join(
-                part for part in [location.get("city"), location.get("country")] if part
-            )
+        jobs: list[RawJob] = []
+        for item in payload.results:
+            location = item.location or _WorkableLocation()
+            location_str = ", ".join(part for part in [location.city, location.country] if part)
             jobs.append(
                 RawJob(
                     adapter=self.name,
                     company=company,
                     board_token=token,
-                    external_id=item.get("shortcode", ""),
-                    title=item.get("title", ""),
+                    external_id=item.shortcode or "",
+                    title=item.title or "",
                     location=location_str,
-                    url=f"https://apply.workable.com/{token}/j/{item.get('shortcode', '')}/",
+                    url=f"https://apply.workable.com/{token}/j/{item.shortcode}/",
                     body="",
-                    posted_at=item.get("published"),
+                    posted_at=item.published,
                 )
             )
         return jobs

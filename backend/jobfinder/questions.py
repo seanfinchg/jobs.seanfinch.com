@@ -4,6 +4,7 @@ import sqlite3
 
 from jobfinder import db
 from jobfinder.adapters import registry
+from jobfinder.db import NovelQuestion
 from jobfinder.models import RawJob
 
 
@@ -60,7 +61,7 @@ def harvest_matched(conn: sqlite3.Connection) -> int:
     return harvested
 
 
-def print_novel_report(novel: list[dict]) -> None:
+def print_novel_report(novel: list[NovelQuestion]) -> None:
     if not novel:
         print("no novel required questions")
         return

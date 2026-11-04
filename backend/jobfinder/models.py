@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import TypedDict
 
 
 @dataclass
@@ -20,3 +21,14 @@ class RawJob:
 
 def source_uid(job: RawJob) -> str:
     return f"{job.adapter}:{job.board_token}:{job.external_id}"
+
+
+class Question(TypedDict, total=False):
+    """One application-form question, as an adapter's fetch_questions()
+    returns it and db.add_questions() stores it."""
+
+    name: str
+    label: str
+    field_type: str
+    required: bool
+    values: list[str | None]

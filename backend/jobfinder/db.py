@@ -5,11 +5,11 @@ import re
 import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
-
-import yaml
+from typing import TypedDict
 
 from jobfinder import normalize
-from jobfinder.models import RawJob, source_uid
+from jobfinder.config import read_config_file, required_str
+from jobfinder.models import Question, RawJob, source_uid
 
 # Schema evolves as an ordered list of migrations rather than one mutable
 # CREATE TABLE block. This DB used to live only in a disposable CI cache;
@@ -171,7 +171,7 @@ def sync_fields(conn: sqlite3.Connection, fields_dir: Path) -> None:
     before any upsert_job()/set_job_fields() call, so the foreign keys below
     always resolve."""
     for path in sorted(Path(fields_dir).glob("*.yaml")):
-        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        data = read_config_file(path)
         slug = path.stem
         label = data.get("label") or slug
         conn.execute(
@@ -183,7 +183,7 @@ def sync_fields(conn: sqlite3.Connection, fields_dir: Path) -> None:
             conn.execute(
                 "INSERT INTO subfields (field_slug, tag, label) VALUES (?, ?, ?) "
                 "ON CONFLICT(field_slug, tag) DO UPDATE SET label = excluded.label",
-                (slug, sf["tag"], sf.get("label") or sf["tag"]),
+                (slug, required_str(sf, "tag"), sf.get("label") or required_str(sf, "tag")),
             )
     conn.commit()
 
@@ -493,7 +493,7 @@ def set_status(conn: sqlite3.Connection, content_hash: str, status: str) -> None
     conn.commit()
 
 
-def add_questions(conn: sqlite3.Connection, uid: str, questions: list[dict]) -> None:
+def add_questions(conn: sqlite3.Connection, uid: str, questions: list[Question]) -> None:
     for q in questions:
         norm_label = normalize.norm(q.get("label", ""))
         conn.execute(
@@ -547,12 +547,22 @@ def is_placeholder_answer(answer: str) -> bool:
     return (answer or "").strip().upper().startswith("TODO")
 
 
-def unanswered_questions(conn: sqlite3.Connection) -> list[dict]:
+class NovelQuestion(TypedDict):
+    """A required question with no real answer yet, and how many postings ask it."""
+
+    norm_label: str
+    label: str
+    field_type: str
+    count: int
+    example_source_uid: str
+
+
+def unanswered_questions(conn: sqlite3.Connection) -> list[NovelQuestion]:
     rows = conn.execute(
         "SELECT source_uid, label, norm_label, field_type FROM questions WHERE required = 1"
     ).fetchall()
 
-    novel: dict[str, dict] = {}
+    novel: dict[str, NovelQuestion] = {}
     for row in rows:
         match = get_answer(conn, row["norm_label"])
         if match is not None and not is_placeholder_answer(match["answer"]):

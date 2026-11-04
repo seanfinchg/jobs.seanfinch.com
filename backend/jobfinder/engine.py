@@ -5,19 +5,23 @@ import functools
 import json
 import logging
 import re
+import sqlite3
 import sys
 import threading
 import time
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TypedDict, TypeGuard, TypeVar
 
 import yaml
 
-from jobfinder import adapters as _adapters  # noqa: F401  (populates the registry)
 from jobfinder import classify, db, questions, scoring
+
+# Importing the adapters package (via its registry module) registers every adapter.
 from jobfinder.adapters import registry
 from jobfinder.adapters.base import Adapter
+from jobfinder.config import Board, FilterKey, Filters, Profile, parse_profile
 from jobfinder.models import RawJob, source_uid
 
 logger = logging.getLogger(__name__)
@@ -58,11 +62,14 @@ BOARD_FETCH_DEADLINE_SECONDS = 20 * 60
 BODY_FETCH_DEADLINE_SECONDS = 2 * 60
 
 
+T = TypeVar("T")
+
+
 class DeadlineExceeded(RuntimeError):
     """Raised by _call_with_deadline when the wrapped call outlives its cap."""
 
 
-def _call_with_deadline(fn, deadline_seconds: float, label: str):
+def _call_with_deadline(fn: Callable[[], T], deadline_seconds: float, label: str) -> T:  # noqa: UP047 -- the Docker image's Python is 3.11, no PEP 695
     """Run fn() with a wall-clock cap. On timeout, dump every thread's stack
     to stderr (so the container logs show where it is actually stuck -- no
     ptrace privilege or extra tooling needed) and raise DeadlineExceeded.
@@ -71,13 +78,14 @@ def _call_with_deadline(fn, deadline_seconds: float, label: str):
     stopped: it is a daemon thread (never blocks exit) and may keep running
     in the background. Acceptable because it is idle-blocked by definition,
     and far cheaper than the whole run stalling behind it."""
-    outcome: dict = {}
+    values: list[T] = []
+    errors: list[BaseException] = []
 
     def target() -> None:
         try:
-            outcome["value"] = fn()
+            values.append(fn())
         except BaseException as exc:
-            outcome["error"] = exc
+            errors.append(exc)
 
     worker = threading.Thread(target=target, name=f"fetch-{label}", daemon=True)
     worker.start()
@@ -86,9 +94,9 @@ def _call_with_deadline(fn, deadline_seconds: float, label: str):
         logger.error("%s exceeded its %ss deadline; thread stacks follow", label, deadline_seconds)
         faulthandler.dump_traceback(file=sys.stderr, all_threads=True)
         raise DeadlineExceeded(f"{label} exceeded its {deadline_seconds}s deadline")
-    if "error" in outcome:
-        raise outcome["error"]
-    return outcome["value"]
+    if errors:
+        raise errors[0]
+    return values[0]
 
 
 class RunAlreadyInProgress(RuntimeError):
@@ -142,7 +150,22 @@ def _progress_path(db_path: Path | str) -> Path | None:
     return Path(str(db_path) + ".scrape-progress.json")
 
 
-def _write_progress(path: Path | None, data: dict) -> None:
+class Progress(TypedDict):
+    """The scrape-progress file engine.run() writes and status_server reads."""
+
+    profile: str
+    adapter: str | None
+    token: str | None
+    boards_done: int
+    boards_total: int
+    total_stored: int
+    started_at: str
+    updated_at: str
+    in_flight_since: str | None
+    finished_at: str | None
+
+
+def _write_progress(path: Path | None, data: Progress) -> None:
     if path is None:
         return
     path.write_text(json.dumps(data))
@@ -159,7 +182,7 @@ def _progress_snapshot(
     run_started_at: str,
     in_flight_since: str | None = None,
     finished_at: str | None = None,
-) -> dict:
+) -> Progress:
     """adapter/token double as "what's in flight" (in_flight_since set) and
     "what last completed" (in_flight_since None) -- the status server tells
     the two apart by that field rather than needing separate names, since
@@ -191,24 +214,32 @@ def _release_run_lock(lock_path: Path | None) -> None:
         lock_path.unlink(missing_ok=True)
 
 
-def _substitute_grad_years(value: Any) -> Any:
+def _is_list(value: object) -> TypeGuard[list[object]]:
+    return isinstance(value, list)
+
+
+def _is_dict(value: object) -> TypeGuard[dict[object, object]]:
+    return isinstance(value, dict)
+
+
+def _substitute_grad_years(value: object) -> object:
     """Recursively replaces the `{grad_years}` placeholder token in any
     string loaded from a profile/level/field YAML with the real, current
     year-window regex (classify.grad_year_pattern()) -- computed once per
     load rather than baked into the YAML as a literal year."""
     if isinstance(value, str):
         return value.replace("{grad_years}", classify.grad_year_pattern())
-    if isinstance(value, list):
+    if _is_list(value):
         return [_substitute_grad_years(v) for v in value]
-    if isinstance(value, dict):
+    if _is_dict(value):
         return {k: _substitute_grad_years(v) for k, v in value.items()}
     return value
 
 
-def _load_yaml(path: Path) -> dict:
+def _load_yaml(path: Path) -> Profile:
     with path.open(encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-    return _substitute_grad_years(data)
+        data: object = yaml.safe_load(f) or {}
+    return parse_profile(_substitute_grad_years(data))
 
 
 # A profile's filters can come from three layers instead of being written
@@ -220,7 +251,7 @@ def _load_yaml(path: Path) -> dict:
 # genuinely personal (location preferences, ad hoc exclusions). A profile
 # that doesn't declare `level`/`fields` behaves exactly as before: flat
 # filters straight off its own YAML.
-_LIST_FILTER_KEYS = [
+_LIST_FILTER_KEYS: list[FilterKey] = [
     "title_include",
     "title_include_weak",
     "body_include_for_weak_title",
@@ -231,8 +262,8 @@ _LIST_FILTER_KEYS = [
 ]
 
 
-def _merge_filters(*filter_dicts: dict) -> dict:
-    merged: dict[str, list[str]] = {}
+def _merge_filters(*filter_dicts: Filters) -> Filters:
+    merged: Filters = {}
     for key in _LIST_FILTER_KEYS:
         combined: list[str] = []
         for fd in filter_dicts:
@@ -241,13 +272,13 @@ def _merge_filters(*filter_dicts: dict) -> dict:
     return merged
 
 
-def load_profile(name: str, profiles_dir: Path = PROFILES_DIR) -> dict:
+def load_profile(name: str, profiles_dir: Path = PROFILES_DIR) -> Profile:
     profile = _load_yaml(profiles_dir / f"{name}.yaml")
 
     include = profile.pop("include", None)
     if include:
         include_paths = [include] if isinstance(include, str) else include
-        boards: dict[str, list] = {}
+        boards: dict[str, list[Board]] = {}
         for path in include_paths:
             included = _load_yaml(profiles_dir.parent / path)
             for adapter_key, board_list in (included.get("boards") or {}).items():
@@ -260,7 +291,7 @@ def load_profile(name: str, profiles_dir: Path = PROFILES_DIR) -> dict:
     field_names = profile.pop("fields", None) or []
 
     if level_name or field_names:
-        level_layer = (
+        level_layer: Profile = (
             _load_yaml(profiles_dir / "levels" / f"{level_name}.yaml") if level_name else {}
         )
         field_layers = {
@@ -269,7 +300,9 @@ def load_profile(name: str, profiles_dir: Path = PROFILES_DIR) -> dict:
         persona_layer = profile  # own filters apply last, always active
 
         layers = [level_layer, *field_layers.values(), persona_layer]
-        profile["filters"] = _merge_filters(*(layer.get("filters") or {} for layer in layers))
+        profile["filters"] = _merge_filters(
+            *(layer.get("filters") or Filters() for layer in layers)
+        )
 
     return profile
 
@@ -278,7 +311,7 @@ def _matches_any(text: str, patterns: list[str]) -> bool:
     return any(re.search(pattern, text or "", re.IGNORECASE) for pattern in patterns)
 
 
-def passes_filters(job: RawJob, filters: dict) -> bool:
+def passes_filters(job: RawJob, filters: Filters) -> bool:
     title_include = filters.get("title_include") or []
     title_include_weak = filters.get("title_include_weak") or []
     body_include_for_weak_title = filters.get("body_include_for_weak_title") or []
@@ -311,7 +344,7 @@ def passes_filters(job: RawJob, filters: dict) -> bool:
     return True
 
 
-def _passes_title_and_location_filters(job: RawJob, filters: dict) -> bool:
+def _passes_title_and_location_filters(job: RawJob, filters: Filters) -> bool:
     """Subset of passes_filters() that never needs body text -- used as a
     cheap pre-check before an adapter's optional fetch_body() call, so the
     lazy body fetch only ever runs for a posting that already looks
@@ -344,11 +377,11 @@ def run(
     harvest_questions: bool = False,
     db_path: Path | str = DB_PATH,
     profiles_dir: Path = PROFILES_DIR,
-    conn=None,
+    conn: sqlite3.Connection | None = None,
 ) -> None:
     profile = load_profile(profile_name, profiles_dir)
     own_conn = conn is None
-    if own_conn:
+    if conn is None:
         conn = db.connect(db_path)
     db.sync_fields(conn, profiles_dir / "fields")
 
@@ -555,7 +588,7 @@ def reclassify(
     *,
     db_path: Path | str = DB_PATH,
     profiles_dir: Path = PROFILES_DIR,
-    conn=None,
+    conn: sqlite3.Connection | None = None,
 ) -> tuple[int, int]:
     """Re-evaluate every already-stored job tagged with this profile against
     its *current* filters, with no network fetch. run()'s main loop
@@ -570,7 +603,7 @@ def reclassify(
     (updated, newly_skipped)."""
     profile = load_profile(profile_name, profiles_dir)
     own_conn = conn is None
-    if own_conn:
+    if conn is None:
         conn = db.connect(db_path)
     db.sync_fields(conn, profiles_dir / "fields")
 

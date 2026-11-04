@@ -4,7 +4,7 @@ import re
 from datetime import date
 from pathlib import Path
 
-import yaml
+from jobfinder.config import Filters, read_config_file, required_str
 
 FIELDS_DIR = Path("profiles") / "fields"
 
@@ -133,10 +133,12 @@ def classify_level(title: str) -> str:
 def _load_field_subfield_patterns(fields_dir: Path) -> dict[str, list[tuple[str, str]]]:
     patterns: dict[str, list[tuple[str, str]]] = {}
     for path in sorted(fields_dir.glob("*.yaml")):
-        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        data = read_config_file(path)
         subfields = data.get("subfields") or []
         if subfields:
-            patterns[path.stem] = [(sf["tag"], sf["pattern"]) for sf in subfields]
+            patterns[path.stem] = [
+                (required_str(sf, "tag"), required_str(sf, "pattern")) for sf in subfields
+            ]
     return patterns
 
 
@@ -179,8 +181,8 @@ def classify_subfields_by_field(title: str, fields_dir: Path = FIELDS_DIR) -> li
 def _load_field_title_patterns(fields_dir: Path) -> dict[str, list[str]]:
     patterns: dict[str, list[str]] = {}
     for path in sorted(fields_dir.glob("*.yaml")):
-        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-        title_include = (data.get("filters") or {}).get("title_include") or []
+        data = read_config_file(path)
+        title_include = (data.get("filters") or Filters()).get("title_include") or []
         if title_include:
             patterns[path.stem] = title_include
     return patterns

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sqlite3
 import webbrowser
+from collections.abc import Callable
 
 from jobfinder import db
 
@@ -17,9 +18,9 @@ def review_loop(
     conn: sqlite3.Connection,
     jobs: list[sqlite3.Row],
     *,
-    ask=input,
-    opener=webbrowser.open,
-    printer=print,
+    ask: Callable[[str], str] = input,
+    opener: Callable[[str], object] = webbrowser.open,
+    printer: Callable[[str], object] = print,
 ) -> None:
     i = 0
     while 0 <= i < len(jobs):

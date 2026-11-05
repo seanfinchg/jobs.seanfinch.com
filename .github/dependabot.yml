@@ -49,6 +49,8 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    cooldown:
+      default-days: 3
     groups:
       actions:
         patterns: ["*"]
@@ -63,3 +65,5 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+    cooldown:
+      default-days: 3

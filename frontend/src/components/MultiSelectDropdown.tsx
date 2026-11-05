@@ -46,29 +46,28 @@ export default function MultiSelectDropdown({
   disabled = false,
 }: MultiSelectDropdownProps): React.JSX.Element {
   const [open, setOpen] = useState(false);
+  // The query clears on close: reopening shows the full list, not what was last typed.
   const [query, setQuery] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
   // A disabled facet should never stay open from before its dependency
   // disappeared (e.g. discipline gets cleared via "Change discipline"
   // while this dropdown happened to be open).
-  useEffect(() => {
-    if (disabled) setOpen(false);
-  }, [disabled]);
+  if (disabled && open) {
+    setOpen(false);
+    setQuery("");
+  }
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent): void {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setQuery("");
+      }
     }
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
-
-  // Query resets on close rather than persisting -- reopening the dropdown
-  // should show the full list again, not whatever was last typed.
-  useEffect(() => {
-    if (!open) setQuery("");
-  }, [open]);
 
   function toggle(value: string): void {
     onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
@@ -76,7 +75,9 @@ export default function MultiSelectDropdown({
 
   const q = query.trim().toLowerCase();
   const visibleOptions = q
-    ? options.filter((opt) => opt.label.toLowerCase().includes(q) || opt.group?.toLowerCase().includes(q))
+    ? options.filter(
+        (opt) => opt.label.toLowerCase().includes(q) || opt.group?.toLowerCase().includes(q),
+      )
     : options;
 
   // Preserve the order groups first appear in `options` -- ungrouped
@@ -92,7 +93,10 @@ export default function MultiSelectDropdown({
       <button
         type="button"
         disabled={disabled}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          if (open) setQuery("");
+          setOpen(!open);
+        }}
         className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors ${
           fullWidth ? "w-full justify-between" : ""
         } ${
@@ -226,7 +230,11 @@ export default function MultiSelectDropdown({
                           />
                           {opt.label}
                         </span>
-                        {counts && <span className="font-mono text-xs text-ultra-light-mode/40">{count}</span>}
+                        {counts && (
+                          <span className="font-mono text-xs text-ultra-light-mode/40">
+                            {count}
+                          </span>
+                        )}
                       </label>
                     );
                   })}

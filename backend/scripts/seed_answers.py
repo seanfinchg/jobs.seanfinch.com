@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 import yaml
+from pydantic import BaseModel, ConfigDict
 
 from jobfinder import db
 from jobfinder.engine import DB_PATH
@@ -28,28 +29,58 @@ RESUME_PATH = BACKEND_DIR / "resume.pdf"
 RESUME_ANSWER = (r"resume|cv", str(RESUME_PATH), "input_file")
 
 
+class _Answer(BaseModel):
+    # An unquoted number in the YAML (a zip code, a year) is still an answer.
+    model_config = ConfigDict(coerce_numbers_to_str=True)
+
+    pattern: str
+    answer: str
+    field_type: str
+
+
+class _AnswersFile(BaseModel):
+    answers: list[_Answer] = []
+
+
 def load_real_answers(path: Path) -> list[tuple[str, str, str]]:
-    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    return [(row["pattern"], row["answer"], row["field_type"]) for row in data.get("answers", [])]
+    data = _AnswersFile.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")) or {})
+    return [(row.pattern, row.answer, row.field_type) for row in data.answers]
 
 
 TODO_PLACEHOLDERS = [
-    (r"work authoriz|authorized to work|legally (authorized|eligible)",
-     "TODO: fill in yourself -- work authorization status", "multi_value_single_select"),
-    (r"sponsor(ship)?",
-     "TODO: fill in yourself -- visa sponsorship needs", "multi_value_single_select"),
-    (r"veteran|disab(led|ility)|race|ethnicity|gender( identity)?|sexual orientation",
-     "TODO: fill in yourself -- EEOC/demographic question, optional on most forms", "multi_value_single_select"),
-    (r"security clearance|ts/sci|polygraph",
-     "TODO: fill in yourself -- clearance status", "multi_value_single_select"),
-    (r"salary expectat|desired salary|compensation expectat",
-     "TODO: fill in yourself -- salary expectations", "input_text"),
+    (
+        r"work authoriz|authorized to work|legally (authorized|eligible)",
+        "TODO: fill in yourself -- work authorization status",
+        "multi_value_single_select",
+    ),
+    (
+        r"sponsor(ship)?",
+        "TODO: fill in yourself -- visa sponsorship needs",
+        "multi_value_single_select",
+    ),
+    (
+        r"veteran|disab(led|ility)|race|ethnicity|gender( identity)?|sexual orientation",
+        "TODO: fill in yourself -- EEOC/demographic question, optional on most forms",
+        "multi_value_single_select",
+    ),
+    (
+        r"security clearance|ts/sci|polygraph",
+        "TODO: fill in yourself -- clearance status",
+        "multi_value_single_select",
+    ),
+    (
+        r"salary expectat|desired salary|compensation expectat",
+        "TODO: fill in yourself -- salary expectations",
+        "input_text",
+    ),
 ]
 
 
 def main() -> None:
     if not ANSWERS_PATH.exists():
-        sys.exit(f"{ANSWERS_PATH.name} not found -- copy answers.example.yaml to it and fill in your details")
+        sys.exit(
+            f"{ANSWERS_PATH.name} not found -- copy answers.example.yaml to it and fill in your details"
+        )
     real_answers = [RESUME_ANSWER] + load_real_answers(ANSWERS_PATH)
     conn = db.connect(DB_PATH)
     for pattern, answer, field_type in real_answers + TODO_PLACEHOLDERS:

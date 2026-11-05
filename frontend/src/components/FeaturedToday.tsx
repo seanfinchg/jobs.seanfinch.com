@@ -54,7 +54,9 @@ export default function FeaturedToday({ jobs }: FeaturedTodayProps): React.JSX.E
     }
     // Today first, then working back a day at a time; alphabetical within
     // a day so the order doesn't reshuffle as counts change underneath it.
-    return [...byCompanyDay.values()].sort((a, b) => a.day - b.day || a.company.localeCompare(b.company));
+    return [...byCompanyDay.values()].sort(
+      (a, b) => a.day - b.day || a.company.localeCompare(b.company),
+    );
   }, [jobs]);
 
   if (spotlights.length === 0) return null;

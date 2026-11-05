@@ -1,14 +1,30 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from jobfinder.adapters.base import Adapter
+from pydantic import TypeAdapter
+
+from jobfinder.adapters.base import Adapter, ApiModel
 from jobfinder.adapters.registry import register
+from jobfinder.config import Board
 from jobfinder.http import session
 from jobfinder.models import RawJob
 
 LISTINGS_PATH = ".github/scripts/listings.json"
 NEW_GRAD_REPO = "SimplifyJobs/New-Grad-Positions"
+
+
+class _Listing(ApiModel):
+    id: str | None = ""
+    company_name: str | None = ""
+    title: str | None = ""
+    url: str | None = ""
+    active: bool | None = True
+    date_posted: float | None = None
+    locations: list[str] | None = None
+
+
+_LISTINGS = TypeAdapter(list[_Listing])
 
 
 def _repo_for(season: str, year: int | None) -> str:
@@ -36,7 +52,7 @@ class SimplifyListingsAdapter(Adapter):
     name = "simplify_listings"
     is_native = False
 
-    def fetch(self, board: dict) -> list[RawJob]:
+    def fetch(self, board: Board) -> list[RawJob]:
         token = board.get("token", "new-grad")
         url = board.get("url")
         if not url:
@@ -45,28 +61,24 @@ class SimplifyListingsAdapter(Adapter):
 
         resp = session.get(url, timeout=30)
         resp.raise_for_status()
-        entries = resp.json()
+        entries = _LISTINGS.validate_python(resp.json())
 
-        jobs = []
+        jobs: list[RawJob] = []
         for entry in entries:
-            if not entry.get("active", True):
+            if not entry.active:
                 continue
-            posted_ms = entry.get("date_posted")
-            posted_at = (
-                datetime.fromtimestamp(posted_ms, tz=timezone.utc).isoformat()
-                if posted_ms
-                else None
-            )
-            locations = entry.get("locations") or []
+            posted_ms = entry.date_posted
+            posted_at = datetime.fromtimestamp(posted_ms, tz=UTC).isoformat() if posted_ms else None
+            locations = entry.locations or []
             jobs.append(
                 RawJob(
                     adapter=self.name,
-                    company=entry.get("company_name", ""),
+                    company=entry.company_name or "",
                     board_token=token,
-                    external_id=entry.get("id", ""),
-                    title=entry.get("title", ""),
+                    external_id=entry.id or "",
+                    title=entry.title or "",
                     location="; ".join(locations),
-                    url=entry.get("url", ""),
+                    url=entry.url or "",
                     body="",
                     posted_at=posted_at,
                 )

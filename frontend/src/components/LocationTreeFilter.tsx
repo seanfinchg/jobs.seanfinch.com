@@ -41,7 +41,16 @@ interface TreeRowProps {
   counts: Record<string, number>;
 }
 
-function TreeRow({ node, depth, selected, onToggle, expanded, onToggleExpand, forceExpanded, counts }: TreeRowProps): React.JSX.Element {
+function TreeRow({
+  node,
+  depth,
+  selected,
+  onToggle,
+  expanded,
+  onToggleExpand,
+  forceExpanded,
+  counts,
+}: TreeRowProps): React.JSX.Element {
   const hasChildren = node.children.length > 0;
   const isExpanded = forceExpanded || expanded.has(node.value);
   const count = counts[node.value] ?? 0;
@@ -73,7 +82,9 @@ function TreeRow({ node, depth, selected, onToggle, expanded, onToggleExpand, fo
               onChange={() => onToggle(node.value)}
               className="accent-accent"
             />
-            <span className={`truncate text-sm ${isZero ? "text-ultra-light-mode/40" : "text-ultra-light-mode/80"}`}>
+            <span
+              className={`truncate text-sm ${isZero ? "text-ultra-light-mode/40" : "text-ultra-light-mode/80"}`}
+            >
               {node.label}
             </span>
           </label>
@@ -107,23 +118,28 @@ function TreeRow({ node, depth, selected, onToggle, expanded, onToggleExpand, fo
 // country or state matches every job under it directly -- see
 // lib/location.ts's locationTagsFor, which tags a job with every level its
 // location resolves to, not just the most specific one.
-export default function LocationTreeFilter({ tree, selected, onChange, counts }: LocationTreeFilterProps): React.JSX.Element {
+export default function LocationTreeFilter({
+  tree,
+  selected,
+  onChange,
+  counts,
+}: LocationTreeFilterProps): React.JSX.Element {
   const [open, setOpen] = useState(false);
+  // The query clears on close: reopening shows the full list, not what was last typed.
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent): void {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setQuery("");
+      }
     }
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
-
-  useEffect(() => {
-    if (!open) setQuery("");
-  }, [open]);
 
   function toggle(value: string): void {
     onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
@@ -146,7 +162,10 @@ export default function LocationTreeFilter({ tree, selected, onChange, counts }:
     <div className="relative w-full" ref={ref}>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          if (open) setQuery("");
+          setOpen(!open);
+        }}
         className={`flex w-full items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition-colors ${
           selected.length > 0
             ? "border-accent/40 bg-accent/10 text-light-mode"
@@ -214,7 +233,9 @@ export default function LocationTreeFilter({ tree, selected, onChange, counts }:
               clear all
             </button>
           )}
-          {visibleTree.length === 0 && <p className="px-2 py-3 text-center text-xs text-ultra-light-mode/40">no matches</p>}
+          {visibleTree.length === 0 && (
+            <p className="px-2 py-3 text-center text-xs text-ultra-light-mode/40">no matches</p>
+          )}
           {visibleTree.map((node) => (
             <TreeRow
               key={node.value}

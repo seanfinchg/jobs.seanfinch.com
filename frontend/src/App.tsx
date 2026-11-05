@@ -48,7 +48,9 @@ const DISCIPLINE_FILTER_OPTIONS = [...DISCIPLINES, { key: EVERYTHING, label: "Ev
 function disciplineFieldSlugs(discipline: string | null, fields: FieldMeta[]): string[] {
   if (discipline === null || discipline === EVERYTHING) return fields.map((f) => f.slug);
   if (discipline === "finance" || discipline === "mechanical-engineering") return [discipline];
-  return fields.filter((f) => f.slug !== "finance" && f.slug !== "mechanical-engineering").map((f) => f.slug);
+  return fields
+    .filter((f) => f.slug !== "finance" && f.slug !== "mechanical-engineering")
+    .map((f) => f.slug);
 }
 
 // The role-picker page's options for a given discipline: if it spans several
@@ -56,7 +58,10 @@ function disciplineFieldSlugs(discipline: string | null, fields: FieldMeta[]): s
 // field (finance, mechanical-engineering), that field's own subfields are
 // the meaningful next narrowing step instead (picking the one field it
 // already implicitly is would be a no-op page).
-function roleOptionsFor(discipline: string, fields: FieldMeta[]): { value: string; label: string }[] {
+function roleOptionsFor(
+  discipline: string,
+  fields: FieldMeta[],
+): { value: string; label: string }[] {
   const slugs = disciplineFieldSlugs(discipline, fields);
   const disciplineFields = fields.filter((f) => slugs.includes(f.slug));
   const onlyField = disciplineFields.length === 1 ? disciplineFields[0] : undefined;
@@ -72,7 +77,15 @@ function roleOptionsFor(discipline: string, fields: FieldMeta[]): { value: strin
 // Level facet counts and the company tracker's "ignore search" behavior --
 // can reuse the exact same matching logic the main table uses, instead of a
 // second hand-maintained copy that drifts out of sync with it.
-type FilterDim = "locationTags" | "roles" | "levels" | "gradYears" | "search" | "top" | "salary" | "defense";
+type FilterDim =
+  | "locationTags"
+  | "roles"
+  | "levels"
+  | "gradYears"
+  | "search"
+  | "top"
+  | "salary"
+  | "defense";
 
 interface FilterState {
   search: string;
@@ -115,7 +128,11 @@ function makeMatcher(state: FilterState) {
     ) {
       return false;
     }
-    if (skip !== "levels" && state.levels.length > 0 && !(job.level && state.levels.includes(job.level))) {
+    if (
+      skip !== "levels" &&
+      state.levels.length > 0 &&
+      !(job.level && state.levels.includes(job.level))
+    ) {
       return false;
     }
     if (skip !== "gradYears" && state.gradYears.length > 0 && isEntryLevel(job)) {
@@ -258,7 +275,10 @@ export default function App(): React.JSX.Element {
   // FilterDim checks below -- nothing needs to see counts "as if discipline
   // weren't set" the way Role/Level facet counts do, so it doesn't need the
   // skip machinery, just narrows the pool everything else operates on.
-  const disciplineSlugs = useMemo(() => disciplineFieldSlugs(discipline, fields), [discipline, fields]);
+  const disciplineSlugs = useMemo(
+    () => disciplineFieldSlugs(discipline, fields),
+    [discipline, fields],
+  );
   const disciplineJobs = useMemo(
     () => jobs.filter((job) => job.matched_fields.some((f) => disciplineSlugs.includes(f))),
     [jobs, disciplineSlugs],
@@ -269,11 +289,24 @@ export default function App(): React.JSX.Element {
   );
 
   const matches = useMemo(
-    () => makeMatcher({ search, locationTags, roles, levels, gradYears, topOnly, salaryMin, hideDefense }),
+    () =>
+      makeMatcher({
+        search,
+        locationTags,
+        roles,
+        levels,
+        gradYears,
+        topOnly,
+        salaryMin,
+        hideDefense,
+      }),
     [search, locationTags, roles, levels, gradYears, topOnly, salaryMin, hideDefense],
   );
 
-  const filtered = useMemo(() => disciplineJobs.filter((job) => matches(job)), [disciplineJobs, matches]);
+  const filtered = useMemo(
+    () => disciplineJobs.filter((job) => matches(job)),
+    [disciplineJobs, matches],
+  );
 
   // The company tracker's whole job is to let you pick a company by
   // clicking it, which sets `search` -- so it has to ignore the search
@@ -320,7 +353,9 @@ export default function App(): React.JSX.Element {
       if (isEntryLevel(job) && job.grad_year != null) years.add(job.grad_year);
     }
     return [
-      ...[...years].sort((a, b) => a - b).map((year) => ({ value: String(year), label: String(year) })),
+      ...[...years]
+        .sort((a, b) => a - b)
+        .map((year) => ({ value: String(year), label: String(year) })),
       { value: "unspecified", label: "Year not specified" },
     ];
   }, [disciplineJobs]);
@@ -350,7 +385,10 @@ export default function App(): React.JSX.Element {
   // the active filters, same split as roleCounts/roleOptions above) --
   // only the per-node counts should react to other filters narrowing the
   // list, not the tree's own branches disappearing and reappearing.
-  const locationTree = useMemo(() => buildLocationTree(disciplineJobs.map((j) => j.location)), [disciplineJobs]);
+  const locationTree = useMemo(
+    () => buildLocationTree(disciplineJobs.map((j) => j.location)),
+    [disciplineJobs],
+  );
 
   // Same "how many facets are actively narrowing the list" idea as the
   // per-option counts above, just totaled -- drives the badge on the
@@ -376,6 +414,8 @@ export default function App(): React.JSX.Element {
       document.body.style.overflow = prev;
     };
   }, [mobileFiltersOpen]);
+
+  const roleFilterDisabled = discipline === null;
 
   if (discipline === null) {
     return (
@@ -404,13 +444,16 @@ export default function App(): React.JSX.Element {
     <div className="min-h-screen bg-ultra-dark-mode px-4 py-6 font-raleway text-ultra-light-mode sm:px-10 sm:py-10">
       <div className="mx-auto max-w-6xl animate-fade-up lg:max-w-352 2xl:max-w-400">
         <header className="mb-5 border-b border-white/10 pb-4 sm:mb-8 sm:pb-6">
-          <h1 className="font-jost text-2xl font-semibold text-light-mode sm:text-3xl">Job Search</h1>
+          <h1 className="font-jost text-2xl font-semibold text-light-mode sm:text-3xl">
+            Job Search
+          </h1>
           <p className="mt-1 text-sm text-ultra-light-mode/50">
             Open roles, updated daily.
             {generatedAt && (
               <span title={relativeDate(generatedAt).title}>
                 {" "}
-                Jobs last updated: {relativeDate(generatedAt).label} at {relativeDate(generatedAt).time}.
+                Jobs last updated: {relativeDate(generatedAt).label} at{" "}
+                {relativeDate(generatedAt).time}.
               </span>
             )}
             {" · "}
@@ -480,72 +523,73 @@ export default function App(): React.JSX.Element {
           </button>
         </div>
 
-        {mobileFiltersOpen && createPortal(
-          // Rendered via a portal straight into document.body -- the page
-          // root has its own permanent transform (see index.css's fade-up
-          // animation, `animation: ... both` keeps `transform: translateY(0)`
-          // applied forever after it finishes), and any non-`none` transform
-          // on an ancestor hijacks the containing block for `position:
-          // fixed` descendants. Nested inside that root, `fixed inset-0`
-          // here would resolve against the root's own (shorter, non-viewport)
-          // box instead of the real viewport -- which is exactly what broke
-          // scrolling inside this sheet. A portal escapes that ancestor
-          // chain entirely, the same fix already applied to the apply-links
-          // popover for the same underlying reason.
-          <div className="fixed inset-0 z-30 flex flex-col bg-ultra-dark-mode lg:hidden">
-            <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
-              <h2 className="font-jost text-base font-semibold text-light-mode">Filters</h2>
-              <button
-                type="button"
-                onClick={() => setMobileFiltersOpen(false)}
-                className="rounded-md px-3 py-2 text-sm text-ultra-light-mode/70 hover:text-light-mode"
-              >
-                Done
-              </button>
-            </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-              <FilterBar
-                showHeading={false}
-                fields={scopedFields}
-                discipline={discipline}
-                disciplineOptions={DISCIPLINE_FILTER_OPTIONS}
-                disciplineCounts={disciplineCounts}
-                onDisciplineChange={setDisciplineFilter}
-                roleFilterDisabled={discipline === null}
-                locationTags={locationTags}
-                onLocationTagsChange={setLocationTags}
-                locationTree={locationTree}
-                locationTagCounts={locationTagCounts}
-                roles={roles}
-                onRolesChange={setRoles}
-                roleCounts={roleCounts}
-                levels={levels}
-                onLevelsChange={setLevels}
-                levelCounts={levelCounts}
-                gradYearOptions={gradYearOptions}
-                gradYears={gradYears}
-                onGradYearsChange={setGradYears}
-                gradYearCounts={gradYearCounts}
-                topOnly={topOnly}
-                onTopOnlyChange={setTopOnly}
-                salaryMin={salaryMin}
-                onSalaryMinChange={setSalaryMin}
-                hideDefense={hideDefense}
-                onHideDefenseChange={setHideDefense}
-              />
-            </div>
-            <div className="shrink-0 border-t border-white/10 px-4 py-3">
-              <button
-                type="button"
-                onClick={() => setMobileFiltersOpen(false)}
-                className="w-full rounded-md bg-accent px-4 py-3 text-sm font-semibold text-ultra-dark-mode"
-              >
-                Show {filtered.length} result{filtered.length === 1 ? "" : "s"}
-              </button>
-            </div>
-          </div>,
-          document.body,
-        )}
+        {mobileFiltersOpen &&
+          createPortal(
+            // Rendered via a portal straight into document.body -- the page
+            // root has its own permanent transform (see index.css's fade-up
+            // animation, `animation: ... both` keeps `transform: translateY(0)`
+            // applied forever after it finishes), and any non-`none` transform
+            // on an ancestor hijacks the containing block for `position:
+            // fixed` descendants. Nested inside that root, `fixed inset-0`
+            // here would resolve against the root's own (shorter, non-viewport)
+            // box instead of the real viewport -- which is exactly what broke
+            // scrolling inside this sheet. A portal escapes that ancestor
+            // chain entirely, the same fix already applied to the apply-links
+            // popover for the same underlying reason.
+            <div className="fixed inset-0 z-30 flex flex-col bg-ultra-dark-mode lg:hidden">
+              <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
+                <h2 className="font-jost text-base font-semibold text-light-mode">Filters</h2>
+                <button
+                  type="button"
+                  onClick={() => setMobileFiltersOpen(false)}
+                  className="rounded-md px-3 py-2 text-sm text-ultra-light-mode/70 hover:text-light-mode"
+                >
+                  Done
+                </button>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+                <FilterBar
+                  showHeading={false}
+                  fields={scopedFields}
+                  discipline={discipline}
+                  disciplineOptions={DISCIPLINE_FILTER_OPTIONS}
+                  disciplineCounts={disciplineCounts}
+                  onDisciplineChange={setDisciplineFilter}
+                  roleFilterDisabled={roleFilterDisabled}
+                  locationTags={locationTags}
+                  onLocationTagsChange={setLocationTags}
+                  locationTree={locationTree}
+                  locationTagCounts={locationTagCounts}
+                  roles={roles}
+                  onRolesChange={setRoles}
+                  roleCounts={roleCounts}
+                  levels={levels}
+                  onLevelsChange={setLevels}
+                  levelCounts={levelCounts}
+                  gradYearOptions={gradYearOptions}
+                  gradYears={gradYears}
+                  onGradYearsChange={setGradYears}
+                  gradYearCounts={gradYearCounts}
+                  topOnly={topOnly}
+                  onTopOnlyChange={setTopOnly}
+                  salaryMin={salaryMin}
+                  onSalaryMinChange={setSalaryMin}
+                  hideDefense={hideDefense}
+                  onHideDefenseChange={setHideDefense}
+                />
+              </div>
+              <div className="shrink-0 border-t border-white/10 px-4 py-3">
+                <button
+                  type="button"
+                  onClick={() => setMobileFiltersOpen(false)}
+                  className="w-full rounded-md bg-accent px-4 py-3 text-sm font-semibold text-ultra-dark-mode"
+                >
+                  Show {filtered.length} result{filtered.length === 1 ? "" : "s"}
+                </button>
+              </div>
+            </div>,
+            document.body,
+          )}
 
         {/* Amazon-style refinement rail: filters live in their own column
             on the left, results in the middle, the company tracker on the
@@ -559,7 +603,7 @@ export default function App(): React.JSX.Element {
               disciplineOptions={DISCIPLINE_FILTER_OPTIONS}
               disciplineCounts={disciplineCounts}
               onDisciplineChange={setDisciplineFilter}
-              roleFilterDisabled={discipline === null}
+              roleFilterDisabled={roleFilterDisabled}
               locationTags={locationTags}
               onLocationTagsChange={setLocationTags}
               locationTree={locationTree}

@@ -1,9 +1,17 @@
 import sqlite3
+from pathlib import Path
 
 import pytest
 
 from jobfinder import db
 from jobfinder.models import RawJob
+
+
+def _job_row(conn: sqlite3.Connection, content_hash: str) -> sqlite3.Row:
+    """get_job, for a hash the test just stored."""
+    row = db.get_job(conn, content_hash)
+    assert row is not None
+    return row
 
 
 @pytest.fixture
@@ -15,17 +23,22 @@ def conn():
     connection.close()
 
 
-def _job(**overrides):
+def _job(**overrides: str) -> RawJob:
     base = dict(
-        adapter="greenhouse", company="Acme", board_token="acme", external_id="1",
-        title="Security Engineer", location="Boston, MA",
-        url="https://boards.greenhouse.io/acme/jobs/1", body="",
+        adapter="greenhouse",
+        company="Acme",
+        board_token="acme",
+        external_id="1",
+        title="Security Engineer",
+        location="Boston, MA",
+        url="https://boards.greenhouse.io/acme/jobs/1",
+        body="",
     )
     base.update(overrides)
     return RawJob(**base)
 
 
-def test_upsert_is_idempotent(conn):
+def test_upsert_is_idempotent(conn: sqlite3.Connection) -> None:
     job = _job()
     db.upsert_job(conn, job, profile="p", is_native=True, now="2026-01-01T00:00:00")
     db.upsert_job(conn, job, profile="p", is_native=True, now="2026-01-01T01:00:00")
@@ -38,13 +51,17 @@ def test_upsert_is_idempotent(conn):
     assert len(sightings) == 1
 
 
-def test_cross_source_dedup_links_one_job_two_sightings(conn):
+def test_cross_source_dedup_links_one_job_two_sightings(conn: sqlite3.Connection) -> None:
     aggregator_job = _job(
-        adapter="simplify_listings", board_token="new-grad", external_id="sl-1",
+        adapter="simplify_listings",
+        board_token="new-grad",
+        external_id="sl-1",
         url="https://simplify.jobs/redirect/1",
     )
     native_job = _job(
-        adapter="greenhouse", board_token="acme", external_id="1",
+        adapter="greenhouse",
+        board_token="acme",
+        external_id="1",
         url="https://boards.greenhouse.io/acme/jobs/1",
     )
 
@@ -59,34 +76,41 @@ def test_cross_source_dedup_links_one_job_two_sightings(conn):
     assert len(sightings) == 2
 
 
-def test_native_apply_url_is_never_downgraded(conn):
+def test_native_apply_url_is_never_downgraded(conn: sqlite3.Connection) -> None:
     native_job = _job(adapter="greenhouse", board_token="acme", external_id="1")
     aggregator_job = _job(
-        adapter="simplify_listings", board_token="new-grad", external_id="sl-1",
+        adapter="simplify_listings",
+        board_token="new-grad",
+        external_id="sl-1",
         url="https://simplify.jobs/redirect/1",
     )
 
     hash_ = db.upsert_job(conn, native_job, profile="p", is_native=True, now="t1")
     db.upsert_job(conn, aggregator_job, profile="p", is_native=False, now="t2")
 
-    job = db.get_job(conn, hash_)
+    job = _job_row(conn, hash_)
     assert job["best_apply_url"] == native_job.url
 
 
-def test_closure_flips_status_when_board_stops_listing_it(conn):
+def test_closure_flips_status_when_board_stops_listing_it(conn: sqlite3.Connection) -> None:
     job = _job()
     db.upsert_job(conn, job, profile="p", is_native=True, now="t1")
     # second run: board no longer returns this job at all
     closed = db.close_stale_sightings(conn, "greenhouse", "acme", "t2")
 
     assert closed == 1
-    assert db.get_job(conn, db.normalize.content_hash(job.company, job.title, job.location))["status"] == "closed"
+    assert (
+        _job_row(conn, db.normalize.content_hash(job.company, job.title, job.location))["status"]
+        == "closed"
+    )
 
 
-def test_closure_spares_a_job_still_open_via_another_source(conn):
+def test_closure_spares_a_job_still_open_via_another_source(conn: sqlite3.Connection) -> None:
     native_job = _job(adapter="greenhouse", board_token="acme", external_id="1")
     aggregator_job = _job(
-        adapter="simplify_listings", board_token="new-grad", external_id="sl-1",
+        adapter="simplify_listings",
+        board_token="new-grad",
+        external_id="sl-1",
         url="https://simplify.jobs/redirect/1",
     )
 
@@ -100,23 +124,23 @@ def test_closure_spares_a_job_still_open_via_another_source(conn):
     closed = db.close_stale_sightings(conn, "greenhouse", "acme", "t2")
 
     assert closed == 0
-    assert db.get_job(conn, hash_)["status"] == "new"
+    assert _job_row(conn, hash_)["status"] == "new"
 
 
-def test_a_failing_board_is_never_passed_to_closure(conn):
+def test_a_failing_board_is_never_passed_to_closure(conn: sqlite3.Connection) -> None:
     # simulates engine.py's behavior: close_stale_sightings is simply never
     # called for a board whose fetch raised this run.
     job = _job()
     db.upsert_job(conn, job, profile="p", is_native=True, now="t1")
 
-    job_row_before = db.get_job(conn, db.normalize.content_hash(job.company, job.title, job.location))
+    job_row_before = _job_row(conn, db.normalize.content_hash(job.company, job.title, job.location))
     assert job_row_before["status"] == "new"
     # no close_stale_sightings call here -- board fetch "failed"
-    job_row_after = db.get_job(conn, db.normalize.content_hash(job.company, job.title, job.location))
+    job_row_after = _job_row(conn, db.normalize.content_hash(job.company, job.title, job.location))
     assert job_row_after["status"] == "new"
 
 
-def test_closure_does_not_touch_a_different_boards_jobs(conn):
+def test_closure_does_not_touch_a_different_boards_jobs(conn: sqlite3.Connection) -> None:
     job_a = _job(board_token="acme", external_id="a1")
     job_b = _job(company="Other Co", board_token="other", external_id="b1")
 
@@ -126,10 +150,10 @@ def test_closure_does_not_touch_a_different_boards_jobs(conn):
     db.close_stale_sightings(conn, "greenhouse", "acme", "t2")
 
     hash_b = db.normalize.content_hash(job_b.company, job_b.title, job_b.location)
-    assert db.get_job(conn, hash_b)["status"] == "new"
+    assert _job_row(conn, hash_b)["status"] == "new"
 
 
-def test_touch_sighting_prevents_false_closure_when_filtered_out(conn):
+def test_touch_sighting_prevents_false_closure_when_filtered_out(conn: sqlite3.Connection) -> None:
     job = _job()
     db.upsert_job(conn, job, profile="p", is_native=True, now="t1")
 
@@ -141,17 +165,17 @@ def test_touch_sighting_prevents_false_closure_when_filtered_out(conn):
     assert closed == 0
 
 
-def test_queued_or_applied_status_is_not_clobbered_by_closure(conn):
+def test_queued_or_applied_status_is_not_clobbered_by_closure(conn: sqlite3.Connection) -> None:
     job = _job()
     hash_ = db.upsert_job(conn, job, profile="p", is_native=True, now="t1")
     db.set_status(conn, hash_, "queued")
 
     db.close_stale_sightings(conn, "greenhouse", "acme", "t2")
 
-    assert db.get_job(conn, hash_)["status"] == "queued"
+    assert _job_row(conn, hash_)["status"] == "queued"
 
 
-def test_board_health_records_failure_without_wiping_last_ok(conn):
+def test_board_health_records_failure_without_wiping_last_ok(conn: sqlite3.Connection) -> None:
     db.record_board_health(conn, "greenhouse", "acme", ok=True, job_count=5, now="t1")
     db.record_board_health(conn, "greenhouse", "acme", ok=False, error="404", now="t2")
 
@@ -163,11 +187,27 @@ def test_board_health_records_failure_without_wiping_last_ok(conn):
     assert row["job_count"] == 5
 
 
-def test_seed_answer_then_question_is_no_longer_novel(conn):
-    db.add_questions(conn, "greenhouse:acme:1", [
-        {"name": "q1", "label": "Are you authorized to work in the US?", "field_type": "boolean", "required": True, "values": []},
-        {"name": "q2", "label": "What is your favorite color?", "field_type": "input_text", "required": True, "values": []},
-    ])
+def test_seed_answer_then_question_is_no_longer_novel(conn: sqlite3.Connection) -> None:
+    db.add_questions(
+        conn,
+        "greenhouse:acme:1",
+        [
+            {
+                "name": "q1",
+                "label": "Are you authorized to work in the US?",
+                "field_type": "boolean",
+                "required": True,
+                "values": [],
+            },
+            {
+                "name": "q2",
+                "label": "What is your favorite color?",
+                "field_type": "input_text",
+                "required": True,
+                "values": [],
+            },
+        ],
+    )
 
     novel = db.unanswered_questions(conn)
     assert len(novel) == 2
@@ -179,31 +219,65 @@ def test_seed_answer_then_question_is_no_longer_novel(conn):
     assert novel[0]["label"] == "What is your favorite color?"
 
 
-def test_todo_placeholder_answer_still_counts_as_unanswered(conn):
-    db.add_questions(conn, "greenhouse:acme:1", [
-        {"name": "q1", "label": "Are you authorized to work in the US?", "field_type": "boolean", "required": True, "values": []},
-    ])
-    db.seed_answer(conn, r"authorized to work", "TODO: fill in yourself -- work authorization status")
+def test_todo_placeholder_answer_still_counts_as_unanswered(conn: sqlite3.Connection) -> None:
+    db.add_questions(
+        conn,
+        "greenhouse:acme:1",
+        [
+            {
+                "name": "q1",
+                "label": "Are you authorized to work in the US?",
+                "field_type": "boolean",
+                "required": True,
+                "values": [],
+            },
+        ],
+    )
+    db.seed_answer(
+        conn, r"authorized to work", "TODO: fill in yourself -- work authorization status"
+    )
 
     novel = db.unanswered_questions(conn)
     assert len(novel) == 1
     assert novel[0]["label"] == "Are you authorized to work in the US?"
 
 
-def test_unanswered_questions_batches_by_norm_label_with_count(conn):
-    db.add_questions(conn, "greenhouse:acme:1", [
-        {"name": "q1", "label": "Are You Authorized?", "field_type": "boolean", "required": True, "values": []},
-    ])
-    db.add_questions(conn, "greenhouse:acme:2", [
-        {"name": "q1", "label": "are you authorized?", "field_type": "boolean", "required": True, "values": []},
-    ])
+def test_unanswered_questions_batches_by_norm_label_with_count(conn: sqlite3.Connection) -> None:
+    db.add_questions(
+        conn,
+        "greenhouse:acme:1",
+        [
+            {
+                "name": "q1",
+                "label": "Are You Authorized?",
+                "field_type": "boolean",
+                "required": True,
+                "values": [],
+            },
+        ],
+    )
+    db.add_questions(
+        conn,
+        "greenhouse:acme:2",
+        [
+            {
+                "name": "q1",
+                "label": "are you authorized?",
+                "field_type": "boolean",
+                "required": True,
+                "values": [],
+            },
+        ],
+    )
 
     novel = db.unanswered_questions(conn)
     assert len(novel) == 1
     assert novel[0]["count"] == 2
 
 
-def test_sync_fields_mirrors_yaml_label_and_subfields(conn, tmp_path):
+def test_sync_fields_mirrors_yaml_label_and_subfields(
+    conn: sqlite3.Connection, tmp_path: Path
+) -> None:
     (tmp_path / "finance.yaml").write_text(
         "label: Finance\nsubfields:\n  - tag: trading\n    label: Sales & Trading\n"
     )
@@ -211,11 +285,13 @@ def test_sync_fields_mirrors_yaml_label_and_subfields(conn, tmp_path):
 
     field = conn.execute("SELECT * FROM fields WHERE slug = 'finance'").fetchone()
     assert field["label"] == "Finance"
-    subfield = conn.execute("SELECT * FROM subfields WHERE field_slug = 'finance' AND tag = 'trading'").fetchone()
+    subfield = conn.execute(
+        "SELECT * FROM subfields WHERE field_slug = 'finance' AND tag = 'trading'"
+    ).fetchone()
     assert subfield["label"] == "Sales & Trading"
 
 
-def test_set_job_fields_populates_join_tables_and_is_queryable(conn):
+def test_set_job_fields_populates_join_tables_and_is_queryable(conn: sqlite3.Connection) -> None:
     job = _job(title="Sales & Trading Analyst")
     hash_ = db.upsert_job(conn, job, profile="p", is_native=True, now="t1")
     db.set_job_fields(conn, hash_, ["finance"], [("finance", "trading")])
@@ -227,17 +303,23 @@ def test_set_job_fields_populates_join_tables_and_is_queryable(conn):
     assert [r["content_hash"] for r in matches] == [hash_]
 
 
-def test_set_job_fields_replaces_rather_than_accumulates_on_reclassify(conn):
+def test_set_job_fields_replaces_rather_than_accumulates_on_reclassify(
+    conn: sqlite3.Connection,
+) -> None:
     job = _job()
     hash_ = db.upsert_job(conn, job, profile="p", is_native=True, now="t1")
     db.set_job_fields(conn, hash_, ["finance"], [("finance", "trading")])
     db.set_job_fields(conn, hash_, ["mechanical-engineering"], [])
 
-    assert [r["field_slug"] for r in conn.execute("SELECT * FROM job_fields")] == ["mechanical-engineering"]
+    assert [r["field_slug"] for r in conn.execute("SELECT * FROM job_fields")] == [
+        "mechanical-engineering"
+    ]
     assert conn.execute("SELECT * FROM job_subfields").fetchall() == []
 
 
-def test_set_job_fields_self_registers_a_slug_sync_fields_never_saw(conn):
+def test_set_job_fields_self_registers_a_slug_sync_fields_never_saw(
+    conn: sqlite3.Connection,
+) -> None:
     """set_job_fields() must not depend on sync_fields() having already run
     for the same fields_dir -- classify.py's own cache can be warm from a
     different dir (see db.py's set_job_fields() docstring), so this needs to
@@ -248,6 +330,7 @@ def test_set_job_fields_self_registers_a_slug_sync_fields_never_saw(conn):
 
     field = conn.execute("SELECT * FROM fields WHERE slug = 'unregistered-field'").fetchone()
     assert field["label"] == "unregistered-field"
-    assert conn.execute(
-        "SELECT * FROM job_fields WHERE field_slug = 'unregistered-field'"
-    ).fetchone() is not None
+    assert (
+        conn.execute("SELECT * FROM job_fields WHERE field_slug = 'unregistered-field'").fetchone()
+        is not None
+    )

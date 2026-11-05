@@ -94,7 +94,7 @@ export function useAppliedTracking(): AppliedTracking {
 
   useEffect(() => {
     let cancelled = false;
-    fetchAppliedIds().then((ids) => {
+    void fetchAppliedIds().then((ids) => {
       if (!cancelled) setAppliedIds(ids);
     });
     return () => {
@@ -125,8 +125,10 @@ export function useAppliedTracking(): AppliedTracking {
         else rolledBack.add(id);
         return rolledBack;
       });
-      if (result.reason === "unauthorized") setError("Sync token was rejected -- try again to re-enter it.");
-      else if (result.reason === "network") setError("Couldn't reach the sync service -- change wasn't saved.");
+      if (result.reason === "unauthorized")
+        setError("Sync token was rejected -- try again to re-enter it.");
+      else if (result.reason === "network")
+        setError("Couldn't reach the sync service -- change wasn't saved.");
     },
     [appliedIds],
   );

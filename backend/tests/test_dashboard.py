@@ -9,14 +9,28 @@ from jobfinder.models import RawJob
 
 DASHBOARD_SRC = Path(__file__).parent.parent.parent / "frontend" / "src"
 
-SENSITIVE_SUBSTRINGS = ["answer", "resume", "pattern", "outcome", "notes", "reasons", "submitted", "status"]
+SENSITIVE_SUBSTRINGS = [
+    "answer",
+    "resume",
+    "pattern",
+    "outcome",
+    "notes",
+    "reasons",
+    "submitted",
+    "status",
+]
 
 
-def _job(**overrides):
+def _job(**overrides: str) -> RawJob:
     base = dict(
-        adapter="greenhouse", company="Acme", board_token="acme", external_id="1",
-        title="Security Engineer", location="Boston, MA",
-        url="https://boards.greenhouse.io/acme/jobs/1", body="secret internal notes",
+        adapter="greenhouse",
+        company="Acme",
+        board_token="acme",
+        external_id="1",
+        title="Security Engineer",
+        location="Boston, MA",
+        url="https://boards.greenhouse.io/acme/jobs/1",
+        body="secret internal notes",
     )
     base.update(overrides)
     return RawJob(**base)
@@ -33,10 +47,15 @@ def _seeded_conn():
 # What actually ends up in an exported row: PUBLIC_FIELDS minus the raw
 # content_hash column (renamed to the opaque `id`), plus the two fields
 # export_data() computes rather than selects directly.
-EXPORTED_ROW_FIELDS = (set(dashboard.PUBLIC_FIELDS) - {"content_hash"}) | {"id", "apply_urls", "featured", "defense"}
+EXPORTED_ROW_FIELDS = (set(dashboard.PUBLIC_FIELDS) - {"content_hash"}) | {
+    "id",
+    "apply_urls",
+    "featured",
+    "defense",
+}
 
 
-def test_export_shape_is_the_public_allowlist_only(tmp_path):
+def test_export_shape_is_the_public_allowlist_only(tmp_path: Path) -> None:
     conn = _seeded_conn()
     out = dashboard.export_data(conn, docs_dir=tmp_path)
     data = json.loads(out.read_text())
@@ -45,7 +64,7 @@ def test_export_shape_is_the_public_allowlist_only(tmp_path):
     assert set(data[0].keys()) == EXPORTED_ROW_FIELDS
 
 
-def test_export_never_leaks_answers_resume_or_application_state(tmp_path):
+def test_export_never_leaks_answers_resume_or_application_state(tmp_path: Path) -> None:
     conn = _seeded_conn()
     out = dashboard.export_data(conn, docs_dir=tmp_path)
     blob = out.read_text().lower()
@@ -57,7 +76,7 @@ def test_export_never_leaks_answers_resume_or_application_state(tmp_path):
         assert term not in blob
 
 
-def test_closed_jobs_are_excluded_from_export(tmp_path):
+def test_closed_jobs_are_excluded_from_export(tmp_path: Path) -> None:
     conn = _seeded_conn()
     hash_ = list(db.open_jobs(conn))[0]["content_hash"]
     db.set_status(conn, hash_, "closed")
@@ -67,11 +86,11 @@ def test_closed_jobs_are_excluded_from_export(tmp_path):
     assert data == []
 
 
-def test_export_writes_into_the_sibling_frontend_public_dir_by_default():
+def test_export_writes_into_the_sibling_frontend_public_dir_by_default() -> None:
     assert dashboard.DASHBOARD_PUBLIC_DIR == Path("..") / "frontend" / "public"
 
 
-def test_frontend_types_only_declare_the_public_allowlist():
+def test_frontend_types_only_declare_the_public_allowlist() -> None:
     types_src = (DASHBOARD_SRC / "types.ts").read_text()
     for field in EXPORTED_ROW_FIELDS:
         assert field in types_src
@@ -79,12 +98,12 @@ def test_frontend_types_only_declare_the_public_allowlist():
         assert banned not in types_src.lower()
 
 
-def test_app_fetches_data_json():
+def test_app_fetches_data_json() -> None:
     app_src = (DASHBOARD_SRC / "App.tsx").read_text()
     assert 'fetch("data.json")' in app_src
 
 
-def test_export_writes_a_generated_at_timestamp_to_meta_json(tmp_path):
+def test_export_writes_a_generated_at_timestamp_to_meta_json(tmp_path: Path) -> None:
     conn = _seeded_conn()
     dashboard.export_data(conn, docs_dir=tmp_path)
     meta = json.loads((tmp_path / "meta.json").read_text())
@@ -97,7 +116,7 @@ def test_export_writes_a_generated_at_timestamp_to_meta_json(tmp_path):
     assert parsed.tzinfo is not None
 
 
-def test_export_uses_an_explicit_generated_at_instead_of_now_when_given(tmp_path):
+def test_export_uses_an_explicit_generated_at_instead_of_now_when_given(tmp_path: Path) -> None:
     # A code-only redeploy (no new scrape) regenerates data.json/fields.json
     # from the already-persisted DB but must not make "jobs last updated"
     # lie about a scrape that didn't happen -- see docker-entrypoint.sh's
@@ -108,13 +127,17 @@ def test_export_uses_an_explicit_generated_at_instead_of_now_when_given(tmp_path
     assert meta["generated_at"] == "2026-01-01T00:00:00+00:00"
 
 
-def test_fields_metadata_reads_label_and_subfields_from_field_yaml(tmp_path):
+def test_fields_metadata_reads_label_and_subfields_from_field_yaml(tmp_path: Path) -> None:
     fields_dir = tmp_path / "fields"
     fields_dir.mkdir()
-    (fields_dir / "security.yaml").write_text(yaml.safe_dump({
-        "label": "Security",
-        "subfields": [{"tag": "appsec", "label": "AppSec", "pattern": "appsec"}],
-    }))
+    (fields_dir / "security.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "label": "Security",
+                "subfields": [{"tag": "appsec", "label": "AppSec", "pattern": "appsec"}],
+            }
+        )
+    )
     # A field with no label at all (no dashboard-facing name yet) shouldn't
     # show up in fields.json -- filters can still work for it.
     (fields_dir / "no_label.yaml").write_text(yaml.safe_dump({"filters": {}}))
@@ -124,11 +147,15 @@ def test_fields_metadata_reads_label_and_subfields_from_field_yaml(tmp_path):
     fields = dashboard._load_fields_metadata(fields_dir=fields_dir)
     assert fields == [
         {"slug": "qa", "label": "QA", "subfields": []},
-        {"slug": "security", "label": "Security", "subfields": [{"tag": "appsec", "label": "AppSec"}]},
+        {
+            "slug": "security",
+            "label": "Security",
+            "subfields": [{"tag": "appsec", "label": "AppSec"}],
+        },
     ]
 
 
-def test_export_writes_fields_json_alongside_data_json(tmp_path):
+def test_export_writes_fields_json_alongside_data_json(tmp_path: Path) -> None:
     conn = _seeded_conn()
     dashboard.export_data(conn, docs_dir=tmp_path)
     fields = json.loads((tmp_path / "fields.json").read_text())
@@ -139,7 +166,7 @@ def test_export_writes_fields_json_alongside_data_json(tmp_path):
     assert "security" in slugs
 
 
-def test_data_json_is_compact_and_still_the_same_list_shape(tmp_path):
+def test_data_json_is_compact_and_still_the_same_list_shape(tmp_path: Path) -> None:
     conn = _seeded_conn()
     out = dashboard.export_data(conn, docs_dir=tmp_path)
     text = out.read_text()
@@ -147,4 +174,3 @@ def test_data_json_is_compact_and_still_the_same_list_shape(tmp_path):
     # The browser parses every byte of this file, so whitespace is pure cost.
     assert text == json.dumps(json.loads(text), separators=(",", ":"))
     assert isinstance(json.loads(text), list)
-

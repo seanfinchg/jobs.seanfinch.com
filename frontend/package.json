@@ -1,17 +1,17 @@
 {
   "name": "jobfinder-dashboard",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=22"
-  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "test": "node --test \"netlify/lib/*.test.ts\""
+    "test": "node --test \"netlify/lib/*.test.ts\"",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json"
   },
   "dependencies": {
     "@fontsource/jost": "^5.0.16",
@@ -34,9 +34,13 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
     "globals": "^16.0.0",
+    "oxfmt": "0.75.0",
     "tailwindcss": "^4.2.4",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.1",
     "vite": "^8.0.10"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

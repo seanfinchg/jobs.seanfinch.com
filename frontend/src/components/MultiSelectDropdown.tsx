@@ -60,7 +60,7 @@ export default function MultiSelectDropdown({
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent): void {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      if (ref.current && e.target instanceof Node && !ref.current.contains(e.target)) {
         setOpen(false);
         setQuery("");
       }

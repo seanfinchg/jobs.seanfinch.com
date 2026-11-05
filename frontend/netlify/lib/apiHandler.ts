@@ -1,6 +1,7 @@
 // Request handling for the jobs API, separate from api.mts so it can be
 // exercised in tests without the Netlify runtime. Only erasable TypeScript.
 
+import { z } from "zod";
 import {
   countByAts,
   distinctLevels,
@@ -17,6 +18,30 @@ export const REQUESTS_PER_MINUTE = 60;
 
 const NOTE =
   "This API cannot submit applications. A human opens the URL and submits the application themselves.";
+
+// The rows of data.json this API serves, checked once per cache refresh so a
+// drifted export surfaces as a failed load rather than a wrong answer.
+const JobsSchema = z.array(
+  z.object({
+    id: z.string(),
+    company: z.string(),
+    title: z.string(),
+    location: z.string(),
+    best_apply_url: z.string(),
+    apply_urls: z.array(z.string()),
+    first_seen: z.string(),
+    posted_at: z.string().nullable(),
+    salary_min: z.number().nullable(),
+    salary_max: z.number().nullable(),
+    level: z.string(),
+    matched_fields: z.array(z.string()),
+    matched_subfields: z.array(z.string()),
+    grad_year: z.number().nullable(),
+    featured: z.boolean(),
+    defense: z.boolean(),
+  }) satisfies z.ZodType<Job>,
+);
+const MetaSchema = z.object({ generated_at: z.string() });
 
 interface Dataset {
   jobs: Job[];
@@ -63,15 +88,14 @@ async function loadDataset(req: Request): Promise<Dataset> {
       fetchJson(req, "/fields.json"),
       fetchJson(req, "/meta.json"),
     ]);
-    if (!Array.isArray(jobs)) throw new Error("data.json is not an array");
-    const generatedAt =
-      meta &&
-      typeof meta === "object" &&
-      typeof (meta as Record<string, unknown>).generated_at === "string"
-        ? ((meta as Record<string, unknown>).generated_at as string)
-        : null;
+    const parsedJobs = JobsSchema.safeParse(jobs);
+    if (!parsedJobs.success) {
+      const where = parsedJobs.error.issues[0]?.path.join(".") ?? "root";
+      throw new Error(`data.json has an unexpected shape (at ${where})`);
+    }
+    const generatedAt = MetaSchema.safeParse(meta).data?.generated_at ?? null;
     cache = {
-      jobs: jobs as Job[],
+      jobs: parsedJobs.data,
       fields: Array.isArray(fields) ? fields : [],
       generatedAt,
       loadedAt: now,

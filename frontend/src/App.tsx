@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import type { FieldMeta, Job } from "@/types";
+import { FieldsSchema, JobsSchema, MetaSchema, type FieldMeta, type Job } from "@/types";
 import StatsBar from "@/components/StatsBar";
 import FilterBar from "@/components/FilterBar";
 import JobTable from "@/components/JobTable";
@@ -231,9 +231,16 @@ export default function App(): React.JSX.Element {
     fetch("data.json")
       .then((res) => {
         if (!res.ok) throw new Error(`data.json ${res.status}`);
-        return res.json() as Promise<Job[]>;
+        return res.json();
       })
-      .then(setJobs)
+      .then((body: unknown) => {
+        const parsed = JobsSchema.safeParse(body);
+        if (!parsed.success) {
+          const where = parsed.error.issues[0]?.path.join(".") ?? "root";
+          throw new Error(`data.json has an unexpected shape (at ${where})`);
+        }
+        setJobs(parsed.data);
+      })
       .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
 
     // meta.json is a nice-to-have (when the pipeline last actually ran, as
@@ -243,8 +250,10 @@ export default function App(): React.JSX.Element {
     // failure shouldn't surface as a page-level error the way data.json's
     // would, since the dashboard is fully usable without it.
     fetch("meta.json")
-      .then((res) => (res.ok ? (res.json() as Promise<{ generated_at: string }>) : null))
-      .then((meta) => setGeneratedAt(meta?.generated_at ?? null))
+      .then((res) => (res.ok ? res.json() : null))
+      .then((body: unknown) =>
+        setGeneratedAt(MetaSchema.safeParse(body).data?.generated_at ?? null),
+      )
       .catch(() => setGeneratedAt(null));
 
     // fields.json carries each field's display label and subfields (see
@@ -252,8 +261,8 @@ export default function App(): React.JSX.Element {
     // page-level error" treatment as meta.json, since the Role filter just
     // falls back to raw slugs rather than the whole page failing.
     fetch("fields.json")
-      .then((res) => (res.ok ? (res.json() as Promise<FieldMeta[]>) : []))
-      .then(setFields)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((body: unknown) => setFields(FieldsSchema.safeParse(body).data ?? []))
       .catch(() => setFields([]));
   }, []);
 

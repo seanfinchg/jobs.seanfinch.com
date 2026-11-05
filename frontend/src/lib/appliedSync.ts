@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { z } from "zod";
 
 // Cross-device "have I applied to this" tracking, synced through a Netlify
 // Function (frontend/netlify/functions/applied.mts) backed by Netlify Blobs.
@@ -9,10 +10,14 @@ const TOKEN_KEY = "appliedSyncToken";
 const IDS_CACHE_KEY = "appliedJobIdsCache";
 const ENDPOINT = "/api/applied";
 
+// What frontend/netlify/functions/applied.mts returns from GET and POST.
+const AppliedResponseSchema = z.object({ appliedIds: z.array(z.string()) });
+const CachedIdsSchema = z.array(z.string());
+
 function readLocalCache(): Set<string> {
   try {
     const raw = localStorage.getItem(IDS_CACHE_KEY);
-    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+    return new Set(raw ? CachedIdsSchema.parse(JSON.parse(raw)) : []);
   } catch {
     return new Set();
   }
@@ -39,7 +44,7 @@ export async function fetchAppliedIds(): Promise<Set<string>> {
   try {
     const resp = await fetch(ENDPOINT);
     if (!resp.ok) return readLocalCache();
-    const data = (await resp.json()) as { appliedIds: string[] };
+    const data = AppliedResponseSchema.parse(await resp.json());
     const ids = new Set(data.appliedIds);
     writeLocalCache(ids);
     return ids;
@@ -66,7 +71,7 @@ export async function setApplied(id: string, applied: boolean): Promise<SetAppli
       return { ok: false, reason: "unauthorized" };
     }
     if (!resp.ok) return { ok: false, reason: "network" };
-    const data = (await resp.json()) as { appliedIds: string[] };
+    const data = AppliedResponseSchema.parse(await resp.json());
     const ids = new Set(data.appliedIds);
     writeLocalCache(ids);
     return { ok: true, appliedIds: ids };

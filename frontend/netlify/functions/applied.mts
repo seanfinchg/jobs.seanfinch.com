@@ -12,7 +12,7 @@ const KEY = "ids";
 async function readAppliedIds(): Promise<string[]> {
   const store = getStore(STORE_NAME);
   const raw: unknown = await store.get(KEY, { type: "json" });
-  return Array.isArray(raw) ? (raw as string[]) : [];
+  return Array.isArray(raw) ? raw.filter((id): id is string => typeof id === "string") : [];
 }
 
 type AppliedChange = { id: string; applied: boolean };

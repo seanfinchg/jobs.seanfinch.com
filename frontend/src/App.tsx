@@ -415,6 +415,8 @@ export default function App(): React.JSX.Element {
     };
   }, [mobileFiltersOpen]);
 
+  const roleFilterDisabled = discipline === null;
+
   if (discipline === null) {
     return (
       <DisciplinePicker
@@ -553,6 +555,7 @@ export default function App(): React.JSX.Element {
                   disciplineOptions={DISCIPLINE_FILTER_OPTIONS}
                   disciplineCounts={disciplineCounts}
                   onDisciplineChange={setDisciplineFilter}
+                  roleFilterDisabled={roleFilterDisabled}
                   locationTags={locationTags}
                   onLocationTagsChange={setLocationTags}
                   locationTree={locationTree}
@@ -600,6 +603,7 @@ export default function App(): React.JSX.Element {
               disciplineOptions={DISCIPLINE_FILTER_OPTIONS}
               disciplineCounts={disciplineCounts}
               onDisciplineChange={setDisciplineFilter}
+              roleFilterDisabled={roleFilterDisabled}
               locationTags={locationTags}
               onLocationTagsChange={setLocationTags}
               locationTree={locationTree}

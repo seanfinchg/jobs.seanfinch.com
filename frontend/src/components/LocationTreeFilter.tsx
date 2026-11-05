@@ -41,6 +41,9 @@ interface TreeRowProps {
   counts: Record<string, number>;
 }
 
+// Indent per depth (4px, then 16px a level); the tree is country > state > city.
+const DEPTH_INDENT = ["pl-1", "pl-5", "pl-9"] as const;
+
 function TreeRow({
   node,
   depth,
@@ -59,8 +62,7 @@ function TreeRow({
   return (
     <div>
       <div
-        className="flex items-center justify-between gap-2 rounded py-1 pr-2 hover:bg-white/5"
-        style={{ paddingLeft: 4 + depth * 16 }}
+        className={`flex items-center justify-between gap-2 rounded py-1 pr-2 hover:bg-white/5 ${DEPTH_INDENT[depth] ?? "pl-9"}`}
       >
         <span className="flex min-w-0 flex-1 items-center gap-1.5">
           {hasChildren ? (

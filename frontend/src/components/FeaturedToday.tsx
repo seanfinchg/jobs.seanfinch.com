@@ -93,7 +93,9 @@ export default function FeaturedToday({ jobs }: FeaturedTodayProps): React.JSX.E
     <div className="group relative mb-6 overflow-hidden rounded-lg border border-white/10 py-3">
       {/* Content is duplicated once so the track can translate exactly
           -50% and loop seamlessly -- the animation pauses on hover via
-          group-hover so a reader can actually catch a chip mid-scroll. */}
+          group-hover so a reader can actually catch a chip mid-scroll. The
+          duration is the one inline style: it scales with a runtime chip
+          count, which no static class can express. */}
       <div
         className="flex w-max gap-2 px-3 animate-marquee group-hover:[animation-play-state:paused]"
         style={{ animationDuration: `${Math.max(20, spotlights.length * 4)}s` }}

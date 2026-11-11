@@ -46,13 +46,15 @@ export interface Query {
   offset: number;
 }
 
-export type ParseResult =
-  | { ok: true; query: Query }
-  | { ok: false; message: string };
+export type ParseResult = { ok: true; query: Query } | { ok: false; message: string };
 
 export const DEFAULT_LIMIT = 25;
 export const MAX_LIMIT = 100;
 export const SORTS: readonly SortKey[] = ["newest", "salary_desc", "company"];
+
+function isSortKey(value: string): value is SortKey {
+  return SORTS.some((s) => s === value);
+}
 
 const ATS_HOSTS: ReadonlyArray<readonly [string, string]> = [
   ["greenhouse", "greenhouse.io"],
@@ -188,10 +190,10 @@ export function parseQuery(params: URLSearchParams, now: number = Date.now()): P
 
   const sort = get("sort");
   if (sort !== null) {
-    if (!SORTS.includes(sort as SortKey)) {
+    if (!isSortKey(sort)) {
       return { ok: false, message: `sort must be one of: ${SORTS.join(", ")}` };
     }
-    query.sort = sort as SortKey;
+    query.sort = sort;
   }
 
   const limit = get("limit");

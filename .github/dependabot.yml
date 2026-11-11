@@ -29,6 +29,10 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+      # Held on 6.x: typescript-eslint 8 refuses to load on TypeScript 7 (peer range <6.1.0).
+      # Drop this once a typescript-eslint release supports 7.
+      - dependency-name: "typescript"
+        versions: [">=7.0.0"]
     open-pull-requests-limit: 10
     cooldown:
       default-days: 3
@@ -49,6 +53,8 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    cooldown:
+      default-days: 3
     groups:
       actions:
         patterns: ["*"]
@@ -63,3 +69,5 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+    cooldown:
+      default-days: 3

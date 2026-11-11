@@ -7,13 +7,12 @@ Concrete, approachable work. "Safe first PR" means it touches no pipeline logic 
 | 1 | Add companies to the board lists | Yes |
 | 2 | Add a workday adapter fetch test | Yes |
 | 3 | Add a focused test for level plus fields merging | Yes |
-| 4 | Add an ESLint flat config | Yes (frontend only, no source edits) |
-| 5 | Add a new discipline (field YAML) | After one smaller PR |
-| 6 | Tighten the featured and defense list tests | Yes |
-| 7 | Add a migration upgrade test | Yes |
-| 8 | Documentation polish | Yes |
-| 9 | Fix a misclassified title | After one smaller PR |
-| 10 | Add an ATS adapter | No, discuss first |
+| 4 | Add a new discipline (field YAML) | After one smaller PR |
+| 5 | Tighten the featured and defense list tests | Yes |
+| 6 | Add a migration upgrade test | Yes |
+| 7 | Documentation polish | Yes |
+| 8 | Fix a misclassified title | After one smaller PR |
+| 9 | Add an ATS adapter | No, discuss first |
 
 ## 1. Add companies to the board lists
 
@@ -39,15 +38,7 @@ The merge is only exercised through the shipped profiles. Using `tmp_path` and s
 
 Done when: tests fail if the layer order changes, and no production code changed.
 
-## 4. Add an ESLint flat config
-
-Files: new `frontend/eslint.config.js`. `frontend/package.json` already lists `eslint`, `@eslint/js`, `typescript-eslint`, `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`, and `globals`, and a `lint` script.
-
-Write the config so `npm run lint` runs. Do not edit `frontend/src` in the same PR. If lint reports existing violations, either set those rules to `warn` with a comment, or list them in the PR description for a follow-up; do not mass-fix.
-
-Done when: `npm run lint` runs from `frontend/` and exits cleanly (or the PR lists exactly which rules are relaxed and why), and `npm run build` still passes. Do not change `package.json` or the lockfile without asking.
-
-## 5. Add a new discipline
+## 4. Add a new discipline
 
 Files: `backend/profiles/fields/<name>.yaml`, [adding-a-field.md](adding-a-field.md), `backend/tests/test_profile_broad_cs.py` for the pattern.
 
@@ -55,7 +46,7 @@ Add a field file with `label`, `filters.title_include` and `title_exclude`, and 
 
 Done when: the new field appears in `fields.json` after `jobfinder dashboard`, tests cover at least three titles that should match and three that should not, and the suite passes.
 
-## 6. Tighten the featured and defense list tests
+## 5. Tighten the featured and defense list tests
 
 Files: `backend/jobfinder/featured.py`, `backend/jobfinder/defense.py`, `backend/tests/test_featured.py`, `backend/tests/test_defense.py`.
 
@@ -63,7 +54,7 @@ Add tests for properties that should always hold, such as every entry already be
 
 Done when: new tests pass and the lists are unchanged.
 
-## 7. Add a migration upgrade test
+## 6. Add a migration upgrade test
 
 Files: `backend/jobfinder/db.py` (`MIGRATIONS`, `init_schema`), `backend/tests/test_db.py`.
 
@@ -71,7 +62,7 @@ Create a database at schema version 1 by running only the first migration, inser
 
 Done when: the test fails if a migration is edited to drop a column or the version bookkeeping breaks.
 
-## 8. Documentation polish
+## 7. Documentation polish
 
 Files: anything under `docs/`, `README.md`, the `*.md` files at the root.
 
@@ -79,7 +70,7 @@ Follow each guide from a clean clone and fix whatever does not work, is unclear,
 
 Done when: links resolve and commands in your diff were run.
 
-## 9. Fix a misclassified title
+## 8. Fix a misclassified title
 
 Files: `backend/jobfinder/classify.py` or a `backend/profiles/fields/*.yaml`, with a test in `backend/tests/test_classify.py` or a `test_profile_*.py`.
 
@@ -87,7 +78,7 @@ Find a real title in the live `data.json` that has the wrong level or field. Fix
 
 Done when: the title classifies correctly, existing classification tests still pass, and the PR lists other titles you checked for regressions.
 
-## 10. Add an ATS adapter
+## 9. Add an ATS adapter
 
 Files: new `backend/jobfinder/adapters/<name>.py`, [adding-an-adapter.md](adding-an-adapter.md).
 

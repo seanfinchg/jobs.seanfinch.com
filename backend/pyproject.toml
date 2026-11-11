@@ -5,10 +5,11 @@ requires-python = ">=3.11"
 dependencies = [
     "requests",
     "pyyaml",
+    "pydantic",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "pyright", "ruff", "types-PyYAML", "types-requests"]
 apply = ["playwright"]
 
 [build-system]
@@ -17,3 +18,26 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["jobfinder*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+# Long lines left are SQL, inline HTML and message strings, which the formatter does not wrap.
+ignore = ["E501"]
+
+# Strict everywhere. YAML config and API responses are parsed with Pydantic at the
+# boundary (jobfinder/config.py, the adapters' ApiModel classes).
+[tool.pyright]
+include = ["jobfinder", "scripts", "tests"]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
+
+# Tests call private helpers directly (_acquire_run_lock, _render_html, ...) on purpose,
+# so reportPrivateUsage is off for tests/ only. extraPaths keeps `jobfinder` importable.
+[[tool.pyright.executionEnvironments]]
+root = "tests"
+extraPaths = ["."]
+reportPrivateUsage = false

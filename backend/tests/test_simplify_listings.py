@@ -1,5 +1,8 @@
 import json
+from collections.abc import Callable
 from pathlib import Path
+
+import pytest
 
 from jobfinder.adapters import simplify_listings
 
@@ -7,19 +10,26 @@ FIXTURE = Path(__file__).parent / "fixtures" / "simplify_listings_sample.json"
 
 
 class _FakeResponse:
-    def __init__(self, payload):
+    def __init__(self, payload: object) -> None:
         self._payload = payload
 
-    def raise_for_status(self):
+    def raise_for_status(self) -> None:
         pass
 
-    def json(self):
+    def json(self) -> object:
         return self._payload
 
 
-def test_fetch_skips_inactive_and_points_at_the_real_ats(monkeypatch):
+def _respond(payload: object) -> Callable[..., _FakeResponse]:
+    def fake(*args: object, **kwargs: object) -> _FakeResponse:
+        return _FakeResponse(payload)
+
+    return fake
+
+
+def test_fetch_skips_inactive_and_points_at_the_real_ats(monkeypatch: pytest.MonkeyPatch) -> None:
     payload = json.loads(FIXTURE.read_text())
-    monkeypatch.setattr(simplify_listings.session, "get", lambda *a, **k: _FakeResponse(payload))
+    monkeypatch.setattr(simplify_listings.session, "get", _respond(payload))
 
     jobs = simplify_listings.SimplifyListingsAdapter().fetch({"token": "new-grad"})
 
@@ -31,5 +41,5 @@ def test_fetch_skips_inactive_and_points_at_the_real_ats(monkeypatch):
     assert job.location == "Boston, MA"
 
 
-def test_is_not_native():
+def test_is_not_native() -> None:
     assert simplify_listings.SimplifyListingsAdapter.is_native is False

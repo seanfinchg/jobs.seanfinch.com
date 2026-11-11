@@ -16,13 +16,21 @@ interface RolePickerProps {
 // fields; for a single-field discipline (finance, mechanical-engineering),
 // the options are that field's own subfields instead -- either way this is
 // "the roles in that field, not all roles" (see App.tsx's roleOptionsFor()).
-export default function RolePicker({ disciplineLabel, options, onSelect, onSelectAll }: RolePickerProps): React.JSX.Element {
+export default function RolePicker({
+  disciplineLabel,
+  options,
+  onSelect,
+  onSelectAll,
+}: RolePickerProps): React.JSX.Element {
   return (
     <div className="flex min-h-screen items-center justify-center bg-ultra-dark-mode px-6 font-raleway text-ultra-light-mode">
       <div className="w-full max-w-2xl animate-fade-up text-center">
-        <h1 className="font-jost text-3xl font-semibold text-light-mode">Which role in {disciplineLabel}?</h1>
+        <h1 className="font-jost text-3xl font-semibold text-light-mode">
+          Which role in {disciplineLabel}?
+        </h1>
         <p className="mt-2 text-sm text-ultra-light-mode/60">
-          Pick one to narrow further, or see every {disciplineLabel} role. You can change this later.
+          Pick one to narrow further, or see every {disciplineLabel} role. You can change this
+          later.
         </p>
 
         <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">

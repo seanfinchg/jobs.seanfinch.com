@@ -1,7 +1,10 @@
 from __future__ import annotations
 
-from jobfinder.adapters.base import Adapter
+from pydantic import TypeAdapter
+
+from jobfinder.adapters.base import Adapter, ApiModel
 from jobfinder.adapters.registry import register
+from jobfinder.config import Board, required_str
 from jobfinder.http import session
 from jobfinder.models import RawJob
 
@@ -13,32 +16,47 @@ from jobfinder.models import RawJob
 BOARD_URL = "https://api.rippling.com/platform/api/ats/v1/board/{board_slug}/jobs"
 
 
+class _RipplingLabel(ApiModel):
+    label: str | None = None
+
+
+class _RipplingJob(ApiModel):
+    uuid: str | None = ""
+    name: str | None = ""
+    url: str | None = ""
+    workLocation: _RipplingLabel | None = None
+    department: _RipplingLabel | None = None
+
+
+_JOBS = TypeAdapter(list[_RipplingJob])
+
+
 @register
 class RipplingAdapter(Adapter):
     name = "rippling"
 
-    def fetch(self, board: dict) -> list[RawJob]:
-        slug = board["token"]
+    def fetch(self, board: Board) -> list[RawJob]:
+        slug = required_str(board, "token")
         company = board.get("company", slug)
 
         resp = session.get(BOARD_URL.format(board_slug=slug), timeout=15)
         resp.raise_for_status()
-        items = resp.json()
+        items = _JOBS.validate_python(resp.json())
 
-        jobs = []
+        jobs: list[RawJob] = []
         for item in items:
-            location = item.get("workLocation") or {}
+            location = item.workLocation.label if item.workLocation else ""
             jobs.append(
                 RawJob(
                     adapter=self.name,
                     company=company,
                     board_token=slug,
-                    external_id=item.get("uuid", ""),
-                    title=item.get("name", ""),
-                    location=location.get("label", ""),
-                    url=item.get("url", ""),
+                    external_id=item.uuid or "",
+                    title=item.name or "",
+                    location=location or "",
+                    url=item.url or "",
                     posted_at=None,
-                    team=(item.get("department") or {}).get("label") or None,
+                    team=(item.department.label if item.department else None) or None,
                 )
             )
         return jobs

@@ -1,8 +1,9 @@
 from jobfinder.adapters import manual
+from jobfinder.config import Board
 
 
-def test_fetch_returns_the_one_configured_posting():
-    board = {
+def test_fetch_returns_the_one_configured_posting() -> None:
+    board: Board = {
         "token": "meta-swe-newgrad-2027",
         "company": "Meta",
         "title": "Software Engineer, University Grad",
@@ -25,8 +26,8 @@ def test_fetch_returns_the_one_configured_posting():
     assert job.posted_at == "2026-08-01T00:00:00+00:00"
 
 
-def test_location_and_posted_at_are_optional():
-    board = {
+def test_location_and_posted_at_are_optional() -> None:
+    board: Board = {
         "token": "ibm-swe-2027",
         "company": "IBM",
         "title": "Software Engineer",
@@ -41,5 +42,5 @@ def test_location_and_posted_at_are_optional():
     assert job.posted_at is None
 
 
-def test_is_native():
+def test_is_native() -> None:
     assert manual.ManualAdapter.is_native is True

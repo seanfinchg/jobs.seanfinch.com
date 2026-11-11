@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from jobfinder.adapters.base import Adapter
+from jobfinder.adapters.base import Adapter, ApiModel
 from jobfinder.adapters.greenhouse import strip_html
 from jobfinder.adapters.registry import register
+from jobfinder.config import Board, required_str
 from jobfinder.http import session
 from jobfinder.models import RawJob
 
@@ -17,12 +18,42 @@ LIST_URL = "https://{token}.bamboohr.com/careers/list"
 DETAIL_URL = "https://{token}.bamboohr.com/careers/{job_id}/detail"
 
 
-def _location_str(item: dict) -> str:
-    location = item.get("location") or {}
-    parts = [location.get("city"), location.get("state")]
+class _BambooLocation(ApiModel):
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+
+
+class _BambooItem(ApiModel):
+    id: str | None = ""
+    jobOpeningName: str | None = None
+    departmentLabel: str | None = None
+    location: _BambooLocation | None = None
+    atsLocation: _BambooLocation | None = None
+
+
+class _BambooList(ApiModel):
+    result: list[_BambooItem] = []
+
+
+class _BambooOpening(ApiModel):
+    description: str | None = None
+
+
+class _BambooDetailResult(ApiModel):
+    jobOpening: _BambooOpening | None = None
+
+
+class _BambooDetail(ApiModel):
+    result: _BambooDetailResult | None = None
+
+
+def _location_str(item: _BambooItem) -> str:
+    location = item.location or _BambooLocation()
+    parts = [location.city, location.state]
     if not any(parts):
-        ats_location = item.get("atsLocation") or {}
-        parts = [ats_location.get("city"), ats_location.get("state"), ats_location.get("country")]
+        ats_location = item.atsLocation or _BambooLocation()
+        parts = [ats_location.city, ats_location.state, ats_location.country]
     return ", ".join(part for part in parts if part)
 
 
@@ -30,34 +61,37 @@ def _location_str(item: dict) -> str:
 class BambooHRAdapter(Adapter):
     name = "bamboohr"
 
-    def fetch(self, board: dict) -> list[RawJob]:
-        token = board["token"]
+    def fetch(self, board: Board) -> list[RawJob]:
+        token = required_str(board, "token")
         company = board.get("company", token)
 
         resp = session.get(LIST_URL.format(token=token), timeout=15)
         resp.raise_for_status()
-        payload = resp.json()
+        payload = _BambooList.model_validate(resp.json())
 
-        jobs = []
-        for item in payload.get("result", []):
-            job_id = str(item.get("id", ""))
+        jobs: list[RawJob] = []
+        for item in payload.result:
+            job_id = str(item.id)
             jobs.append(
                 RawJob(
                     adapter=self.name,
                     company=company,
                     board_token=token,
                     external_id=job_id,
-                    title=(item.get("jobOpeningName") or "").strip(),
+                    title=(item.jobOpeningName or "").strip(),
                     location=_location_str(item),
                     url=f"https://{token}.bamboohr.com/careers/{job_id}",
                     body="",
-                    team=item.get("departmentLabel") or None,
+                    team=item.departmentLabel or None,
                 )
             )
         return jobs
 
     def fetch_body(self, job: RawJob) -> str | None:
-        resp = session.get(DETAIL_URL.format(token=job.board_token, job_id=job.external_id), timeout=15)
+        resp = session.get(
+            DETAIL_URL.format(token=job.board_token, job_id=job.external_id), timeout=15
+        )
         resp.raise_for_status()
-        job_opening = (resp.json().get("result") or {}).get("jobOpening") or {}
-        return strip_html(job_opening.get("description") or "")
+        detail = _BambooDetail.model_validate(resp.json())
+        job_opening = (detail.result or _BambooDetailResult()).jobOpening or _BambooOpening()
+        return strip_html(job_opening.description or "")

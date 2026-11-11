@@ -3,9 +3,12 @@ from __future__ import annotations
 import re
 import sqlite3
 import webbrowser
+from collections.abc import Callable, Sequence
+from typing import NotRequired, Protocol, TypedDict
 
 from jobfinder import db
 from jobfinder.adapters.workday import is_workday_url
+from jobfinder.config import required_str
 from jobfinder.normalize import norm
 
 # Every function down to run() takes a duck-typed `filler`/`page` object with
@@ -15,6 +18,44 @@ from jobfinder.normalize import norm
 # to never run this against a real account or a live form.
 
 
+class FormField(TypedDict):
+    """A form field discover_fields() found. prompt_and_save() only needs
+    the label, so selector is optional here and checked by fill_field()."""
+
+    label: str
+    selector: NotRequired[str]
+    field_type: NotRequired[str]
+    required: NotRequired[bool]
+
+
+class Filler(Protocol):
+    """The three Playwright Page methods fill_field() uses."""
+
+    def fill(self, selector: str, value: str, /) -> object: ...
+
+    def select_option(self, selector: str, /, *, label: str) -> object: ...
+
+    def set_input_files(self, selector: str, files: str, /) -> object: ...
+
+
+class FormLocator(Protocol):
+    """The Playwright Locator methods discover_fields() uses."""
+
+    def all(self) -> Sequence[FormLocator]: ...
+
+    def count(self) -> int: ...
+
+    def inner_text(self) -> str: ...
+
+    def get_attribute(self, name: str, /) -> str | None: ...
+
+    def evaluate(self, expression: str, /) -> object: ...
+
+
+class FormPage(Protocol):
+    def locator(self, selector: str, /) -> FormLocator: ...
+
+
 def match_answer(conn: sqlite3.Connection, label: str) -> str | None:
     row = db.get_answer(conn, norm(label))
     if row is None or db.is_placeholder_answer(row["answer"]):
@@ -22,9 +63,9 @@ def match_answer(conn: sqlite3.Connection, label: str) -> str | None:
     return row["answer"]
 
 
-def fill_field(field: dict, value: str, filler) -> None:
+def fill_field(field: FormField, value: str, filler: Filler) -> None:
     field_type = field.get("field_type", "input_text")
-    selector = field["selector"]
+    selector = required_str(field, "selector")
 
     if field_type == "input_file":
         filler.set_input_files(selector, value)
@@ -34,10 +75,10 @@ def fill_field(field: dict, value: str, filler) -> None:
         filler.fill(selector, value)
 
 
-def fill_form(conn: sqlite3.Connection, fields: list[dict], filler) -> list[dict]:
+def fill_form(conn: sqlite3.Connection, fields: list[FormField], filler: Filler) -> list[FormField]:
     """Fills every field with an answer-bank match. Returns the required
     fields that don't have one, for the caller to prompt for."""
-    unresolved = []
+    unresolved: list[FormField] = []
     for field in fields:
         value = match_answer(conn, field["label"])
         if value is not None:
@@ -47,25 +88,27 @@ def fill_form(conn: sqlite3.Connection, fields: list[dict], filler) -> list[dict
     return unresolved
 
 
-def prompt_and_save(conn: sqlite3.Connection, field: dict, ask=input) -> str:
+def prompt_and_save(
+    conn: sqlite3.Connection, field: FormField, ask: Callable[[str], str] = input
+) -> str:
     value = ask(f"{field['label']} ")
     pattern = re.escape(norm(field["label"]))
     db.seed_answer(conn, pattern, value, field.get("field_type", "input_text"))
     return value
 
 
-def open_for_manual_handling(url: str, opener=webbrowser.open) -> None:
+def open_for_manual_handling(url: str, opener: Callable[[str], object] = webbrowser.open) -> None:
     opener(url)
 
 
-def discover_fields(page) -> list[dict]:
+def discover_fields(page: FormPage) -> list[FormField]:
     """Generic label[for] -> input mapping. Good enough for a typical
     Greenhouse/Lever/Ashby embed; custom widgets (non-native dropdowns,
     React-controlled inputs with no real `for` association) won't be picked
     up and fall through to the manual prompt instead, which is the safe
     failure mode here.
     """
-    fields = []
+    fields: list[FormField] = []
     for label_el in page.locator("label").all():
         label_text = label_el.inner_text().strip()
         target_id = label_el.get_attribute("for")
@@ -79,7 +122,9 @@ def discover_fields(page) -> list[dict]:
 
         tag = input_el.evaluate("el => el.tagName.toLowerCase()")
         input_type = input_el.evaluate("el => el.type || ''") if tag == "input" else ""
-        required = bool(input_el.evaluate("el => el.required || el.getAttribute('aria-required') === 'true'"))
+        required = bool(
+            input_el.evaluate("el => el.required || el.getAttribute('aria-required') === 'true'")
+        )
 
         if input_type == "file":
             field_type = "input_file"
@@ -90,7 +135,14 @@ def discover_fields(page) -> list[dict]:
         else:
             field_type = "input_text"
 
-        fields.append({"label": label_text, "selector": selector, "field_type": field_type, "required": required})
+        fields.append(
+            {
+                "label": label_text,
+                "selector": selector,
+                "field_type": field_type,
+                "required": required,
+            }
+        )
     return fields
 
 
@@ -103,7 +155,7 @@ def run(conn: sqlite3.Connection, *, headless: bool = False) -> None:
         print("nothing queued")
         return
 
-    fillable = []
+    fillable: list[sqlite3.Row] = []
     for row in queued:
         url = row["best_apply_url"] or ""
         if is_workday_url(url):
@@ -120,7 +172,9 @@ def run(conn: sqlite3.Connection, *, headless: bool = False) -> None:
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as p:
-        browser = p.chromium.launch_persistent_context(user_data_dir=".jobfinder-browser-profile", headless=False)
+        browser = p.chromium.launch_persistent_context(
+            user_data_dir=".jobfinder-browser-profile", headless=False
+        )
         try:
             for row in fillable:
                 page = browser.new_page()
@@ -132,9 +186,13 @@ def run(conn: sqlite3.Connection, *, headless: bool = False) -> None:
                     value = prompt_and_save(conn, field)
                     fill_field(field, value, page)
 
-                print(f"\a{row['company']} | {row['title']} is filled in. Review it, solve any captcha, "
-                      "and press submit yourself, then come back here and press Enter.")
+                print(
+                    f"\a{row['company']} | {row['title']} is filled in. Review it, solve any captcha, "
+                    "and press submit yourself, then come back here and press Enter."
+                )
                 input()
-                db.record_application(conn, row["content_hash"], outcome="filled_pending_manual_submit")
+                db.record_application(
+                    conn, row["content_hash"], outcome="filled_pending_manual_submit"
+                )
         finally:
             browser.close()

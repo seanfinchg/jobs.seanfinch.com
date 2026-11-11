@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-
-import yaml
+from typing import TypedDict
 
 from jobfinder import classify, db, defense, featured
+from jobfinder.config import read_config_file, required_str
 
 # The React app lives in ../frontend (a sibling of this package's repo,
 # backend/) and reads this at runtime via fetch("data.json").
@@ -20,25 +20,46 @@ DASHBOARD_PUBLIC_DIR = Path("..") / "frontend" / "public"
 # data) -- gives the frontend a stable React key and lets it look up every
 # apply_url a job was seen at, not just the single best one.
 PUBLIC_FIELDS = [
-    "content_hash", "company", "title", "location",
-    "best_apply_url", "first_seen", "posted_at", "salary_min", "salary_max",
-    "level", "matched_fields", "matched_subfields", "grad_year",
+    "content_hash",
+    "company",
+    "title",
+    "location",
+    "best_apply_url",
+    "first_seen",
+    "posted_at",
+    "salary_min",
+    "salary_max",
+    "level",
+    "matched_fields",
+    "matched_subfields",
+    "grad_year",
 ]
 
 
-def _load_fields_metadata(fields_dir: Path = classify.FIELDS_DIR) -> list[dict]:
+class SubfieldMetadata(TypedDict):
+    tag: str
+    label: str
+
+
+class FieldMetadata(TypedDict):
+    slug: str
+    label: str
+    subfields: list[SubfieldMetadata]
+
+
+def _load_fields_metadata(fields_dir: Path = classify.FIELDS_DIR) -> list[FieldMetadata]:
     """Per-field display metadata for the dashboard's role filter -- a
     field's slug, label, and its {tag, label} subfields, read straight off
     profiles/fields/*.yaml so a new field file needs no frontend edit to
     show up with a real label instead of its raw slug."""
-    fields = []
+    fields: list[FieldMetadata] = []
     for path in sorted(fields_dir.glob("*.yaml")):
-        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        data = read_config_file(path)
         label = data.get("label")
         if not label:
             continue
-        subfields = [
-            {"tag": sf["tag"], "label": sf.get("label", sf["tag"])}
+        subfields: list[SubfieldMetadata] = [
+            {"tag": required_str(sf, "tag"), "label": sf.get("label", required_str(sf, "tag"))}
             for sf in (data.get("subfields") or [])
         ]
         fields.append({"slug": path.stem, "label": label, "subfields": subfields})
@@ -61,16 +82,18 @@ def export_data(
         "WHERE status NOT IN ('closed', 'skipped') ORDER BY last_seen DESC"
     ).fetchall()
 
-    data = []
+    data: list[dict[str, object]] = []
     for row in rows:
-        entry = dict(row)
-        content_hash = entry.pop("content_hash")
+        # Read from the row (typed Any by sqlite3), not the copy being reshaped.
+        entry: dict[str, object] = dict(row)
+        content_hash: str = row["content_hash"]
+        del entry["content_hash"]
         entry["id"] = content_hash
         entry["apply_urls"] = db.sighting_urls(conn, content_hash)
-        entry["featured"] = featured.is_featured(entry["company"])
-        entry["defense"] = defense.is_defense_surveillance(entry["company"])
-        entry["matched_fields"] = json.loads(entry["matched_fields"] or "[]")
-        entry["matched_subfields"] = json.loads(entry["matched_subfields"] or "[]")
+        entry["featured"] = featured.is_featured(row["company"])
+        entry["defense"] = defense.is_defense_surveillance(row["company"])
+        entry["matched_fields"] = json.loads(row["matched_fields"] or "[]")
+        entry["matched_subfields"] = json.loads(row["matched_subfields"] or "[]")
         data.append(entry)
 
     out_path = docs_dir / "data.json"
@@ -93,7 +116,9 @@ def export_data(
     # docker-entrypoint.sh's deploy()). Defaults to now for plain ad hoc
     # `jobfinder dashboard` CLI usage, which has no other timestamp to use.
     meta_path = docs_dir / "meta.json"
-    meta_path.write_text(json.dumps({"generated_at": generated_at or datetime.now(timezone.utc).isoformat()}))
+    meta_path.write_text(
+        json.dumps({"generated_at": generated_at or datetime.now(UTC).isoformat()})
+    )
 
     # Also separate from data.json: per-field display metadata (label,
     # subfields) doesn't change per job row, so it belongs in its own file

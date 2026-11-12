@@ -1,13 +1,17 @@
-# Locked dev/apply-extra dependencies (pytest + playwright), on top of
+# Locked dev/apply-extra dependencies (pytest, playwright, ruff, pyright and type stubs), on top of
 # requirements-lock.txt. Used locally and in CI, never in the Docker image.
 # Regenerate with: pip install -e ".[dev,apply]" && pip freeze --exclude jobfinder
 colorama==0.4.6; sys_platform == "win32"
 greenlet==3.5.6
 iniconfig==2.3.1
+nodeenv==1.12.0
 packaging==26.3
 playwright==1.64.1
 pluggy==1.7.0
 pyee==13.0.1
 Pygments==2.21.0
-pytest==9.1.1
-typing_extensions==4.16.0
+pyright==1.1.414
+pytest==9.2.0
+ruff==0.17.4
+types-PyYAML==6.0.12.20261103
+types-requests==2.33.0.20261030

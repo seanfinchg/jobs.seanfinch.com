@@ -4,7 +4,7 @@ import re
 from datetime import date
 from pathlib import Path
 
-import yaml
+from jobfinder.config import Filters, read_config_file, required_str
 
 FIELDS_DIR = Path("profiles") / "fields"
 
@@ -46,6 +46,7 @@ def classify_grad_year(title: str, body: str = "", today: date | None = None) ->
             return int(match.group(1) or match.group(2))
     return None
 
+
 # Checked in priority order so the first, most specific match wins -- e.g.
 # "senior" alone comes late in the list because it shows up as a modifier
 # inside several more specific titles ("Senior Staff", "Senior Principal",
@@ -86,7 +87,10 @@ LEVEL_PATTERNS: list[tuple[str, str]] = [
     # which would false-positive on HR/recruiting titles ("Talent
     # Acquisition Manager", "Head of Talent") that aren't entry-level
     # engineering roles at all.
-    ("new-grad", r"new ?grad|university grad|\bgraduate\b|early career|entry[ -]level|\bassociate\b|early talent|emerging talent|exceptional talent|\bl1\b|\bic1\b|\b(i|1)\s*$"),
+    (
+        "new-grad",
+        r"new ?grad|university grad|\bgraduate\b|early career|entry[ -]level|\bassociate\b|early talent|emerging talent|exceptional talent|\bl1\b|\bic1\b|\b(i|1)\s*$",
+    ),
     ("mid", r"\bl2\b|\bic2\b|\b(ii|2)\s*$"),
 ]
 DEFAULT_LEVEL = "mid"
@@ -94,9 +98,18 @@ DEFAULT_LEVEL = "mid"
 # Canonical display/sort order for the dashboard's level filter -- roughly
 # junior to senior on the IC track, then the management track.
 LEVEL_ORDER: list[str] = [
-    "intern", "new-grad", "mid", "senior", "staff", "senior-staff",
-    "principal", "senior-principal", "distinguished",
-    "manager", "director", "vp",
+    "intern",
+    "new-grad",
+    "mid",
+    "senior",
+    "staff",
+    "senior-staff",
+    "principal",
+    "senior-principal",
+    "distinguished",
+    "manager",
+    "director",
+    "vp",
 ]
 
 
@@ -120,10 +133,12 @@ def classify_level(title: str) -> str:
 def _load_field_subfield_patterns(fields_dir: Path) -> dict[str, list[tuple[str, str]]]:
     patterns: dict[str, list[tuple[str, str]]] = {}
     for path in sorted(fields_dir.glob("*.yaml")):
-        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        data = read_config_file(path)
         subfields = data.get("subfields") or []
         if subfields:
-            patterns[path.stem] = [(sf["tag"], sf["pattern"]) for sf in subfields]
+            patterns[path.stem] = [
+                (required_str(sf, "tag"), required_str(sf, "pattern")) for sf in subfields
+            ]
     return patterns
 
 
@@ -166,8 +181,8 @@ def classify_subfields_by_field(title: str, fields_dir: Path = FIELDS_DIR) -> li
 def _load_field_title_patterns(fields_dir: Path) -> dict[str, list[str]]:
     patterns: dict[str, list[str]] = {}
     for path in sorted(fields_dir.glob("*.yaml")):
-        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-        title_include = (data.get("filters") or {}).get("title_include") or []
+        data = read_config_file(path)
+        title_include = (data.get("filters") or Filters()).get("title_include") or []
         if title_include:
             patterns[path.stem] = title_include
     return patterns

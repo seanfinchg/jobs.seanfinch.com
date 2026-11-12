@@ -34,18 +34,57 @@ export interface ParsedLocation {
 }
 
 const US_STATE_NAMES: Record<string, string> = {
-  alabama: "AL", alaska: "AK", arizona: "AZ", arkansas: "AR", california: "CA",
-  colorado: "CO", connecticut: "CT", delaware: "DE", florida: "FL", georgia: "GA",
-  hawaii: "HI", idaho: "ID", illinois: "IL", indiana: "IN", iowa: "IA",
-  kansas: "KS", kentucky: "KY", louisiana: "LA", maine: "ME", maryland: "MD",
-  massachusetts: "MA", michigan: "MI", minnesota: "MN", mississippi: "MS",
-  missouri: "MO", montana: "MT", nebraska: "NE", nevada: "NV",
-  "new hampshire": "NH", "new jersey": "NJ", "new mexico": "NM", "new york": "NY",
-  "north carolina": "NC", "north dakota": "ND", ohio: "OH", oklahoma: "OK",
-  oregon: "OR", pennsylvania: "PA", "rhode island": "RI", "south carolina": "SC",
-  "south dakota": "SD", tennessee: "TN", texas: "TX", utah: "UT", vermont: "VT",
-  virginia: "VA", washington: "WA", "west virginia": "WV", wisconsin: "WI",
-  wyoming: "WY", "district of columbia": "DC",
+  alabama: "AL",
+  alaska: "AK",
+  arizona: "AZ",
+  arkansas: "AR",
+  california: "CA",
+  colorado: "CO",
+  connecticut: "CT",
+  delaware: "DE",
+  florida: "FL",
+  georgia: "GA",
+  hawaii: "HI",
+  idaho: "ID",
+  illinois: "IL",
+  indiana: "IN",
+  iowa: "IA",
+  kansas: "KS",
+  kentucky: "KY",
+  louisiana: "LA",
+  maine: "ME",
+  maryland: "MD",
+  massachusetts: "MA",
+  michigan: "MI",
+  minnesota: "MN",
+  mississippi: "MS",
+  missouri: "MO",
+  montana: "MT",
+  nebraska: "NE",
+  nevada: "NV",
+  "new hampshire": "NH",
+  "new jersey": "NJ",
+  "new mexico": "NM",
+  "new york": "NY",
+  "north carolina": "NC",
+  "north dakota": "ND",
+  ohio: "OH",
+  oklahoma: "OK",
+  oregon: "OR",
+  pennsylvania: "PA",
+  "rhode island": "RI",
+  "south carolina": "SC",
+  "south dakota": "SD",
+  tennessee: "TN",
+  texas: "TX",
+  utah: "UT",
+  vermont: "VT",
+  virginia: "VA",
+  washington: "WA",
+  "west virginia": "WV",
+  wisconsin: "WI",
+  wyoming: "WY",
+  "district of columbia": "DC",
 };
 const VALID_US_ABBR = new Set(Object.values(US_STATE_NAMES));
 const US_STATE_FULL_NAME: Record<string, string> = Object.fromEntries(
@@ -63,44 +102,106 @@ const US_STATE_FULL_NAME: Record<string, string> = Object.fromEntries(
 // handled contextually instead (see HYPHEN_COUNTRY_CODES), since e.g. "IN"
 // means Indiana in "Crane, IN" but India in "IN-Bangalore-MSO".
 const COUNTRY_ALIASES: Record<string, string> = {
-  us: "United States", usa: "United States", "u.s": "United States",
-  "u.s.a": "United States", "united states": "United States",
-  "united states of america": "United States", america: "United States",
-  uk: "United Kingdom", "u.k": "United Kingdom", gb: "United Kingdom",
-  "united kingdom": "United Kingdom", england: "United Kingdom",
-  scotland: "United Kingdom", wales: "United Kingdom",
-  britain: "United Kingdom", "great britain": "United Kingdom",
-  canada: "Canada", can: "Canada",
-  ireland: "Ireland", ie: "Ireland", irl: "Ireland", "republic of ireland": "Ireland",
-  india: "India", ind: "India",
-  poland: "Poland", pl: "Poland", pol: "Poland",
-  israel: "Israel", isr: "Israel",
-  germany: "Germany", deu: "Germany",
-  uae: "United Arab Emirates", "united arab emirates": "United Arab Emirates",
-  australia: "Australia", "new zealand": "New Zealand",
-  singapore: "Singapore", china: "China", japan: "Japan",
-  "south korea": "South Korea", taiwan: "Taiwan", "hong kong": "Hong Kong",
-  netherlands: "Netherlands", "the netherlands": "Netherlands",
-  france: "France", spain: "Spain", italy: "Italy", germany2: "Germany",
-  switzerland: "Switzerland", austria: "Austria", belgium: "Belgium",
-  denmark: "Denmark", norway: "Norway", sweden: "Sweden", finland: "Finland",
-  iceland: "Iceland", portugal: "Portugal", greece: "Greece",
-  romania: "Romania", hungary: "Hungary", czechia: "Czech Republic",
-  "czech republic": "Czech Republic", slovenia: "Slovenia", slovakia: "Slovakia",
-  serbia: "Serbia", croatia: "Croatia", cyprus: "Cyprus", armenia: "Armenia",
-  estonia: "Estonia", latvia: "Latvia", lithuania: "Lithuania",
-  ukraine: "Ukraine", russia: "Russia", turkey: "Turkey", qatar: "Qatar",
-  "saudi arabia": "Saudi Arabia", egypt: "Egypt", "south africa": "South Africa",
-  nigeria: "Nigeria", kenya: "Kenya", brazil: "Brazil", mexico: "Mexico",
-  argentina: "Argentina", chile: "Chile", colombia: "Colombia", peru: "Peru",
-  uruguay: "Uruguay", "costa rica": "Costa Rica", panama: "Panama",
-  vietnam: "Vietnam", thailand: "Thailand", indonesia: "Indonesia",
-  malaysia: "Malaysia", philippines: "Philippines",
+  us: "United States",
+  usa: "United States",
+  "u.s": "United States",
+  "u.s.a": "United States",
+  "united states": "United States",
+  "united states of america": "United States",
+  america: "United States",
+  uk: "United Kingdom",
+  "u.k": "United Kingdom",
+  gb: "United Kingdom",
+  "united kingdom": "United Kingdom",
+  england: "United Kingdom",
+  scotland: "United Kingdom",
+  wales: "United Kingdom",
+  britain: "United Kingdom",
+  "great britain": "United Kingdom",
+  canada: "Canada",
+  can: "Canada",
+  ireland: "Ireland",
+  ie: "Ireland",
+  irl: "Ireland",
+  "republic of ireland": "Ireland",
+  india: "India",
+  ind: "India",
+  poland: "Poland",
+  pl: "Poland",
+  pol: "Poland",
+  israel: "Israel",
+  isr: "Israel",
+  germany: "Germany",
+  deu: "Germany",
+  uae: "United Arab Emirates",
+  "united arab emirates": "United Arab Emirates",
+  australia: "Australia",
+  "new zealand": "New Zealand",
+  singapore: "Singapore",
+  china: "China",
+  japan: "Japan",
+  "south korea": "South Korea",
+  taiwan: "Taiwan",
+  "hong kong": "Hong Kong",
+  netherlands: "Netherlands",
+  "the netherlands": "Netherlands",
+  france: "France",
+  spain: "Spain",
+  italy: "Italy",
+  germany2: "Germany",
+  switzerland: "Switzerland",
+  austria: "Austria",
+  belgium: "Belgium",
+  denmark: "Denmark",
+  norway: "Norway",
+  sweden: "Sweden",
+  finland: "Finland",
+  iceland: "Iceland",
+  portugal: "Portugal",
+  greece: "Greece",
+  romania: "Romania",
+  hungary: "Hungary",
+  czechia: "Czech Republic",
+  "czech republic": "Czech Republic",
+  slovenia: "Slovenia",
+  slovakia: "Slovakia",
+  serbia: "Serbia",
+  croatia: "Croatia",
+  cyprus: "Cyprus",
+  armenia: "Armenia",
+  estonia: "Estonia",
+  latvia: "Latvia",
+  lithuania: "Lithuania",
+  ukraine: "Ukraine",
+  russia: "Russia",
+  turkey: "Turkey",
+  qatar: "Qatar",
+  "saudi arabia": "Saudi Arabia",
+  egypt: "Egypt",
+  "south africa": "South Africa",
+  nigeria: "Nigeria",
+  kenya: "Kenya",
+  brazil: "Brazil",
+  mexico: "Mexico",
+  argentina: "Argentina",
+  chile: "Chile",
+  colombia: "Colombia",
+  peru: "Peru",
+  uruguay: "Uruguay",
+  "costa rica": "Costa Rica",
+  panama: "Panama",
+  vietnam: "Vietnam",
+  thailand: "Thailand",
+  indonesia: "Indonesia",
+  malaysia: "Malaysia",
+  philippines: "Philippines",
   // Broad regions -- not countries, but the source data uses them exactly
   // like one ("Europe", "AMER" as a corporate region code for the
   // Americas), so they're useful as their own filter tag rather than
   // dropped entirely.
-  europe: "Europe", "north america": "North America", amer: "Americas",
+  europe: "Europe",
+  "north america": "North America",
+  amer: "Americas",
 };
 delete COUNTRY_ALIASES.germany2;
 
@@ -110,21 +211,50 @@ delete COUNTRY_ALIASES.germany2;
 // what they mean far more often in this data ("Wilmington, DE", "Crane,
 // IN", "Deerfield, IL" are all real US postings).
 const HYPHEN_COUNTRY_CODES: Record<string, string> = {
-  CA: "Canada", DE: "Germany", IN: "India", PL: "Poland", UK: "United Kingdom",
-  GB: "United Kingdom", FR: "France", MX: "Mexico", IE: "Ireland", CN: "China",
+  CA: "Canada",
+  DE: "Germany",
+  IN: "India",
+  PL: "Poland",
+  UK: "United Kingdom",
+  GB: "United Kingdom",
+  FR: "France",
+  MX: "Mexico",
+  IE: "Ireland",
+  CN: "China",
 };
 
 const CANADA_PROVINCES = new Set([
-  "alberta", "british columbia", "manitoba", "new brunswick",
-  "newfoundland and labrador", "nova scotia", "ontario",
-  "prince edward island", "quebec", "saskatchewan",
-  "northwest territories", "nunavut", "yukon",
+  "alberta",
+  "british columbia",
+  "manitoba",
+  "new brunswick",
+  "newfoundland and labrador",
+  "nova scotia",
+  "ontario",
+  "prince edward island",
+  "quebec",
+  "saskatchewan",
+  "northwest territories",
+  "nunavut",
+  "yukon",
 ]);
 // Trailing 2-letter province code with no "Canada" spelled out anywhere
 // ("Toronto, ON") is still an unambiguous Canada signal -- none of these
 // collide with a US state abbreviation.
 const CANADA_PROVINCE_ABBR = new Set([
-  "on", "qc", "bc", "ab", "mb", "sk", "ns", "nb", "pe", "nl", "yt", "nt", "nu",
+  "on",
+  "qc",
+  "bc",
+  "ab",
+  "mb",
+  "sk",
+  "ns",
+  "nb",
+  "pe",
+  "nl",
+  "yt",
+  "nt",
+  "nu",
 ]);
 
 interface CityAlias {
@@ -275,7 +405,8 @@ function resolveCity(rawCity: string): PlaceResult {
   if (!alias && cleaned.includes("-")) {
     alias = CITY_ALIASES[normalizeKey(cleaned.split("-")[0] ?? "")];
   }
-  if (alias) return { city: alias.city, state: alias.state ?? null, country: alias.country ?? null };
+  if (alias)
+    return { city: alias.city, state: alias.state ?? null, country: alias.country ?? null };
   return { city: cleaned, state: null, country: null };
 }
 
@@ -293,7 +424,8 @@ function classifyBare(whole: string): PlaceResult {
   if (VALID_US_ABBR.has(cleaned.toUpperCase()) && cleaned.length <= 2) {
     return { city: null, state: cleaned.toUpperCase(), country: null };
   }
-  if (CANADA_PROVINCES.has(key)) return { city: titleCase(cleaned), state: null, country: "Canada" };
+  if (CANADA_PROVINCES.has(key))
+    return { city: titleCase(cleaned), state: null, country: "Canada" };
   if (CITY_ALIASES[key]) return resolveCity(cleaned);
 
   // Multi-word leftovers (e.g. "IN Remote India" with "Remote" already
@@ -316,7 +448,10 @@ function classifyBare(whole: string): PlaceResult {
 // "Country - City" / "State - City" reversed pairs, and "City - CODE"
 // pairs where the tail is an office code, not a second place.
 function classifyHyphenated(whole: string): PlaceResult {
-  const parts = whole.split("-").map((p) => p.trim()).filter(Boolean);
+  const parts = whole
+    .split("-")
+    .map((p) => p.trim())
+    .filter(Boolean);
   if (parts.length === 0) return EMPTY_PLACE;
 
   if (parts.length >= 3) {
@@ -324,7 +459,11 @@ function classifyHyphenated(whole: string): PlaceResult {
     const p1 = parts[1] ?? "";
     const p2 = parts[2] ?? "";
     if (p0.toUpperCase() === "US" && VALID_US_ABBR.has(p1.toUpperCase())) {
-      return { city: cleanupCityNoise(parts.slice(2).join("-")), state: p1.toUpperCase(), country: null };
+      return {
+        city: cleanupCityNoise(parts.slice(2).join("-")),
+        state: p1.toUpperCase(),
+        country: null,
+      };
     }
     const country = HYPHEN_COUNTRY_CODES[p0.toUpperCase()];
     if (country) {
@@ -353,7 +492,8 @@ function classifyHyphenated(whole: string): PlaceResult {
     if (COUNTRY_ALIASES[p0Key]) {
       return { city: restIsCountry ? null : rest, state: null, country: COUNTRY_ALIASES[p0Key] };
     }
-    const hyphenCountry = p0.toUpperCase() !== "US" ? (HYPHEN_COUNTRY_CODES[p0.toUpperCase()] ?? null) : null;
+    const hyphenCountry =
+      p0.toUpperCase() !== "US" ? (HYPHEN_COUNTRY_CODES[p0.toUpperCase()] ?? null) : null;
     if (hyphenCountry) {
       return { city: restIsCountry ? null : rest, state: null, country: hyphenCountry };
     }
@@ -400,7 +540,9 @@ function classifyCommaTokens(tokens: string[]): PlaceResult[] {
   if (!country && remaining.length >= 3) {
     const hasState = remaining.some((t) => {
       const key = normalizeKey(t);
-      return US_STATE_NAMES[key] !== undefined || VALID_US_ABBR.has(stripPunctuation(t).toUpperCase());
+      return (
+        US_STATE_NAMES[key] !== undefined || VALID_US_ABBR.has(stripPunctuation(t).toUpperCase())
+      );
     });
     if (!hasState) return classifyCommaGlob(tokens);
   }
@@ -434,7 +576,9 @@ function classifyCommaTokens(tokens: string[]): PlaceResult[] {
   const cityToken = remaining.length > 0 ? remaining.join(", ") : null;
   if (!cityToken) return [{ city: null, state, country }];
   const resolved = resolveCity(cityToken);
-  return [{ city: resolved.city, state: state ?? resolved.state, country: country ?? resolved.country }];
+  return [
+    { city: resolved.city, state: state ?? resolved.state, country: country ?? resolved.country },
+  ];
 }
 
 const REMOTE_RE = /\bremote\b/i;
@@ -448,7 +592,7 @@ function parseSegment(rawSegment: string): LocationSegment[] {
   const remote = REMOTE_RE.test(raw);
   const hybrid = HYBRID_RE.test(raw);
 
-  let working = raw
+  const working = raw
     .replace(/\([^)]*\)/g, " ") // balanced parentheticals, e.g. "(Travel-Required)"
     .replace(/[()]/g, " ") // any left dangling by a mid-parenthetical split (e.g. "X | Y)" from "(X | Y)")
     .replace(/remote[-\s]friendly,?/gi, " ")
@@ -474,10 +618,21 @@ function parseSegment(rawSegment: string): LocationSegment[] {
     places = classifyCommaTokens(tokens);
   } else {
     const single = tokens[0] ?? working;
-    places = [!single.includes(",") && single.includes("-") ? classifyHyphenated(single) : classifyBare(single)];
+    places = [
+      !single.includes(",") && single.includes("-")
+        ? classifyHyphenated(single)
+        : classifyBare(single),
+    ];
   }
 
-  return places.map((p) => ({ raw, city: p.city, state: p.state, country: p.country, remote, hybrid }));
+  return places.map((p) => ({
+    raw,
+    city: p.city,
+    state: p.state,
+    country: p.country,
+    remote,
+    hybrid,
+  }));
 }
 
 function segmentLabel(segment: LocationSegment): string | null {
@@ -598,17 +753,21 @@ export function buildLocationTree(rawLocations: Iterable<string>): LocationTreeN
         .map(([state, stateCities]) => ({
           value: `state:${state}`,
           label: state,
-          children: [...stateCities].sort((a, b) => a.localeCompare(b)).map((label) => ({
-            value: `city:${label}`,
-            label,
-            children: [],
-          })),
+          children: [...stateCities]
+            .sort((a, b) => a.localeCompare(b))
+            .map((label) => ({
+              value: `city:${label}`,
+              label,
+              children: [],
+            })),
         }));
-      const cityNodes: LocationTreeNode[] = [...cities].sort((a, b) => a.localeCompare(b)).map((label) => ({
-        value: `city:${label}`,
-        label,
-        children: [],
-      }));
+      const cityNodes: LocationTreeNode[] = [...cities]
+        .sort((a, b) => a.localeCompare(b))
+        .map((label) => ({
+          value: `city:${label}`,
+          label,
+          children: [],
+        }));
       return {
         value: `country:${country}`,
         label: country,

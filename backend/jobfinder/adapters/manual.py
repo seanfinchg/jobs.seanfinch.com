@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from jobfinder.adapters.base import Adapter
 from jobfinder.adapters.registry import register
+from jobfinder.config import Board, required_str
 from jobfinder.models import RawJob
 
 
@@ -20,17 +21,17 @@ class ManualAdapter(Adapter):
 
     name = "manual"
 
-    def fetch(self, board: dict) -> list[RawJob]:
-        token = board["token"]
+    def fetch(self, board: Board) -> list[RawJob]:
+        token = required_str(board, "token")
         return [
             RawJob(
                 adapter=self.name,
-                company=board["company"],
+                company=required_str(board, "company"),
                 board_token=token,
                 external_id=token,
-                title=board["title"],
+                title=required_str(board, "title"),
                 location=board.get("location", ""),
-                url=board["url"],
+                url=required_str(board, "url"),
                 posted_at=board.get("posted_at"),
             )
         ]

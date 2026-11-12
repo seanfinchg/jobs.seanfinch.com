@@ -67,10 +67,18 @@ function roleGroupValues(fields: FieldMeta[]): Record<string, string> {
 }
 const LEVEL_OPTIONS = LEVEL_ORDER.map((value) => ({ value, label: LEVEL_LABELS[value] ?? value }));
 
-function FilterSection({ title, children }: { title: string; children: React.ReactNode }): React.JSX.Element {
+function FilterSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}): React.JSX.Element {
   return (
     <div className="flex flex-col gap-1.5">
-      <h3 className="text-xs font-semibold tracking-wide text-ultra-light-mode/50 uppercase">{title}</h3>
+      <h3 className="text-xs font-semibold tracking-wide text-ultra-light-mode/50 uppercase">
+        {title}
+      </h3>
       {children}
     </div>
   );
@@ -132,7 +140,10 @@ export default function FilterBar({
                   : "border-white/10 bg-dark-mode text-ultra-light-mode/70 hover:text-light-mode"
               }`}
             >
-              {option.label} <span className="text-ultra-light-mode/40">({disciplineCounts[option.key] ?? 0})</span>
+              {option.label}{" "}
+              <span className="text-ultra-light-mode/40">
+                ({disciplineCounts[option.key] ?? 0})
+              </span>
             </button>
           ))}
         </div>

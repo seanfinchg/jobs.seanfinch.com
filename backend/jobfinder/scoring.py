@@ -16,7 +16,7 @@ _MAX_PLAUSIBLE_SALARY_RATIO = 3
 def _salary_figures(body: str) -> list[int]:
     """Every plausible dollar figure in the text. Not a real comp parser --
     just enough to tell "this posting states pay" from "it doesn't"."""
-    figures = []
+    figures: list[int] = []
     for whole, thousands, k_suffix in _SALARY_RE.findall(body or ""):
         if k_suffix or not thousands:
             value = int(whole) * 1000

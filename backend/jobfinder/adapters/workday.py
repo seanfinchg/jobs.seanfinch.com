@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import re
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-from jobfinder.adapters.base import Adapter
+from jobfinder.adapters.base import Adapter, ApiModel
 from jobfinder.adapters.registry import register
+from jobfinder.config import Board, required_str
 from jobfinder.http import session
 from jobfinder.models import RawJob
 
@@ -31,6 +32,19 @@ JOBS_URL = "https://{tenant}.{wd}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/job
 PAGE_LIMIT = 20
 
 WORKDAY_HOST_MARKER = "myworkdayjobs.com"
+
+
+class _WorkdayPosting(ApiModel):
+    title: str | None = ""
+    externalPath: str | None = ""
+    locationsText: str | None = ""
+    postedOn: str | None = ""
+    bulletFields: list[str] | None = None
+
+
+class _WorkdayPage(ApiModel):
+    jobPostings: list[_WorkdayPosting] = []
+
 
 # The three board identifiers a fresh Workday tenant needs (tenant/wd/site)
 # aren't guessable the way a single-slug adapter's token is -- but a real
@@ -64,12 +78,12 @@ def parse_workday_url(url: str) -> dict[str, str] | None:
     return {"tenant": tenant, "wd": wd, "site": site}
 
 
-def _parse_posted_on(text: str) -> str | None:
+def _parse_posted_on(text: str | None) -> str | None:
     """Workday returns a relative human string ("Posted Today", "Posted 3
     Days Ago", "Posted 30+ Days Ago"), never a real date -- best-effort
     parse only, same spirit as this repo's salary extraction."""
     text = (text or "").strip().lower()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if text == "posted today":
         return now.isoformat()
     if text == "posted yesterday":
@@ -84,9 +98,11 @@ def _parse_posted_on(text: str) -> str | None:
 class WorkdayAdapter(Adapter):
     name = "workday"
 
-    def fetch(self, board: dict) -> list[RawJob]:
-        tenant, wd, site = board["tenant"], board["wd"], board["site"]
-        token = board["token"]
+    def fetch(self, board: Board) -> list[RawJob]:
+        tenant = required_str(board, "tenant")
+        wd = required_str(board, "wd")
+        site = required_str(board, "site")
+        token = required_str(board, "token")
         company = board.get("company", tenant)
         base_url = f"https://{tenant}.{wd}.myworkdayjobs.com/{site}"
 
@@ -99,21 +115,21 @@ class WorkdayAdapter(Adapter):
                 timeout=15,
             )
             resp.raise_for_status()
-            postings = resp.json().get("jobPostings", [])
+            postings = _WorkdayPage.model_validate(resp.json()).jobPostings
 
             for item in postings:
-                bullet_fields = item.get("bulletFields") or []
-                external_id = bullet_fields[0] if bullet_fields else item.get("externalPath", "")
+                bullet_fields = item.bulletFields or []
+                external_id = bullet_fields[0] if bullet_fields else item.externalPath or ""
                 jobs.append(
                     RawJob(
                         adapter=self.name,
                         company=company,
                         board_token=token,
                         external_id=external_id,
-                        title=item.get("title", ""),
-                        location=item.get("locationsText", ""),
-                        url=base_url + item.get("externalPath", ""),
-                        posted_at=_parse_posted_on(item.get("postedOn", "")),
+                        title=item.title or "",
+                        location=item.locationsText or "",
+                        url=base_url + (item.externalPath or ""),
+                        posted_at=_parse_posted_on(item.postedOn),
                     )
                 )
 

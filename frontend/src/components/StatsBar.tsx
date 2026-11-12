@@ -36,7 +36,9 @@ export default function StatsBar({ jobs }: StatsBarProps): React.JSX.Element {
           key={tile.label}
           className="rounded-lg border border-white/10 bg-dark-mode px-3 py-3 sm:px-5 sm:py-4"
         >
-          <div className="font-jost text-xl font-semibold text-light-mode sm:text-3xl">{tile.value}</div>
+          <div className="font-jost text-xl font-semibold text-light-mode sm:text-3xl">
+            {tile.value}
+          </div>
           <div className="mt-1 text-xs text-ultra-light-mode/70 sm:text-sm">{tile.label}</div>
         </div>
       ))}

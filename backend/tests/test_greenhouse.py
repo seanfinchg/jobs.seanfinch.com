@@ -1,5 +1,8 @@
 import json
+from collections.abc import Callable
 from pathlib import Path
+
+import pytest
 
 from jobfinder.adapters import greenhouse
 
@@ -8,19 +11,26 @@ QUESTIONS_FIXTURE = Path(__file__).parent / "fixtures" / "greenhouse_questions.j
 
 
 class _FakeResponse:
-    def __init__(self, payload):
+    def __init__(self, payload: object) -> None:
         self._payload = payload
 
-    def raise_for_status(self):
+    def raise_for_status(self) -> None:
         pass
 
-    def json(self):
+    def json(self) -> object:
         return self._payload
 
 
-def test_fetch_parses_jobs(monkeypatch):
+def _respond(payload: object) -> Callable[..., _FakeResponse]:
+    def fake(*args: object, **kwargs: object) -> _FakeResponse:
+        return _FakeResponse(payload)
+
+    return fake
+
+
+def test_fetch_parses_jobs(monkeypatch: pytest.MonkeyPatch) -> None:
     payload = json.loads(FIXTURE.read_text())
-    monkeypatch.setattr(greenhouse.session, "get", lambda *a, **k: _FakeResponse(payload))
+    monkeypatch.setattr(greenhouse.session, "get", _respond(payload))
 
     jobs = greenhouse.GreenhouseAdapter().fetch({"company": "Acme", "token": "acme"})
 
@@ -39,13 +49,18 @@ def test_fetch_parses_jobs(monkeypatch):
     assert jobs[1].team is None
 
 
-def test_fetch_questions_parses_schema(monkeypatch):
+def test_fetch_questions_parses_schema(monkeypatch: pytest.MonkeyPatch) -> None:
     payload = json.loads(QUESTIONS_FIXTURE.read_text())
-    monkeypatch.setattr(greenhouse.session, "get", lambda *a, **k: _FakeResponse(payload))
+    monkeypatch.setattr(greenhouse.session, "get", _respond(payload))
 
     job = greenhouse.RawJob(
-        adapter="greenhouse", company="Acme", board_token="acme",
-        external_id="1001", title="", location="", url="",
+        adapter="greenhouse",
+        company="Acme",
+        board_token="acme",
+        external_id="1001",
+        title="",
+        location="",
+        url="",
     )
     questions = greenhouse.GreenhouseAdapter().fetch_questions(job)
 

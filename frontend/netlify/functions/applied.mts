@@ -11,8 +11,21 @@ const KEY = "ids";
 
 async function readAppliedIds(): Promise<string[]> {
   const store = getStore(STORE_NAME);
-  const raw = await store.get(KEY, { type: "json" });
-  return Array.isArray(raw) ? (raw as string[]) : [];
+  const raw: unknown = await store.get(KEY, { type: "json" });
+  return Array.isArray(raw) ? raw.filter((id): id is string => typeof id === "string") : [];
+}
+
+type AppliedChange = { id: string; applied: boolean };
+
+function isAppliedChange(value: unknown): value is AppliedChange {
+  if (typeof value !== "object" || value === null) return false;
+  return (
+    "id" in value &&
+    typeof value.id === "string" &&
+    value.id !== "" &&
+    "applied" in value &&
+    typeof value.applied === "boolean"
+  );
 }
 
 export default async (req: Request): Promise<Response> => {
@@ -28,13 +41,13 @@ export default async (req: Request): Promise<Response> => {
       return new Response("unauthorized", { status: 401 });
     }
 
-    let body: { id?: string; applied?: boolean };
+    let body: unknown;
     try {
       body = await req.json();
     } catch {
       return new Response("invalid json body", { status: 400 });
     }
-    if (!body.id || typeof body.applied !== "boolean") {
+    if (!isAppliedChange(body)) {
       return new Response("body must be {id: string, applied: boolean}", { status: 400 });
     }
 

@@ -41,8 +41,32 @@ const JOBS = [
   },
 ];
 
-const FIELDS = [{ slug: "security", label: "Security", subfields: [{ tag: "appsec", label: "AppSec" }] }];
+const FIELDS = [
+  { slug: "security", label: "Security", subfields: [{ tag: "appsec", label: "AppSec" }] },
+];
 const META = { generated_at: "2026-10-31T06:00:00+00:00" };
+
+// Response shapes the assertions read; the handler's own output is the source of truth.
+type ApiJob = { id: string; ats: string; apply_url: string };
+type JobsEnvelope = {
+  total: number;
+  limit: number;
+  offset: number;
+  next_offset: number | null;
+  generated_at: string;
+  jobs: ApiJob[];
+};
+type JobDetail = { id: string; apply: { url: string; urls: string[]; ats: string; note: string } };
+type ApiError = { error: string; message?: string };
+type Meta = {
+  total_jobs: number;
+  levels: string[];
+  fields: unknown;
+  ats: { name: string }[];
+  limits: unknown;
+};
+
+const readJson = async <T>(res: Response): Promise<T> => (await res.json()) as T;
 
 const realFetch = globalThis.fetch;
 let calls: string[] = [];
@@ -52,13 +76,13 @@ beforeEach(() => {
   resetCache();
   calls = [];
   failing = false;
-  globalThis.fetch = (async (input: unknown) => {
+  globalThis.fetch = (input: unknown) => {
     const path = new URL(String(input)).pathname;
     calls.push(path);
-    if (failing) return new Response("nope", { status: 500 });
+    if (failing) return Promise.resolve(new Response("nope", { status: 500 }));
     const body = path === "/data.json" ? JOBS : path === "/fields.json" ? FIELDS : META;
-    return Response.json(body);
-  }) as typeof fetch;
+    return Promise.resolve(Response.json(body));
+  };
 });
 
 afterEach(() => {
@@ -73,19 +97,19 @@ test("GET /api/jobs returns the envelope", async () => {
   assert.equal(res.status, 200);
   assert.equal(res.headers.get("access-control-allow-origin"), "*");
   assert.match(res.headers.get("cache-control") ?? "", /public/);
-  const body = await res.json();
+  const body = await readJson<JobsEnvelope>(res);
   assert.equal(body.total, 1);
   assert.equal(body.limit, 25);
   assert.equal(body.offset, 0);
   assert.equal(body.next_offset, null);
   assert.equal(body.generated_at, META.generated_at);
-  assert.equal(body.jobs[0].id, "j1");
+  assert.equal(body.jobs[0]?.id, "j1");
   assert.equal(body.jobs[0].ats, "greenhouse");
   assert.equal(body.jobs[0].apply_url, JOBS[0]?.best_apply_url);
 });
 
 test("pagination cursor", async () => {
-  const body = await (await get("/api/jobs?limit=1")).json();
+  const body = await readJson<JobsEnvelope>(await get("/api/jobs?limit=1"));
   assert.equal(body.jobs.length, 1);
   assert.equal(body.next_offset, 1);
   assert.equal(body.total, 2);
@@ -94,7 +118,7 @@ test("pagination cursor", async () => {
 test("GET /api/jobs/:id includes apply block", async () => {
   const res = await get("/api/jobs/j2");
   assert.equal(res.status, 200);
-  const body = await res.json();
+  const body = await readJson<JobDetail>(res);
   assert.equal(body.id, "j2");
   assert.equal(body.apply.url, "https://jobs.lever.co/beta/2");
   assert.deepEqual(body.apply.urls, ["https://jobs.lever.co/beta/2"]);
@@ -105,17 +129,17 @@ test("GET /api/jobs/:id includes apply block", async () => {
 test("unknown id is a JSON 404", async () => {
   const res = await get("/api/jobs/nope");
   assert.equal(res.status, 404);
-  const body = await res.json();
+  const body = await readJson<ApiError>(res);
   assert.equal(body.error, "not_found");
 });
 
 test("GET /api/meta", async () => {
-  const body = await (await get("/api/meta")).json();
+  const body = await readJson<Meta>(await get("/api/meta"));
   assert.equal(body.total_jobs, 2);
   assert.deepEqual(body.levels, ["mid", "senior"]);
   assert.deepEqual(body.fields, FIELDS);
   assert.deepEqual(
-    body.ats.map((a: { name: string }) => a.name),
+    body.ats.map((a) => a.name),
     ["greenhouse", "lever"],
   );
   assert.deepEqual(body.limits, { requests_per_minute: 60, max_page_size: 100 });
@@ -124,7 +148,7 @@ test("GET /api/meta", async () => {
 test("bad params are a JSON 400", async () => {
   const res = await get("/api/jobs?limit=500");
   assert.equal(res.status, 400);
-  const body = await res.json();
+  const body = await readJson<ApiError>(res);
   assert.equal(body.error, "bad_request");
   assert.ok(body.message);
 });
@@ -133,7 +157,7 @@ test("non-GET is a JSON 405", async () => {
   const res = await get("/api/jobs", { method: "POST" });
   assert.equal(res.status, 405);
   assert.equal(res.headers.get("allow"), "GET, OPTIONS");
-  assert.equal((await res.json()).error, "method_not_allowed");
+  assert.equal((await readJson<ApiError>(res)).error, "method_not_allowed");
 });
 
 test("OPTIONS is a 204 with CORS", async () => {
@@ -153,5 +177,5 @@ test("fetch failure is a 503 with Retry-After", async () => {
   const res = await get("/api/jobs");
   assert.equal(res.status, 503);
   assert.ok(res.headers.get("retry-after"));
-  assert.equal((await res.json()).error, "unavailable");
+  assert.equal((await readJson<ApiError>(res)).error, "unavailable");
 });

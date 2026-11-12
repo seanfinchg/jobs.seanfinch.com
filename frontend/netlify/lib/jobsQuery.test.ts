@@ -217,7 +217,10 @@ test("runQuery adds ats and apply_url and keeps original fields", () => {
 test("limit and offset paginate through runQuery", () => {
   const page = runQuery(JOBS, q({ limit: "2", offset: "1" }));
   assert.equal(page.total, 4);
-  assert.deepEqual(page.items.map((j) => j.id), ["c", "b"]);
+  assert.deepEqual(
+    page.items.map((j) => j.id),
+    ["c", "b"],
+  );
   assert.equal(page.next_offset, 3);
 });
 
@@ -251,7 +254,7 @@ test("bad params are rejected with a message", () => {
   for (const params of bad) {
     const r = parseQuery(new URLSearchParams(params), NOW);
     assert.equal(r.ok, false, JSON.stringify(params));
-    if (!r.ok) assert.ok(r.message.length > 0);
+    assert.ok(r.message.length > 0);
   }
 });
 

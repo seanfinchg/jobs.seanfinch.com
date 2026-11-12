@@ -19,19 +19,53 @@ _LOCATION_BUCKETS: list[tuple[str, list[str]]] = [
     # cambridge/lexington/newton/burlington all name other, more famous
     # places (Cambridge UK, Lexington SC/KY, Newton IA/KS, Burlington VT/ON)
     # -- only bucket them as Boston-area when the state actually says so.
-    ("boston", [r"\bboston\b", r"somerville", r"waltham", r"\bmassachusetts\b", r"\bma\b",
-                rf"cambridge{_MA_MARKER}", rf"lexington{_MA_MARKER}",
-                rf"newton{_MA_MARKER}", rf"burlington{_MA_MARKER}"]),
-    ("new york", [r"new york", r"\bnyc\b", r"brooklyn", r"manhattan", r"jersey city",
-                  r"\bny\b", r"\bnj\b"]),
-    ("sf bay area", [r"san francisco", r"\bsf\b", r"bay area", r"palo alto",
-                     r"mountain view", r"sunnyvale", r"santa clara", r"san jose",
-                     r"menlo park", r"oakland"]),
-    ("socal", [r"los angeles", r"irvine", r"san diego", r"santa monica",
-               r"orange county", r"pasadena", r"culver city"]),
+    (
+        "boston",
+        [
+            r"\bboston\b",
+            r"somerville",
+            r"waltham",
+            r"\bmassachusetts\b",
+            r"\bma\b",
+            rf"cambridge{_MA_MARKER}",
+            rf"lexington{_MA_MARKER}",
+            rf"newton{_MA_MARKER}",
+            rf"burlington{_MA_MARKER}",
+        ],
+    ),
+    (
+        "new york",
+        [r"new york", r"\bnyc\b", r"brooklyn", r"manhattan", r"jersey city", r"\bny\b", r"\bnj\b"],
+    ),
+    (
+        "sf bay area",
+        [
+            r"san francisco",
+            r"\bsf\b",
+            r"bay area",
+            r"palo alto",
+            r"mountain view",
+            r"sunnyvale",
+            r"santa clara",
+            r"san jose",
+            r"menlo park",
+            r"oakland",
+        ],
+    ),
+    (
+        "socal",
+        [
+            r"los angeles",
+            r"irvine",
+            r"san diego",
+            r"santa monica",
+            r"orange county",
+            r"pasadena",
+            r"culver city",
+        ],
+    ),
     ("seattle", [r"\bseattle\b", r"bellevue", r"redmond"]),
-    ("remote-us", [r"remote.*(us|united states)", r"(us|united states).*remote",
-                   r"^remote$"]),
+    ("remote-us", [r"remote.*(us|united states)", r"(us|united states).*remote", r"^remote$"]),
     ("remote", [r"remote"]),
 ]
 

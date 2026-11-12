@@ -1,42 +1,48 @@
 {
   "name": "jobfinder-dashboard",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=22"
-  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "test": "node --test \"netlify/lib/*.test.ts\""
+    "test": "node --test \"netlify/lib/*.test.ts\"",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json"
   },
   "dependencies": {
-    "@fontsource/jost": "^5.0.16",
-    "@fontsource/raleway": "^5.0.16",
-    "@netlify/blobs": "^11.1.6",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "@fontsource/jost": "5.3.0",
+    "@fontsource/raleway": "5.3.0",
+    "@netlify/blobs": "^11.1.8",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zod": "4.6.7"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
-    "@netlify/functions": "^6.0.3",
-    "@tailwindcss/vite": "^4.2.4",
-    "@types/node": "^24.0.0",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "@typescript-eslint/eslint-plugin": "^8.72.1",
-    "@typescript-eslint/parser": "^8.72.1",
-    "@vitejs/plugin-react": "^6.1.2",
-    "eslint": "^9.39.4",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.7",
-    "globals": "^16.0.0",
-    "tailwindcss": "^4.2.4",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.72.1",
-    "vite": "^8.0.10"
+    "@eslint/js": "10.0.1",
+    "@netlify/functions": "6.1.1",
+    "@tailwindcss/vite": "4.3.5",
+    "@types/node": "^24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.2.1",
+    "eslint": "10.14.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.7",
+    "globals": "17.14.0",
+    "oxfmt": "0.77.0",
+    "tailwindcss": "4.3.5",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vite": "8.3.6"
+  },
+  "overrides": {
+    "minimatch": "11.0.3"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

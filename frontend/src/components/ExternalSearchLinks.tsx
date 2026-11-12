@@ -39,7 +39,10 @@ function buildRoleTerm(roles: string[]): string {
   return terms.length === 1 ? (terms[0] ?? DEFAULT_ROLE_TERM) : `(${terms.join(" OR ")})`;
 }
 
-export default function ExternalSearchLinks({ roles, levels }: ExternalSearchLinksProps): React.JSX.Element {
+export default function ExternalSearchLinks({
+  roles,
+  levels,
+}: ExternalSearchLinksProps): React.JSX.Element {
   const activeLevels = levels.length > 0 ? levels : DEFAULT_LEVELS;
   const roleTerm = buildRoleTerm(roles);
 
@@ -56,13 +59,16 @@ export default function ExternalSearchLinks({ roles, levels }: ExternalSearchLin
   return (
     <div className="rounded-lg border border-white/10 p-4">
       <p className="mb-3 text-sm text-ultra-light-mode/50">
-        LinkedIn and Indeed can't be ingested directly (no public API, ToS-restricted). These search links are
-        built from your Role/Level filters above{roles.length === 0 && levels.length === 0 ? " (none set -- showing defaults)" : ""}:
+        LinkedIn and Indeed can't be ingested directly (no public API, ToS-restricted). These search
+        links are built from your Role/Level filters above
+        {roles.length === 0 && levels.length === 0 ? " (none set -- showing defaults)" : ""}:
       </p>
       <div className="flex flex-col gap-2">
         {rows.map(({ level, linkedInUrl, indeedUrl }) => (
           <div key={level} className="flex flex-wrap items-center gap-3">
-            <span className="w-24 shrink-0 text-sm text-ultra-light-mode/70">{LEVEL_LABELS[level] ?? level}</span>
+            <span className="w-24 shrink-0 text-sm text-ultra-light-mode/70">
+              {LEVEL_LABELS[level] ?? level}
+            </span>
             <a
               href={linkedInUrl}
               target="_blank"

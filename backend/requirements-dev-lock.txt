@@ -6,12 +6,12 @@ greenlet==3.5.6
 iniconfig==2.3.1
 nodeenv==1.12.0
 packaging==26.3
-playwright==1.64.1
+playwright==1.65.2
 pluggy==1.7.0
 pyee==13.0.1
 Pygments==2.21.0
 pyright==1.1.414
 pytest==9.2.0
-ruff==0.17.4
-types-PyYAML==6.0.12.20261103
+ruff==0.17.6
+types-PyYAML==6.0.12.20261113
 types-requests==2.33.0.20261030

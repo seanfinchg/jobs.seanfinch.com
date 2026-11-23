@@ -2,12 +2,12 @@
 # Regenerate with: pip install -e . && pip freeze --exclude jobfinder
 # then keep only requests/pyyaml/pydantic and their transitive deps (see pip show).
 annotated-types==0.8.0
-certifi==2026.10.23
+certifi==2026.11.20
 charset-normalizer==3.5.2
 idna==3.20
-pydantic==2.14.3
-pydantic_core==2.50.4
-PyYAML==6.0.3
+pydantic==2.14.4
+pydantic_core==2.50.5
+PyYAML==6.0.4
 requests==2.34.2
 typing-inspection==0.4.5
 typing_extensions==4.16.0
